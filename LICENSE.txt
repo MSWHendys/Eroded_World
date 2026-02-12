@@ -1,2 +1,3 @@
 Copyright (c) 2026
-MIT
+Currently under internal / custom license.  
+License details may change in the future.
