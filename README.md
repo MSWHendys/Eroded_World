@@ -225,7 +225,7 @@ License details may change in the future.
 ## 🤝 Contributing
 
 This project is under active development.  
-Pull requests, feedback, and technical suggestions are welcome.
+Feedback, bug reports, and technical suggestions are welcome.
 
 ---
 
