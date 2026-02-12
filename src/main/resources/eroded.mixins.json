@@ -1,0 +1,23 @@
+{
+  "required": true,
+  "package": "cz.mcsworld.eroded.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "MobEntityAccessor",
+    "CraftingResultSlotMixin",
+    "AnvilScreenHandlerMixin",
+    "SmithingScreenHandlerMixin",
+    "BlockItemPlaceMixin",
+    "LivingEntityCanTargetMixin",
+    "ItemStackFinishUsingMixin",
+    "EntityPortalMixin",
+    "CraftingResultSlotAccessor",
+    "ItemMixin",
+    "ItemStackMixin"
+  ],
+  "client": [
+    "InGameHudMixin",
+    "client.NumericPropertiesMixin"
+  ],
+  "server": []
+}

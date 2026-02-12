@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "eroded",
+  "version": "${version}",
+  "name": "Eroded World",
+  "description": "Eroded World is a survival overhaul mod focused on darkness, stamina management, environmental danger and slower, more strategic gameplay. Mining, combat and movement are influenced by energy and world conditions, creating a harsher and more immersive Minecraft experience.",
+  "authors": [
+    "MSWHendys"
+  ],
+  "license": "MIT",
+  "icon": "assets/eroded/logo.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "cz.mcsworld.eroded.ErodedMod"
+    ],
+    "client": [
+      "cz.mcsworld.eroded.ErodedModClient"
+    ]
+  },
+  "mixins": [
+    "eroded.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric": ">=${fabric_version}",
+    "minecraft": "~${minecraft_version}",
+    "cloth-config": "*"
+  }
+}

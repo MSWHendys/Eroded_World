@@ -1,0 +1,13 @@
+{
+  "replace": false,
+  "values": [
+    "#minecraft:planks",
+    "#minecraft:logs",
+    "#minecraft:wool",
+    "#minecraft:sand",
+    "#minecraft:dirt",
+    "#minecraft:stone_bricks",
+    "minecraft:stick",
+    "minecraft:torch"
+  ]
+}

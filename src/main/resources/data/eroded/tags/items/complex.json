@@ -1,0 +1,11 @@
+{
+  "replace": false,
+  "values": [
+    "minecraft:anvil",
+    "minecraft:smithing_table",
+    "minecraft:enchanting_table",
+    "minecraft:beacon",
+    "minecraft:ender_chest",
+    "minecraft:netherite_ingot"
+  ]
+}
