@@ -1,7 +1,6 @@
 package cz.mcsworld.eroded.client.data;
 
-import cz.mcsworld.eroded.config.ErodedConfig;
-import cz.mcsworld.eroded.config.ErodedConfigs;
+import cz.mcsworld.eroded.config.darkness.DarknessConfigs;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
@@ -10,7 +9,6 @@ import net.minecraft.world.LightType;
 
 public final class DarknessClientData {
 
-    private static boolean targetDarkness = false;
     private static float smoothedLocalDarkness = 0.0f;
     private static float smoothedEyeTarget = 0.0f;
     private static boolean darknessLatched = false;
@@ -23,43 +21,44 @@ public final class DarknessClientData {
     private static int darknessStableTicks = 0;
     private static final int ENTER_STABLE_TICKS = 20;
 
-    private static boolean inDarkness;
     private static boolean wasInDarkness = false;
-    public static boolean consumeDarknessEnter(boolean current) {
-        boolean entered = !wasInDarkness && current;
-        wasInDarkness = current;
-        return entered;
-    }
+
 
     public static boolean SHOW_DEBUG_PANEL = false;
-    public static void update(boolean value) {
+    private static boolean serverInDarkness = false;
 
+    public static void update(boolean value) {
         hasServerState = true;
 
-        wasInDarkness = inDarkness;
+        wasInDarkness = serverInDarkness;
+        serverInDarkness = value;
 
-        inDarkness = value;
-        targetDarkness = value;
+
+    }
+    public static boolean isServerInDarkness() {
+        return hasServerState && serverInDarkness;
     }
 
     public static boolean consumeDarknessExit() {
-        boolean exited = wasInDarkness && !inDarkness;
-        wasInDarkness = inDarkness;
+        boolean exited = wasInDarkness && !serverInDarkness;
+        wasInDarkness = serverInDarkness;
         return exited;
     }
 
     public static float tickAndGetAlpha() {
 
-        ErodedConfig cfg = ErodedConfigs.get();
+        var root = DarknessConfigs.get();
+        if (!root.enabled) return 0.0f;
 
-        float target = (hasServerState && targetDarkness) ? 1.0f : 0.0f;
+        var cfg = root.client;
+        if (!cfg.visualDarknessEnabled) return 0.0f;
 
-        float targetSmoothing = 0.03f;
+        float target = isServerInDarkness() ? 1.0f : 0.0f;
 
-        smoothedEyeTarget +=
-                (target - smoothedEyeTarget) * targetSmoothing;
+        float targetSmoothing = cfg.eyeSmoothing;
+        smoothedEyeTarget += (target - smoothedEyeTarget) * targetSmoothing;
 
-        float speed = Math.max(0.001f, cfg.darknessFadeSpeed);
+        float speed = Math.max(0.001f, cfg.fadeSpeed);
 
         if (alpha < smoothedEyeTarget) {
             alpha = Math.min(smoothedEyeTarget, alpha + speed);
@@ -76,6 +75,10 @@ public final class DarknessClientData {
         if (client.world == null || client.player == null)
             return smoothedLocalDarkness;
 
+        var root = DarknessConfigs.get();
+        if (!root.enabled) return 0.0f;
+
+        var cfg = root.client;
         var world = client.world;
         var player = client.player;
 
@@ -83,10 +86,10 @@ public final class DarknessClientData {
         var look = player.getRotationVec(1.0f);
 
         float totalBlockLight = 0.0f;
-        int samples = 6;
+        int samples = cfg.samples;
 
         for (int i = 0; i < samples; i++) {
-            float dist = 1.5f + i * 1.8f;
+            float dist = (float) (cfg.sampleStart + i * cfg.sampleStep);
 
             BlockPos p = basePos.add(
                     MathHelper.floor(look.x * dist),
@@ -108,20 +111,21 @@ public final class DarknessClientData {
         float blockDarkness =
                 1.0f - MathHelper.clamp((avgBlock - 2f) / 7f, 0f, 1f);
 
-        blockDarkness = (float) Math.pow(blockDarkness, 1.3f);
+        blockDarkness = (float) Math.pow(blockDarkness, cfg.blockCurve);
 
-        blockDarkness = (float) Math.pow(blockDarkness, 1.3f);
 
-        float smoothing = 0.02f;
         smoothedLocalDarkness +=
-                (blockDarkness - smoothedLocalDarkness) * smoothing;
+                (blockDarkness - smoothedLocalDarkness) * cfg.localSmoothing;
 
         return smoothedLocalDarkness;
     }
 
 
     public static float getSkyLimiter() {
+        var root = DarknessConfigs.get();
+        if (!root.enabled) return 1.0f;
 
+        var cfg = root.client;
         MinecraftClient client = MinecraftClient.getInstance();
         if (client.world == null || client.player == null)
             return 1.0f;
@@ -134,7 +138,7 @@ public final class DarknessClientData {
 
         float limiter = 1.0f - MathHelper.clamp((sky - 2f) / 11f, 0f, 1f);
 
-        return (float) Math.pow(limiter, 1.4f);
+        return (float) Math.pow(limiter, cfg.skyCurve);
     }
 
 
@@ -166,35 +170,34 @@ public final class DarknessClientData {
 
     public static boolean isDarknessActive() {
 
-        if (!hasServerState) {
-            darknessStableTicks = 0;
-            return false;
-        }
+        var root = DarknessConfigs.get();
+        if (!root.enabled) return false;
+
+        var cfg = root.client;
+        if (!cfg.visualDarknessEnabled) return false;
+
+        if (!hasServerState) return false;
 
         float local = getLocalLightDarkness();
+        boolean current = serverInDarkness;
 
-        if (local >= 0.6f) {
+        if (current) {
             darknessStableTicks++;
-
             if (darknessStableTicks >= ENTER_STABLE_TICKS) {
                 darknessLatched = true;
                 lightGraceTicks = 0;
                 return true;
             }
-
             return false;
         } else {
             darknessStableTicks = 0;
         }
 
         if (darknessLatched) {
-
             lightGraceTicks++;
-
-            if (lightGraceTicks < 80) {
+            if (lightGraceTicks < cfg.graceTicks) {
                 return true;
             }
-
             darknessLatched = false;
             return false;
         }

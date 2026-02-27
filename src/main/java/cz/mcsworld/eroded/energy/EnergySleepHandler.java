@@ -21,7 +21,9 @@ public final class EnergySleepHandler {
     private static void onWakeUp(LivingEntity entity, BlockPos pos) {
         if (!(entity instanceof ServerPlayerEntity player)) return;
 
-        EnergyConfig cfg = EnergyConfig.get();
+        var root = EnergyConfig.get();
+        var cfg = root.server.sleep;
+
         if (!cfg.sleepRestoresFull) return;
 
         SkillData data = SkillManager.get(player);

@@ -1,5 +1,6 @@
 package cz.mcsworld.eroded.world.darkness;
 
+import cz.mcsworld.eroded.config.darkness.DarknessConfigs;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
@@ -10,17 +11,18 @@ public final class DarknessLightResolver {
     private DarknessLightResolver() {}
 
     public static final int FEAR_LIGHT_THRESHOLD = 4;
-    public static final int SUPPRESS_LIGHT_THRESHOLD = 7;
-    public static final int MAX_RADIUS = 8;
+
     public static BlockPos findNearbyBlockLight(ServerWorld world, BlockPos origin) {
+        var cfg = DarknessConfigs.get().server;
+
 
         BlockPos.Mutable pos = new BlockPos.Mutable();
         BlockPos best = null;
         double bestDist = Double.MAX_VALUE;
 
-        for (int dx = -MAX_RADIUS; dx <= MAX_RADIUS; dx++) {
-            for (int dy = -MAX_RADIUS; dy <= MAX_RADIUS; dy++) {
-                for (int dz = -MAX_RADIUS; dz <= MAX_RADIUS; dz++) {
+        for (int dx = -cfg.lightSearchRadius; dx <= cfg.lightSearchRadius; dx++) {
+            for (int dy = -cfg.lightSearchRadius; dy <= cfg.lightSearchRadius; dy++) {
+                for (int dz = -cfg.lightSearchRadius; dz <= cfg.lightSearchRadius; dz++) {
 
                     pos.set(
                             origin.getX() + dx,
@@ -29,7 +31,7 @@ public final class DarknessLightResolver {
                     );
 
                     int block = world.getLightLevel(LightType.BLOCK, pos);
-                    if (block < FEAR_LIGHT_THRESHOLD) continue;
+                    if (block < cfg.fearLightThreshold) continue;
 
                     double d = pos.getSquaredDistance(origin);
                     if (d < bestDist) {
@@ -58,10 +60,12 @@ public final class DarknessLightResolver {
     }
 
     public static boolean isMobFearing(ServerWorld world, BlockPos pos) {
-        return world.getLightLevel(LightType.BLOCK, pos) >= FEAR_LIGHT_THRESHOLD;
+        var cfg = DarknessConfigs.get().server;
+        return world.getLightLevel(LightType.BLOCK, pos) >= cfg.fearLightThreshold;
     }
 
     public static boolean isMobSuppressed(ServerWorld world, BlockPos pos) {
-        return world.getLightLevel(LightType.BLOCK, pos) >= SUPPRESS_LIGHT_THRESHOLD;
+        var cfg = DarknessConfigs.get().server;
+        return world.getLightLevel(LightType.BLOCK, pos) >= cfg.suppressLightThreshold;
     }
 }

@@ -12,7 +12,7 @@ base {
 
 
 repositories {
-    maven { url "https://maven.shedaniel.me/" }
+    maven { url = "https://maven.shedaniel.me/" }
 }
 
 dependencies {
@@ -21,22 +21,28 @@ dependencies {
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
     modImplementation "me.shedaniel.cloth:cloth-config-fabric:19.0.147"
+
 }
 
 processResources {
 
-    inputs.property "version", project.version
-    inputs.property "minecraft_version", project.minecraft_version
-    inputs.property "loader_version", project.loader_version
-    inputs.property "fabric_version", project.fabric_version
+    def projectVersion = project.version.toString()
+    def minecraftVersion = project.minecraft_version
+    def loaderVersion = project.loader_version
+    def fabricVersion = project.fabric_version
 
-    filteringCharset "UTF-8"
+    inputs.property "version", projectVersion
+    inputs.property "minecraft_version", minecraftVersion
+    inputs.property "loader_version", loaderVersion
+    inputs.property "fabric_version", fabricVersion
+
+    filteringCharset = "UTF-8"
 
     filesMatching("fabric.mod.json") {
-        expand "version": project.version,
-                "minecraft_version": project.minecraft_version,
-                "loader_version": project.loader_version,
-                "fabric_version": project.fabric_version
+        expand "version": projectVersion,
+                "minecraft_version": minecraftVersion,
+                "loader_version": loaderVersion,
+                "fabric_version": fabricVersion
     }
 }
 

@@ -6,7 +6,8 @@ public class QualityRepairModifier {
 
     public static float getRepairMultiplier(Quality quality) {
 
-        CraftingConfig cfg = CraftingConfig.get();
+        var root = CraftingConfig.get();
+        var cfg = root.quality;
 
         return switch (quality) {
             case POOR -> cfg.poorRepairMultiplier;

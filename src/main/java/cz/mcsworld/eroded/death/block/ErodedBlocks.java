@@ -17,34 +17,26 @@ public final class ErodedBlocks {
     public static void register() {
         Identifier id = Identifier.of(ErodedMod.MOD_ID, "death_ender_chest");
 
+        RegistryKey<Block> blockKey = RegistryKey.of(Registries.BLOCK.getKey(), id);
+        RegistryKey<Item> itemKey = RegistryKey.of(Registries.ITEM.getKey(), id);
+
         DEATH_ENDER_CHEST = Registry.register(
                 Registries.BLOCK,
-                id,
+                blockKey,
                 new DeathEnderChestBlock(
                         AbstractBlock.Settings.create()
                                 .strength(50.0F, 1200.0F)
                                 .requiresTool()
-                                .registryKey(
-                                        RegistryKey.of(
-                                                Registries.BLOCK.getKey(),
-                                                id
-                                        )
-                                )
+                                .registryKey(blockKey)
                 )
         );
 
         Registry.register(
                 Registries.ITEM,
-                id,
+                itemKey,
                 new BlockItem(
                         DEATH_ENDER_CHEST,
-                        new Item.Settings()
-                                .registryKey(
-                                        RegistryKey.of(
-                                                Registries.ITEM.getKey(),
-                                                id
-                                        )
-                                )
+                        new Item.Settings().registryKey(itemKey)
                 )
         );
     }

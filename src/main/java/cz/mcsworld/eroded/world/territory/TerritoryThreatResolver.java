@@ -1,24 +1,29 @@
 package cz.mcsworld.eroded.world.territory;
 
+import cz.mcsworld.eroded.config.territory.TerritoryConfig;
+
 public final class TerritoryThreatResolver {
 
     private TerritoryThreatResolver() {}
 
-    public static float computeThreat(TerritoryData data, long tick) {
+    public static float computeThreat(TerritoryCell cell, long tick) {
+        var cfg = TerritoryConfig.get().server;
 
-        int mining     = data.getMining(tick);
-        int pollution  = data.getPollution(tick);
-        int forest     = data.getForestation(tick);
+        int mining    = cell.getMining(tick);
+        int pollution = cell.getPollution(tick);
+        int forest    = cell.getForestation(tick);
 
-
-        float miningN    = clamp(mining    / 100.0f, 0.0f, 1.0f);
+        float miningN    = clamp(mining / 100.0f, 0.0f, 1.0f);
         float pollutionN = clamp(pollution / 100.0f, 0.0f, 1.0f);
-        float forestN    = clamp(forest    / 100.0f, 0.0f, 1.0f);
+        float forestN    = clamp(forest / 100.0f, 0.0f, 1.0f);
 
         float threat =
-                (miningN    * 0.45f) +
-                        (pollutionN * 0.45f) -
-                        (forestN    * 0.30f);
+                (miningN * cfg.miningWeight) +
+                        (pollutionN * cfg.pollutionWeight) -
+                        (forestN * cfg.forestWeight);
+
+        float scoreN = clamp(cell.getMiningScore() / 300.0f, 0.0f, 1.0f);
+        threat += scoreN * 0.25f;
 
         return clamp(threat, 0.0f, 1.0f);
     }

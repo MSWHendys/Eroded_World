@@ -39,6 +39,26 @@
   "item.eroded.death_compass": "Kompas návratu",
   "eroded.compass.tooltip.coords": "Poslední ozvěna: X %s  Y %s  Z %s",
   "eroded.compass.whisper.coords": "Ozvěna zní z X %s  Y %s  Z %s",
-  "eroded.crafting.not_enough_energy": "Nemáš dostatek energie na výrobu."
+  "eroded.crafting.not_enough_energy": "Nemáš dostatek energie na výrobu.",
+  "item.eroded.death_ender_chest": "Truhla smrti",
+  "eroded.energy.hud.position.center_down": "Střed dole",
+  "eroded.energy.hud.position.left_down": "Vlevo dole",
+  "eroded.energy.hud.position.right_down": "Vpravo dole",
+  "eroded.energy.hud.position.center_up": "Střed nahoře",
+  "eroded.energy.hud.position.left_up": "Vlevo nahoře",
+  "eroded.energy.hud.position.right_up": "Vpravo nahoře",
+  "eroded.energy.hud.position.changed": "Pozice energie nastavena na: %s",
+  "eroded.energy.hud.position.invalid": "Neplatná pozice.",
+
+  "eroded.command.reload.success": "§a[Eroded] Konfigurace a systémy byly úspěšně restartovány.",
+  "eroded.command.reload.error": "§c[Eroded] Při reloadu došlo k chybě!",
+
+  "eroded.command.sound.cooldown": "§c[Eroded] Počkej chvíli před další změnou.",
+  "eroded.command.sound.volume.set": "§a[Eroded] Heartbeat hlasitost nastavena na %s",
+  "eroded.command.sound.delay.set": "§a[Eroded] Heartbeat zpoždění nastaveno na %s",
+  "eroded.command.sound.reset": "§a[Eroded] Heartbeat nastavení bylo resetováno.",
+  "eroded.command.sound.info.title": "§6[Eroded] Heartbeat nastavení:",
+  "eroded.command.sound.info.volume": "\n  §eHlasitost: §f%s",
+  "eroded.command.sound.info.delay": "\n  §ePauza: §f%s"
 
 }

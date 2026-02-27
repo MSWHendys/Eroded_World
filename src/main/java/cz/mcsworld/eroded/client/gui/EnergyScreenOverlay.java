@@ -13,12 +13,14 @@ import net.minecraft.text.Text;
 public final class EnergyScreenOverlay {
 
     private static final String ICON = "⚡";
+
     private static int lastEnergyValue = -1;
     private static boolean isRegenerating = false;
 
     private static int craftingFailTicks = 0;
-    private static int energyWarningTicks = 0;
-    private static SkillData.EnergyState lastKnownState = SkillData.EnergyState.NORMAL;
+
+    private static int warningTicks = 0;
+    private static SkillData.EnergyState activeWarningState = null;
 
     private EnergyScreenOverlay() {}
 
@@ -28,28 +30,34 @@ public final class EnergyScreenOverlay {
         );
     }
 
+    public static void triggerWarning(SkillData.EnergyState state) {
+        activeWarningState = state;
+        warningTicks = EnergyConfig.get().client.hud.warningMessageTime;
+    }
+
+    public static void onCraftingFail() {
+        craftingFailTicks = EnergyConfig.get().client.hud.warningMessageTime;
+    }
+
     private static void render(Screen screen, DrawContext context, int mouseX, int mouseY, float delta) {
+
         MinecraftClient client = MinecraftClient.getInstance();
         if (client == null || client.player == null || !ClientEnergyData.isInitialized()) return;
 
-        EnergyConfig cfg = EnergyConfig.get();
+        var root = EnergyConfig.get();
+        var cfg = root.client.hud;
+
         if (!cfg.energyHudEnabled) return;
 
         int energy = ClientEnergyData.getEnergy();
         int maxEnergy = ClientEnergyData.getMaxEnergy();
-        if (maxEnergy <= 0) maxEnergy = cfg.maxEnergy;
+        if (maxEnergy <= 0) maxEnergy = root.server.core.maxEnergy;
 
         if (energy > lastEnergyValue && lastEnergyValue != -1) isRegenerating = true;
         else if (energy < lastEnergyValue) isRegenerating = false;
         if (energy >= maxEnergy) isRegenerating = false;
 
         lastEnergyValue = energy;
-
-        SkillData.EnergyState currentState = EnergyHudLogic.getCurrentState(energy, maxEnergy);
-        if (!isRegenerating && currentState != SkillData.EnergyState.NORMAL && currentState != lastKnownState) {
-            energyWarningTicks = cfg.WarningMessageTime;
-        }
-        lastKnownState = currentState;
 
         int total = cfg.numberEnergyFlashes;
         int ticks = client.inGameHud.getTicks();
@@ -61,7 +69,9 @@ public final class EnergyScreenOverlay {
 
         for (int i = 0; i < total; i++) {
             int drawX = iconsX + i * 8;
-            EnergyHudLogic.SegmentVisual visual = EnergyHudLogic.resolve(i, total, energy, maxEnergy, isRegenerating, ticks);
+
+            EnergyHudLogic.SegmentVisual visual =
+                    EnergyHudLogic.resolve(i, total, energy, maxEnergy, isRegenerating, ticks);
 
             if (!visual.visible()) {
                 context.drawText(client.textRenderer, ICON, drawX, iconsY, EnergyHudLogic.EMPTY, true);
@@ -76,7 +86,15 @@ public final class EnergyScreenOverlay {
             matrices.scale(visual.scale(), visual.scale());
             matrices.translate(-cx, -cy);
 
-            context.drawText(client.textRenderer, ICON, drawX, iconsY, (0xFF << 24) | (visual.color() & 0x00FFFFFF), true);
+            context.drawText(
+                    client.textRenderer,
+                    ICON,
+                    drawX,
+                    iconsY,
+                    (0xFF << 24) | (visual.color() & 0x00FFFFFF),
+                    true
+            );
+
             matrices.popMatrix();
         }
 
@@ -89,29 +107,31 @@ public final class EnergyScreenOverlay {
             craftingFailTicks--;
         }
 
-        else if (energyWarningTicks > 0 && !isRegenerating) {
-            String key = EnergyHudLogic.getWarningTranslationKey(currentState);
+        else if (warningTicks > 0 && activeWarningState != null) {
+            String key = EnergyHudLogic.getWarningTranslationKey(activeWarningState);
             if (key != null) {
                 textToDraw = Text.translatable(key);
                 textColor = EnergyHudLogic.RED;
-                energyWarningTicks--;
+                warningTicks--;
             } else {
-                energyWarningTicks = 0;
+                warningTicks = 0;
             }
         }
 
         else {
             textToDraw = Text.literal(energy + " / " + maxEnergy);
-            textColor = 0xFFFFFFFF;
         }
 
         if (textToDraw != null) {
             int w = client.textRenderer.getWidth(textToDraw);
-            context.drawText(client.textRenderer, textToDraw, barCenterX - w / 2, iconsY + 10, textColor, true);
+            context.drawText(
+                    client.textRenderer,
+                    textToDraw,
+                    barCenterX - w / 2,
+                    iconsY + 10,
+                    textColor,
+                    true
+            );
         }
-    }
-
-    public static void onCraftingFail() {
-        craftingFailTicks = EnergyConfig.get().WarningMessageTime;
     }
 }

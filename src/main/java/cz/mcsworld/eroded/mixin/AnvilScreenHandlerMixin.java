@@ -73,8 +73,12 @@ public class AnvilScreenHandlerMixin {
 
         SkillData data = SkillManager.get(serverPlayer);
 
-        EnergyConfig energyCfg = EnergyConfig.get();
-        CraftingConfig craftingCfg = CraftingConfig.get();
+
+        var root = CraftingConfig.get();
+        var craftingCfg = root.energy;
+
+        var energyRoot = EnergyConfig.get();
+        var energyCfg = energyRoot.server.core;
 
         int baseCost = EnergyCostResolver.getBaseCraftingCost(input);
 

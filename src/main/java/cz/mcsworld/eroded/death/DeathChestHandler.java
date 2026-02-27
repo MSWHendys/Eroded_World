@@ -4,13 +4,13 @@ import cz.mcsworld.eroded.config.death.DeathConfig;
 import cz.mcsworld.eroded.death.block.ErodedBlocks;
 import cz.mcsworld.eroded.core.ErodedItems;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,111 +18,91 @@ import java.util.Map;
 import java.util.UUID;
 
 public final class DeathChestHandler {
-
-    private DeathChestHandler() {}
+    private static final Logger LOGGER = LoggerFactory.getLogger("ErodedDeath");
 
     public static void register() {
-        ServerLivingEntityEvents.ALLOW_DEATH.register(DeathChestHandler::onDeath);
+        ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {
+            if (entity instanceof ServerPlayerEntity player) {
+
+                boolean isInvulnerable = player.isInvulnerableTo(player.getWorld(), source);
+
+                if (amount >= player.getHealth() && !isInvulnerable && !hasTotem(player)) {
+                    LOGGER.info("Detekováno fatální poškození pro {} (Příčina: {}). Zálohuji inventář.",
+                            player.getName().getString(), source.getName());
+                    handleDeath(player);
+                }
+            }
+            return true;
+        });
     }
 
-    private static boolean onDeath(LivingEntity entity, DamageSource source, float damage) {
-        if (!(entity instanceof ServerPlayerEntity player)) return true;
-        if (!(player.getWorld() instanceof ServerWorld world)) return true;
+    private static boolean hasTotem(ServerPlayerEntity player) {
+        return player.getMainHandStack().isOf(Items.TOTEM_OF_UNDYING) ||
+                player.getOffHandStack().isOf(Items.TOTEM_OF_UNDYING);
+    }
 
-        PlayerInventory inv = player.getInventory();
+    private static void handleDeath(ServerPlayerEntity player) {
+        ServerWorld world = (ServerWorld) player.getWorld();
+        List<ItemStack> snapshot = new ArrayList<>();
 
-        for (int i = 0; i < inv.size(); i++) {
-            ItemStack s = inv.getStack(i);
-            if (!s.isEmpty() && s.isOf(ErodedItems.DEATH_COMPASS)) {
-                inv.setStack(i, ItemStack.EMPTY);
+        for (int i = 0; i < player.getInventory().size(); i++) {
+            ItemStack stack = player.getInventory().getStack(i);
+            if (!stack.isEmpty()) {
+                if (!stack.isOf(ErodedItems.DEATH_COMPASS)) {
+                    snapshot.add(stack.copy());
+                }
+                player.getInventory().setStack(i, ItemStack.EMPTY);
             }
         }
 
-        boolean hasItems = false;
-        for (int i = 0; i < inv.size(); i++) {
-            if (!inv.getStack(i).isEmpty()) {
-                hasItems = true;
-                break;
-            }
-        }
-        if (!hasItems) return true;
+        if (snapshot.isEmpty()) return;
 
         UUID hologramId = UUID.randomUUID();
+        BlockPos deathPos = player.getBlockPos().toImmutable();
+        UUID playerUuid = player.getUuid();
+        var gameProfile = player.getGameProfile();
 
-        BlockPos chestPos = findSurfacePos(world, player.getBlockPos());
-        world.setBlockState(chestPos, ErodedBlocks.DEATH_ENDER_CHEST.getDefaultState());
+        new Thread(() -> {
+            try {
+                Thread.sleep(250);
 
-        List<ItemStack> snapshot = new ArrayList<>();
-        for (int i = 0; i < inv.size(); i++) {
-            snapshot.add(inv.getStack(i));
-            inv.setStack(i, ItemStack.EMPTY);
-        }
-        player.getInventory().setSelectedSlot(0);
+                world.getServer().execute(() -> {
+                    try {
 
-        long deathValue = DeathValueCalculator.calculate(snapshot);
+                        BlockPos chestPos = findSurfacePos(world, deathPos);
 
-        long baseTimeMs = DeathConfig.get().chest.protectionTicks * 50L;
-        double dist = DeathDistanceHelper.getDeathToWorldSpawnDistance(player, chestPos, world.getRegistryKey());
-        long extraTimeMs = (dist >= 0) ? Math.round(dist * 450L) : 0L;
-        long untilEpochMs = System.currentTimeMillis() + baseTimeMs + extraTimeMs;
+                        world.setBlockState(chestPos, ErodedBlocks.DEATH_ENDER_CHEST.getDefaultState(), 3);
 
-        ErodedDeathMemory memory = new ErodedDeathMemory(
-                chestPos,
-                world.getRegistryKey(),
-                untilEpochMs,
-                deathValue,
-                hologramId
-        );
+                        long deathValue = DeathValueCalculator.calculate(snapshot);
+                        long baseTimeMs = DeathConfig.get().chest.protectionTicks * 50L;
+                        long untilEpochMs = System.currentTimeMillis() + baseTimeMs;
 
-        boolean accepted = ErodedDeathStorage.putIfMoreValuable(player.getUuid(), memory);
+                        ErodedDeathMemory memory = new ErodedDeathMemory(
+                                chestPos, world.getRegistryKey(), untilEpochMs, deathValue, hologramId
+                        );
 
-        Map<Integer, DeathChestState.StoredStack> stored = DeathChestState.fromInventory(snapshot);
-        DeathChestState.get(world).put(chestPos, player.getUuid(), untilEpochMs, stored, hologramId);
+                        ErodedDeathStorage.putIfMoreValuable(playerUuid, memory);
+                        Map<Integer, DeathChestState.StoredStack> stored = DeathChestState.fromInventory(snapshot);
+                        DeathChestState.get(world).put(chestPos, playerUuid, untilEpochMs, stored, hologramId);
 
-        ErodedCompassHandler.onPlayerDeath(player, chestPos, accepted);
+                        ErodedCompassHandler.onPlayerDeath(player, chestPos, true);
+                        DeathHologramHandler.spawn(world, chestPos, gameProfile, (int)(baseTimeMs/1000), hologramId);
 
-        int remainingSeconds = (int) ((untilEpochMs - System.currentTimeMillis()) / 1000L);
-        DeathHologramHandler.spawn(
-                world,
-                chestPos,
-                player.getGameProfile(),
-                remainingSeconds,
-                hologramId
-        );
-
-        return true;
+                    } catch (Exception e) {
+                        LOGGER.error("Chyba v odloženém zápisu: ", e);
+                    }
+                });
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }).start();
     }
 
     private static BlockPos findSurfacePos(ServerWorld world, BlockPos startPos) {
-        if (world.getFluidState(startPos).isEmpty()) {
-            return world.getBlockState(startPos).isAir() ? startPos : startPos.up();
+        BlockPos.Mutable mutable = startPos.mutableCopy();
+        while (world.getBlockState(mutable).isAir() && mutable.getY() > world.getBottomY()) {
+            mutable.move(0, -1, 0);
         }
-        for (int r = 1; r <= 6; r++) {
-            for (int x = -r; x <= r; x++) {
-                for (int z = -r; z <= r; z++) {
-
-                    for (int yOff : new int[]{0, 1, -1}) {
-                        BlockPos checkPos = startPos.add(x, yOff, z);
-
-                        if (world.getFluidState(checkPos).isEmpty() && world.getBlockState(checkPos).isReplaceable()) {
-                            return checkPos;
-                        }
-                    }
-                }
-            }
-        }
-
-        BlockPos.Mutable mutablePos = startPos.mutableCopy();
-        int searchLimit = Math.min(startPos.getY() + 45, world.getTopYInclusive() - 3);
-
-        while (mutablePos.getY() < searchLimit) {
-            if (!world.getFluidState(mutablePos).isEmpty()) {
-                mutablePos.move(0, 1, 0);
-            } else {
-                break;
-            }
-        }
-
-        return mutablePos.toImmutable();
+        return (mutable.getY() < startPos.getY()) ? mutable.up().toImmutable() : startPos;
     }
 }

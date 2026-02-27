@@ -39,5 +39,28 @@
   "item.eroded.death_compass": "Return Compass",
   "eroded.compass.tooltip.coords": "Last echo: X %s  Y %s  Z %s",
   "eroded.compass.whisper.coords": "Echo from X %s  Y %s  Z %s",
-  "eroded.crafting.not_enough_energy": "You don’t have enough energy to craft."
+  "eroded.crafting.not_enough_energy": "You don’t have enough energy to craft.",
+  "item.eroded.death_ender_chest": "Death Chest",
+  "eroded.energy.hud.position.center_down": "Center Down",
+  "eroded.energy.hud.position.left_down": "Left Down",
+  "eroded.energy.hud.position.right_down": "Right Down",
+  "eroded.energy.hud.position.center_up": "Center Up",
+  "eroded.energy.hud.position.left_up": "Left Up",
+  "eroded.energy.hud.position.right_up": "Right Up",
+  "eroded.energy.hud.position.changed": "Energy HUD position set to: %s",
+  "eroded.energy.hud.position.invalid": "Invalid position.",
+
+  "eroded.command.reload.success": "§a[Eroded] Configuration and systems successfully reloaded.",
+  "eroded.command.reload.error": "§c[Eroded] An error occurred during reload!",
+
+  "eroded.command.sound.cooldown": "§c[Eroded] Please wait before changing again.",
+  "eroded.command.sound.volume.set": "§a[Eroded] Heartbeat volume set to %s",
+  "eroded.command.sound.delay.set": "§a[Eroded] Heartbeat delay set to %s",
+  "eroded.command.sound.reset": "§a[Eroded] Heartbeat settings reset.",
+  "eroded.command.sound.info.title": "§6[Eroded] Heartbeat settings:",
+  "eroded.command.sound.info.volume": "\n  §eVolume: §f%s",
+  "eroded.command.sound.info.delay": "\n  §eDelay: §f%s"
+
+
+
 }

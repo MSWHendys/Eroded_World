@@ -7,7 +7,8 @@ public class CraftingCgResolver {
 
     public static float getBaseCg(ItemStack stack) {
 
-        CraftingConfig cfg = CraftingConfig.get();
+        var root = CraftingConfig.get();
+        var cfg = root.cg;
 
         if (stack.isDamageable()) {
             return cfg.baseCgDamageable;

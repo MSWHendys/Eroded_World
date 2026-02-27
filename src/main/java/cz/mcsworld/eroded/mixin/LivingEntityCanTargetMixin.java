@@ -1,5 +1,6 @@
 package cz.mcsworld.eroded.mixin;
 
+import cz.mcsworld.eroded.config.darkness.DarknessConfigs;
 import cz.mcsworld.eroded.world.darkness.DarknessEnvironment;
 import cz.mcsworld.eroded.world.darkness.DarknessLightResolver;
 import cz.mcsworld.eroded.world.darkness.DarknessMobLightMemory;
@@ -17,6 +18,10 @@ public abstract class LivingEntityCanTargetMixin {
 
     @Inject(method = "canTarget(Lnet/minecraft/entity/LivingEntity;)Z", at = @At("HEAD"), cancellable = true)
     private void eroded$lightControlsAggression(LivingEntity target, CallbackInfoReturnable<Boolean> cir) {
+        var root = DarknessConfigs.get();
+        if (!root.enabled) return;
+
+        if (!root.server.mobLightFearEnabled) return;
         if (!((Object) this instanceof HostileEntity mob)) return;
         if (!(mob.getWorld() instanceof ServerWorld world) || !mob.isAlive()) return;
 

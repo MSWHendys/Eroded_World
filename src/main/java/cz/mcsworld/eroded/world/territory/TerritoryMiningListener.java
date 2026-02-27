@@ -10,17 +10,21 @@ public final class TerritoryMiningListener {
 
     public static void register() {
 
-        PlayerBlockBreakEvents.AFTER.register((world, player, pos, state, blockEntity) -> {
+        PlayerBlockBreakEvents.AFTER.register((world, player, pos, blockState, blockEntity) -> {
             if (!(world instanceof ServerWorld serverWorld)) return;
+
+            long tick = serverWorld.getServer().getTicks();
+            TerritoryTracker.onBlockBroken(serverWorld, pos, blockState);
             ChunkPos chunk = new ChunkPos(pos);
-            TerritoryCellKey key =
-                    TerritoryCellKey.fromChunk(chunk.x, chunk.z);
-            TerritoryWorldState stateData =
-                    TerritoryWorldState.get(serverWorld);
-            TerritoryCell cell =
-                    stateData.getOrCreateCell(key);
-            cell.incrementMining();
+            TerritoryCellKey key = TerritoryCellKey.fromChunk(chunk.x, chunk.z);
+
+            TerritoryWorldState stateData = TerritoryWorldState.get(serverWorld);
+            TerritoryCell cell = stateData.getOrCreateCell(key);
+
+            cell.incrementMiningScore();
+            cell.addMining(1, tick);
             stateData.markDirty();
+            cell.setLastMiningActivityTick(tick);
         });
     }
 }

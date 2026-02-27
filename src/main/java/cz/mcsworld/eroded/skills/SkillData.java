@@ -1,14 +1,11 @@
 package cz.mcsworld.eroded.skills;
 
 import cz.mcsworld.eroded.config.energy.EnergyConfig;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.EnumMap;
 import java.util.Map;
 
 public class SkillData {
-
 
     private final Map<SkillType, Float> cgMap = new EnumMap<>(SkillType.class);
 
@@ -17,8 +14,6 @@ public class SkillData {
             cgMap.put(type, 0.0f);
         }
     }
-    private static final Logger LOGGER =
-            LoggerFactory.getLogger("ErodedEnergy");
 
     public float getCg(SkillType type) {
         return cgMap.getOrDefault(type, 0.0f);
@@ -53,13 +48,60 @@ public class SkillData {
 
     private EnergyState lastEnergyState = EnergyState.NORMAL;
 
+    public static int severity(EnergyState state) {
+        return switch (state) {
+            case NORMAL -> 0;
+            case TIRED -> 1;
+            case EXHAUSTED -> 2;
+            case EMPTY -> 3;
+        };
+    }
+
+    private EnergyState calculateEnergyState() {
+        var root = EnergyConfig.get();
+        var cfg = root.server.thresholds;
+        if (collapsed) {
+            return EnergyState.EMPTY;
+        }
+
+        int max = getMaxEnergy();
+        if (max <= 0) return EnergyState.NORMAL;
+
+        float percent = (energy / (float) max) * 100f;
+
+        if (percent <= cfg.emptyPercent) return EnergyState.EMPTY;
+        if (percent <= cfg.exhaustedPercent) return EnergyState.EXHAUSTED;
+        if (percent <= cfg.tiredPercent) return EnergyState.TIRED;
+        return EnergyState.NORMAL;
+    }
+
+    public EnergyState detectWorseningState() {
+
+        EnergyState current = calculateEnergyState();
+
+        if (severity(current) > severity(lastEnergyState)) {
+            lastEnergyState = current;
+            return current;
+        }
+
+        if (severity(current) < severity(lastEnergyState)) {
+            lastEnergyState = current;
+        }
+
+        return null;
+    }
+
+    public EnergyState getEnergyState() {
+        return calculateEnergyState();
+    }
+
     public int getEnergy() {
         regenerateEnergy();
         return energy;
     }
 
     public int getMaxEnergy() {
-        return getConfig().maxEnergy;
+        return getConfig().server.core.maxEnergy;
     }
 
     public boolean hasEnoughEnergy(int amount) {
@@ -67,8 +109,21 @@ public class SkillData {
         return !collapsed && energy >= amount;
     }
 
+    public boolean canAffordEnergy(int amount) {
+        regenerateEnergy();
+        return !collapsed && energy >= amount;
+    }
+
+    public boolean tryConsumeEnergy(int amount) {
+        if (!hasEnoughEnergy(amount)) return false;
+        consumeEnergy(amount);
+        return true;
+    }
+
     public void consumeEnergy(int amount) {
         if (collapsed || amount <= 0) return;
+
+        regenerateEnergy();
 
         energy = Math.max(0, energy - amount);
 
@@ -76,12 +131,6 @@ public class SkillData {
             enterCollapse();
             return;
         }
-
-        regenerateEnergy();
-    }
-
-    public EnergyState getEnergyState() {
-        return lastEnergyState;
     }
 
     public void addEnergy(int amount) {
@@ -89,11 +138,19 @@ public class SkillData {
         if (amount <= 0) return;
 
         energy = Math.min(getMaxEnergy(), energy + amount);
+
+        if (energy > 0) {
+            collapsed = false;
+        }
+
+        lastEnergyState = calculateEnergyState();
     }
 
     public void setEnergy(int value) {
         energy = Math.max(0, Math.min(getMaxEnergy(), value));
         collapsed = false;
+
+        lastEnergyState = calculateEnergyState();
     }
 
     public void setEnergyAfterDeath(float ratio) {
@@ -105,17 +162,20 @@ public class SkillData {
         energy = getMaxEnergy();
         collapsed = false;
         lastRegenTime = System.currentTimeMillis();
+
+        lastEnergyState = calculateEnergyState();
     }
 
     private void enterCollapse() {
-        EnergyConfig cfg = getConfig();
+        var energyRoot = EnergyConfig.get();
+        var cfg = energyRoot.server.collapse;
         collapsed = true;
         collapseUntilMs = System.currentTimeMillis() + cfg.collapseDelayMs;
-
     }
 
     private void regenerateEnergy() {
-        EnergyConfig cfg = getConfig();
+        var root = EnergyConfig.get();
+        var cfg = root.server.regen;
         long now = System.currentTimeMillis();
 
         if (collapsed) {
@@ -135,7 +195,7 @@ public class SkillData {
         if (elapsed < intervalMs) return;
 
         int restoredSegments = (int) (elapsed / intervalMs);
-        int restoreAmount = restoredSegments * cfg.energyPerSegment;
+        int restoreAmount = restoredSegments * root.server.core.energyPerSegment;
 
         if (restoreAmount > 0) {
             energy = Math.min(getMaxEnergy(), energy + restoreAmount);
@@ -143,11 +203,13 @@ public class SkillData {
         }
     }
 
-    private int lastFlashes = -1;
 
+    private int lastFlashes = -1;
+/**
     public boolean areFlashesDecreasing() {
-        EnergyConfig cfg = getConfig();
-        int flashes = getCurrentFlashes(cfg);
+        var root = EnergyConfig.get();
+        var cfg = root;
+        int flashes = getCurrentFlashes(root);
 
         if (lastFlashes == -1) {
             lastFlashes = flashes;
@@ -160,19 +222,11 @@ public class SkillData {
     }
 
     private int getCurrentFlashes(EnergyConfig cfg) {
-        float energyPerFlash = (float) getMaxEnergy() / cfg.numberEnergyFlashes;
+        float energyPerFlash = (float) getMaxEnergy() / cfg.client.hud.numberEnergyFlashes;
         return (int) (energy / energyPerFlash);
-    }
+    } */
 
     private EnergyConfig getConfig() {
         return EnergyConfig.get();
-    }
-    public boolean tryConsumeEnergy(int amount) {
-        if (!hasEnoughEnergy(amount)) return false;
-        consumeEnergy(amount);
-        return true;
-    }
-    public boolean canAffordEnergy(int amount) {
-        return !collapsed && energy >= amount;
     }
 }

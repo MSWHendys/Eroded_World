@@ -1,5 +1,6 @@
 package cz.mcsworld.eroded.world.darkness;
 
+import cz.mcsworld.eroded.config.darkness.DarknessConfigs;
 import net.minecraft.entity.ai.goal.Goal;
 import net.minecraft.entity.mob.HostileEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -39,7 +40,7 @@ public final class StartleFromLightGoal extends Goal {
         if (mob.getTarget() == null) return false;
 
         int blockLight = world.getLightLevel(LightType.BLOCK, pos);
-        if (blockLight < DarknessLightResolver.FEAR_LIGHT_THRESHOLD) return false;
+        if (blockLight < DarknessConfigs.get().server.fearLightThreshold) return false;
 
         BlockPos light = DarknessLightResolver.findNearbyBlockLight(world, pos);
         if (light == null) return false;

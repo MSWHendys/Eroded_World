@@ -1,5 +1,6 @@
 package cz.mcsworld.eroded.client.audio;
 
+import cz.mcsworld.eroded.client.data.DarknessClientData;
 import cz.mcsworld.eroded.config.darkness.DarknessConfigs;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.sound.PositionedSoundInstance;
@@ -10,22 +11,30 @@ import net.minecraft.util.math.random.Random;
 public final class CalmDownEffect {
 
     private static int fadeTicksLeft = 0;
+    private static int totalFadeTicks = 0;
     private static boolean active = false;
 
     private CalmDownEffect() {}
 
     public static void trigger() {
 
-        DarknessConfigs cfg = DarknessConfigs.get();
-        DarknessConfigs.CalmDown calm = cfg.calmDown;
+        var root = DarknessConfigs.get();
+        if (!root.enabled) return;
+
+        var client = root.client;
+        if (!client.visualDarknessEnabled) return;
+        if (!client.calmDown.enabled) return;
+
+        var calm = client.calmDown;
 
         fadeTicksLeft = calm.fadeTicks;
+        totalFadeTicks = calm.fadeTicks;
         active = true;
 
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client.player == null) return;
+        MinecraftClient mc = MinecraftClient.getInstance();
+        if (mc.player == null) return;
 
-        client.getSoundManager().play(
+        mc.getSoundManager().play(
                 PositionedSoundInstance.master(
                         SoundEvents.ENTITY_PLAYER_BREATH,
                         calm.volume,
@@ -39,14 +48,17 @@ public final class CalmDownEffect {
         if (!active) return baseAlpha;
 
         fadeTicksLeft--;
+
         if (fadeTicksLeft <= 0) {
             active = false;
             return baseAlpha;
         }
 
-        float t = fadeTicksLeft / (float) DarknessConfigs.get().calmDown.fadeTicks;
+        float t = fadeTicksLeft / (float) totalFadeTicks;
+
         float factor = MathHelper.clamp(t * t, 0.0f, 1.0f);
 
         return baseAlpha * factor;
     }
+
 }

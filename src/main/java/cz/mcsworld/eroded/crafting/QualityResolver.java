@@ -10,7 +10,8 @@ public class QualityResolver {
             SkillData data,
             float inputQualityAvg
     ) {
-        CraftingConfig cfg = CraftingConfig.get();
+        var root = CraftingConfig.get();
+        var cfg = root.quality;
 
         float woodworking = data.getCg(SkillType.WOODWORKING);
         float smelting = data.getCg(SkillType.SMELTING);

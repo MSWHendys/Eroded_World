@@ -14,7 +14,10 @@ public class EnergyCostResolver {
     }
 
     public static int getBaseCraftingCostFromInputs(List<ItemStack> inputs) {
-        CraftingConfig cfg = CraftingConfig.get();
+
+        var root = CraftingConfig.get();
+        var cfg = root.energy;
+
         int highestTierCost = cfg.minorCraftCost;
 
         for (ItemStack stack : inputs) {
@@ -27,7 +30,9 @@ public class EnergyCostResolver {
     }
 
     private static int getCostFromMaterial(ItemStack stack) {
-        CraftingConfig cfg = CraftingConfig.get();
+
+        var root = CraftingConfig.get();
+        var cfg = root.energy;
 
         if (stack.isOf(Items.NETHERITE_INGOT) || stack.isOf(Items.NETHERITE_SCRAP) || stack.isOf(Items.NETHERITE_BLOCK)
                 || stack.getItem().toString().contains("netherite_")) {

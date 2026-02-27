@@ -1,8 +1,7 @@
 package cz.mcsworld.eroded.mixin;
 
 import cz.mcsworld.eroded.client.data.DarknessClientData;
-import cz.mcsworld.eroded.config.ErodedConfig;
-import cz.mcsworld.eroded.config.ErodedConfigs;
+import cz.mcsworld.eroded.config.darkness.DarknessConfigs;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.hud.InGameHud;
@@ -53,7 +52,11 @@ public class InGameHudMixin {
 
         if (smoothAlpha <= 0.001f) return;
 
-        ErodedConfig cfg = ErodedConfigs.get();
+        var root = DarknessConfigs.get();
+        if (!root.enabled) return;
+
+        var cfg = root.client;
+
 
         int w = context.getScaledWindowWidth();
         int h = context.getScaledWindowHeight();

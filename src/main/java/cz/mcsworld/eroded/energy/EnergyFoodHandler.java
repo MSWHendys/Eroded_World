@@ -1,5 +1,6 @@
 package cz.mcsworld.eroded.energy;
 
+import cz.mcsworld.eroded.config.crafting.CraftingConfig;
 import cz.mcsworld.eroded.config.energy.EnergyConfig;
 import cz.mcsworld.eroded.network.EnergySyncPacket;
 import cz.mcsworld.eroded.network.SafeNetworkUtil;
@@ -38,7 +39,8 @@ public final class EnergyFoodHandler {
         FoodComponent food = stack.get(DataComponentTypes.FOOD);
         if (food == null) return 0;
 
-        EnergyConfig cfg = EnergyConfig.get();
+        var root = EnergyConfig.get();
+        var cfg = root.server.food;
 
         int hunger = food.nutrition();
         float saturation = food.saturation();

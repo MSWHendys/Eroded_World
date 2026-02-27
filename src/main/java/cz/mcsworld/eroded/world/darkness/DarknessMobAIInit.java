@@ -1,5 +1,6 @@
 package cz.mcsworld.eroded.world.darkness;
 
+import cz.mcsworld.eroded.config.darkness.DarknessConfigs;
 import cz.mcsworld.eroded.mixin.MobEntityAccessor;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.minecraft.entity.Entity;
@@ -16,6 +17,10 @@ public final class DarknessMobAIInit {
     }
 
     private static void onLoad(Entity entity, ServerWorld world) {
+        var cfg = DarknessConfigs.get().server;
+
+        if (!DarknessConfigs.get().enabled) return;
+        if (!cfg.mobLightFearEnabled) return;
         if (!(entity instanceof HostileEntity mob)) return;
         if (!mob.isAlive()) return;
 
@@ -25,8 +30,7 @@ public final class DarknessMobAIInit {
         GoalSelector selector = ((MobEntityAccessor) mob).eroded$getGoalSelector();
         selector.add(1, new LightStartleImpulseGoal(mob));
 
-        selector.add(4, new EscapeFromLightGoal(mob, 1.2));
-
-        selector.add(5, new StartleFromLightGoal(mob, 5, 1.0));
+        selector.add(4, new EscapeFromLightGoal(mob, cfg.escapeSpeed));
+        selector.add(5, new StartleFromLightGoal(mob, cfg.escapeDistance, 1.0));
     }
 }

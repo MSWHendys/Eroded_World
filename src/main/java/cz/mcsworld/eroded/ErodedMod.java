@@ -3,12 +3,10 @@ package cz.mcsworld.eroded;
 import cz.mcsworld.eroded.combat.DodgeHandler;
 import cz.mcsworld.eroded.combat.SprintEnergyHandler;
 import cz.mcsworld.eroded.command.ErodedCommand;
-import cz.mcsworld.eroded.config.ErodedConfig;
 import cz.mcsworld.eroded.config.combat.CombatConfig;
 import cz.mcsworld.eroded.config.crafting.CraftingConfig;
 import cz.mcsworld.eroded.config.darkness.DarknessConfigs;
 import cz.mcsworld.eroded.config.death.DeathConfig;
-import cz.mcsworld.eroded.config.debug.DebugConfig;
 import cz.mcsworld.eroded.config.energy.EnergyConfig;
 import cz.mcsworld.eroded.config.territory.TerritoryConfig;
 import cz.mcsworld.eroded.core.ErodedComponents;
@@ -20,6 +18,7 @@ import cz.mcsworld.eroded.energy.EnergySyncHandler;
 import cz.mcsworld.eroded.network.NetworkPayloads;
 import cz.mcsworld.eroded.world.darkness.*;
 import cz.mcsworld.eroded.world.loot.MutatedMobLootHandler;
+import cz.mcsworld.eroded.world.spawn.SpawnProtectionTicker;
 import cz.mcsworld.eroded.world.territory.TerritoryCaveCollapseHandler;
 import cz.mcsworld.eroded.world.territory.TerritoryMobSpawnHandler;
 import cz.mcsworld.eroded.world.territory.ecosystem.TerritoryEcosystemTicker;
@@ -45,15 +44,27 @@ public class ErodedMod implements ModInitializer {
         AutoConfig.register(TerritoryConfig.class, GsonConfigSerializer::new);
         AutoConfig.register(DeathConfig.class, GsonConfigSerializer::new);
         AutoConfig.register(CombatConfig.class, GsonConfigSerializer::new);
-        AutoConfig.register(DebugConfig.class, GsonConfigSerializer::new);
-        AutoConfig.register(ErodedConfig.class, GsonConfigSerializer::new);
+
 
         ErodedItems.register();
         ErodedBlocks.register();
         ErodedComponents.register();
 
-        SprintEnergyHandler.register();
-        DodgeHandler.register();
+        //SprintEnergyHandler.register();
+        //DodgeHandler.register();
+        CombatConfig combat = CombatConfig.get();
+
+        if (combat.enabled) {
+
+            if (combat.sprint.enabled) {
+                SprintEnergyHandler.register();
+            }
+
+            if (combat.dodge.enabled) {
+                DodgeHandler.register();
+            }
+        }
+
         EnergySyncHandler.register();
         DarknessChecker.register();
         DarknessMobAIInit.register();
@@ -81,6 +92,8 @@ public class ErodedMod implements ModInitializer {
 
         ErodedCompassServerTicker.register();
         EnergySleepHandler.register();
+        SpawnProtectionTicker.register();
+
         LOGGER.info("[Eroded World] - mod initialized – death system stabilized.");
     }
 }

@@ -1,5 +1,6 @@
 package cz.mcsworld.eroded.world.darkness;
 
+import cz.mcsworld.eroded.config.darkness.DarknessConfigs;
 import cz.mcsworld.eroded.world.territory.*;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.block.Block;
@@ -15,10 +16,6 @@ import java.util.Map;
 
 public final class DarknessLightEater {
 
-    private static final int CHECK_INTERVAL = 40;
-    private static final int RADIUS = 2;
-    private static final int MAX_ACTIONS_PER_TICK = 6;
-
     private static int tickCounter = 0;
     private static int actions = 0;
 
@@ -29,9 +26,15 @@ public final class DarknessLightEater {
     }
 
     private static void onTick(MinecraftServer server) {
+        var root = DarknessConfigs.get();
+        if (!root.enabled) return;
 
+        var cfg = root.server;
+
+        if (!DarknessConfigs.get().enabled) return;
+        if (!cfg.lightEaterEnabled) return;
         tickCounter++;
-        if (tickCounter % CHECK_INTERVAL != 0) return;
+        if (tickCounter % cfg.lightEaterCheckInterval != 0) return;
 
         actions = 0;
 
@@ -45,8 +48,8 @@ public final class DarknessLightEater {
                     Box.of(Vec3d.of(world.getSpawnPos()), 256, 256, 256),
                     e -> e.getCommandTags().contains(MutatedMobResolver.MUTATED_TAG)
             )) {
-                if (actions >= MAX_ACTIONS_PER_TICK) return;
-                tryExtinguish(world, mob, threatCache, tick);
+                if (actions >= cfg.maxLightActionsPerTick) return;
+                tryExtinguish(world, mob, threatCache, tick, cfg);
             }
         }
     }
@@ -55,24 +58,33 @@ public final class DarknessLightEater {
             ServerWorld world,
             HostileEntity mob,
             Map<ChunkPos, Float> threatCache,
-            long tick
+            long tick, DarknessConfigs.Server cfg
     ) {
 
         BlockPos center = mob.getBlockPos();
         ChunkPos cp = new ChunkPos(center);
 
         float threat = threatCache.computeIfAbsent(cp, c -> {
-            TerritoryData d = TerritoryStorage.get(world, c);
-            return TerritoryThreatResolver.computeThreat(d, tick);
+
+            TerritoryWorldState worldState = TerritoryWorldState.get(world);
+
+            TerritoryCellKey key =
+                    TerritoryCellKey.fromChunk(c.x, c.z);
+
+            TerritoryCell cell =
+                    worldState.getOrCreateCell(key);
+
+            return TerritoryThreatResolver.computeThreat(cell, tick);
         });
 
-        if (threat < 0.6f) return;
+
+        if (threat < cfg.threatRequired) return;
 
         BlockPos.Mutable pos = new BlockPos.Mutable();
 
-        for (int dx = -RADIUS; dx <= RADIUS; dx++) {
+        for (int dx = -cfg.lightEaterRadius; dx <= cfg.lightEaterRadius; dx++) {
             for (int dy = -1; dy <= 1; dy++) {
-                for (int dz = -RADIUS; dz <= RADIUS; dz++) {
+                for (int dz = -cfg.lightEaterRadius; dz <= cfg.lightEaterRadius; dz++) {
 
                     pos.set(center.getX() + dx, center.getY() + dy, center.getZ() + dz);
                     BlockState state = world.getBlockState(pos);

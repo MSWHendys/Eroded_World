@@ -11,45 +11,74 @@ public final class TerritoryTracker {
 
     private TerritoryTracker() {}
 
+    // ============================================================
+    // BLOCK PLACE
+    // ============================================================
+
     public static void onBlockPlaced(
             ServerWorld world,
             BlockPos pos,
-            BlockState state
+            BlockState blockState
     ) {
         long tick = world.getServer().getTicks();
 
-        TerritoryData data =
-                TerritoryStorage.get(world, new ChunkPos(pos));
+        ChunkPos chunk = new ChunkPos(pos);
+        TerritoryCellKey key =
+                TerritoryCellKey.fromChunk(chunk.x, chunk.z);
 
-        Block block = state.getBlock();
+        TerritoryWorldState worldState =
+                TerritoryWorldState.get(world);
+
+        TerritoryCell cell =
+                worldState.getOrCreateCell(key);
+
+        Block block = blockState.getBlock();
 
         int forest = resolveForestationValue(block);
         int pollution = resolvePollutionValue(block);
 
         if (forest > 0) {
-            data.addForestation(forest, tick);
+            cell.addForestation(forest, tick);
+            worldState.markDirty();
         }
 
         if (pollution > 0) {
-            data.addPollution(pollution, tick);
+            cell.addPollution(pollution, tick);
+            worldState.markDirty();
         }
     }
+
+    // ============================================================
+    // BLOCK BREAK
+    // ============================================================
 
     public static void onBlockBroken(
             ServerWorld world,
             BlockPos pos,
-            BlockState state
+            BlockState blockState
     ) {
         long tick = world.getServer().getTicks();
 
-        TerritoryData data =
-                TerritoryStorage.get(world, new ChunkPos(pos));
+        ChunkPos chunk = new ChunkPos(pos);
+        TerritoryCellKey key =
+                TerritoryCellKey.fromChunk(chunk.x, chunk.z);
 
-        int mining = resolveMiningValue(state, pos);
+        TerritoryWorldState worldState =
+                TerritoryWorldState.get(world);
+
+        TerritoryCell cell =
+                worldState.getOrCreateCell(key);
+
+        int mining = resolveMiningValue(blockState, pos);
         if (mining > 0) {
-            data.addMining(mining, tick);
+            cell.addMining(mining, tick);
+            worldState.markDirty();
         }
     }
+
+    // ============================================================
+    // VALUE RESOLVERS
+    // ============================================================
 
     private static int resolveMiningValue(BlockState state, BlockPos pos) {
         Block block = state.getBlock();
@@ -73,7 +102,6 @@ public final class TerritoryTracker {
     }
 
     private static int resolveForestationValue(Block block) {
-
         if (block == Blocks.OAK_LOG
                 || block == Blocks.SPRUCE_LOG
                 || block == Blocks.BIRCH_LOG
@@ -101,7 +129,6 @@ public final class TerritoryTracker {
     }
 
     private static int resolvePollutionValue(Block block) {
-
         if (block == Blocks.FURNACE
                 || block == Blocks.BLAST_FURNACE
                 || block == Blocks.SMOKER

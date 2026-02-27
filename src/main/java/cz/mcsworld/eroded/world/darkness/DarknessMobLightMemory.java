@@ -1,5 +1,6 @@
 package cz.mcsworld.eroded.world.darkness;
 
+import cz.mcsworld.eroded.config.darkness.DarknessConfigs;
 import net.minecraft.entity.mob.HostileEntity;
 
 import java.util.Map;
@@ -7,13 +8,13 @@ import java.util.WeakHashMap;
 
 public final class DarknessMobLightMemory {
 
-    private static final int COOLDOWN_TICKS = 12;
     private static final Map<HostileEntity, Integer> MEMORY = new WeakHashMap<>();
 
     private DarknessMobLightMemory() {}
 
     public static void markLightExtinguished(HostileEntity mob) {
-        MEMORY.put(mob, COOLDOWN_TICKS);
+        var cfg = DarknessConfigs.get().server;
+        MEMORY.put(mob, cfg.postLightCooldownTicks);
     }
 
     public static boolean isInPostLightPause(HostileEntity mob) {

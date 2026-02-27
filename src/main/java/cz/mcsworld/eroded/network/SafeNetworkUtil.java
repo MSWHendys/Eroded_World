@@ -3,9 +3,7 @@ package cz.mcsworld.eroded.network;
 
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.network.packet.CustomPayload;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
 
 public final class SafeNetworkUtil {
 
@@ -32,20 +30,4 @@ public final class SafeNetworkUtil {
         }
     }
 
-    public static void safeDisconnect(
-            ServerPlayerEntity player,
-            Text reason
-    ) {
-        if (player == null) return;
-        if (player.isDisconnected()) return;
-
-        MinecraftServer server = player.getServer();
-        if (server == null) return;
-
-        server.execute(() -> {
-            if (!player.isDisconnected() && player.networkHandler != null) {
-                player.networkHandler.disconnect(reason);
-            }
-        });
-    }
 }

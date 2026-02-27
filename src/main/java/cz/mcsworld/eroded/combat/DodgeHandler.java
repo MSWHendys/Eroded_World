@@ -36,8 +36,12 @@ public final class DodgeHandler {
     }
 
     private static void handle(ServerPlayerEntity player, DodgeRequestPacket pkt) {
+        var root = CombatConfig.get();
+        if (!root.enabled || !root.dodge.enabled) return;
+        var cfg = root.dodge;
 
-        var cfg = CombatConfig.get().dodge;
+        if (!cfg.allowBackward && pkt.dirZ() < 0) return;
+        if (!cfg.allowSideways && pkt.dirX() != 0) return;
 
         UUID id = player.getUuid();
         int ticks = player.getServer().getTicks();
@@ -47,7 +51,6 @@ public final class DodgeHandler {
 
         SkillData data = SkillManager.get(player);
         if (!data.tryConsumeEnergy(cfg.energyCost)) {
-            SafeNetworkUtil.safeSend(player, new EnergyWarningPacket());
             return;
         }
 
@@ -57,8 +60,8 @@ public final class DodgeHandler {
                 player,
                 start,
                 dir,
-                cfg.distance,
-                cfg.step
+                cfg.maxDistance,
+                cfg.stepSize
         );
 
         if (safeTarget == null) return;

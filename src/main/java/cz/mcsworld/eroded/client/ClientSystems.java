@@ -1,5 +1,6 @@
 package cz.mcsworld.eroded.client;
 
+import cz.mcsworld.eroded.client.audio.HeartbeatClient;
 import cz.mcsworld.eroded.client.compass.ErodedCompassHeartbeat;
 import cz.mcsworld.eroded.client.data.ClientEnergyData;
 import cz.mcsworld.eroded.client.util.DarknessHudGuard;
@@ -13,7 +14,7 @@ public final class ClientSystems {
     public static void clientTick() {
         MinecraftClient client = MinecraftClient.getInstance();
         if (client == null || client.player == null) return;
-
+        HeartbeatClient.tick();
         EnergyConfig cfg = EnergyConfig.get();
         int energy = ClientEnergyData.getEnergy();
         if (energy <= 1) {

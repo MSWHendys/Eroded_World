@@ -4,20 +4,26 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import cz.mcsworld.eroded.config.ErodedConfigs;
+import cz.mcsworld.eroded.config.energy.EnergyConfig;
+import cz.mcsworld.eroded.config.energy.EnergyHudPosition;
+import cz.mcsworld.eroded.network.SoundTuningSyncPacket;
 import cz.mcsworld.eroded.world.territory.*;
-import cz.mcsworld.eroded.world.territory.ecosystem.TerritoryEcosystemTicker;
+import me.shedaniel.autoconfig.AutoConfig;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
-import net.minecraft.util.math.ChunkPos;
+
+import static net.minecraft.server.command.CommandManager.literal;
+import static net.minecraft.server.command.CommandManager.argument;
 
 public final class ErodedCommand {
+    private static final java.util.Map<java.util.UUID, Long> SOUND_COOLDOWN = new java.util.HashMap<>();
+    private static final long SOUND_COOLDOWN_MS = 1000;
 
-    private ErodedCommand() {}
+    private ErodedCommand() {
+    }
 
     public static void register() {
         CommandRegistrationCallback.EVENT.register(
@@ -30,145 +36,87 @@ public final class ErodedCommand {
 
         dispatcher.register(
                 CommandManager.literal("eroded")
-                        .requires(src -> src.hasPermissionLevel(2))
 
                         .then(CommandManager.literal("reload")
+                                .requires(src -> src.hasPermissionLevel(2))
                                 .executes(ctx -> {
-                                    ErodedConfigs.reload();
-                                    ctx.getSource().sendFeedback(
-                                            () -> Text.literal("§a[Eroded] Konfigurace byla znovu načtena."),
-                                            false
-                                    );
-                                    return 1;
-                                })
-                        )
-                        .then(CommandManager.literal("force")
-                                .executes(ctx -> {
-                                    ServerPlayerEntity player = ctx.getSource().getPlayer();
-                                    TerritoryEcosystemTicker.forceTick(
-                                            (ServerWorld) player.getWorld()
-                                    );
-
-                                    ctx.getSource().sendFeedback(
-                                            () -> Text.literal("§c[Ecosystem] FORCE tick proveden."),
-                                            false
-                                    );
-                                    return 1;
+                                    try {
+                                        ErodedConfigs.reload();
+                                        ctx.getSource().sendFeedback(
+                                                () -> Text.translatable("eroded.command.reload.success"),
+                                                false
+                                        );
+                                        return 1;
+                                    } catch (Exception e) {
+                                        ctx.getSource().sendError(
+                                                Text.translatable("eroded.command.reload.error")
+                                        );
+                                        e.printStackTrace();
+                                        return 0;
+                                    }
                                 })
                         )
 
-                        .then(CommandManager.literal("territory")
+                        .then(CommandManager.literal("sound")
 
-                                .executes(ctx -> {
-                                    ServerPlayerEntity player = ctx.getSource().getPlayer();
-                                    var world = player.getWorld();
-                                    long tick = world.getServer().getTicks();
+                                .then(CommandManager.literal("volume")
+                                        .then(CommandManager.argument("value", IntegerArgumentType.integer(1, 10)
+                                                        )
+                                                        .executes(ctx -> {
 
-                                    ChunkPos cp = new ChunkPos(player.getBlockPos());
-                                    TerritoryData data = TerritoryStorage.get(world, cp);
+                                                            int value = IntegerArgumentType.getInteger(ctx, "value");
+                                                            ServerPlayerEntity player = ctx.getSource().getPlayer();
 
-                                    int mining = data.getMining(tick);
-                                    int forest = data.getForestation(tick);
-                                    int pollution = data.getPollution(tick);
+                                                            long now = System.currentTimeMillis();
+                                                            Long last = SOUND_COOLDOWN.get(player.getUuid());
 
-                                    float threat =
-                                            TerritoryThreatResolver.computeThreat(data, tick);
+                                                            if (last != null && now - last < SOUND_COOLDOWN_MS) {
+                                                                ctx.getSource().sendError(Text.translatable("eroded.command.sound.cooldown"));
+                                                                return 0;
+                                                            }
 
-                                    ctx.getSource().sendFeedback(
-                                            () -> Text.literal(
-                                                    "§6[Území]\n" +
-                                                            "§7Chunk: §f" + cp.x + " / " + cp.z + "\n" +
-                                                            "§7Těžba: §f" + mining + "\n" +
-                                                            "§7Zalesnění: §f" + forest + "\n" +
-                                                            "§7Znečištění: §f" + pollution + "\n" +
-                                                            "§7Hrozba: §f" + String.format("%.2f", threat)
-                                            ),
-                                            false
-                                    );
-                                    return 1;
-                                })
+                                                            SOUND_COOLDOWN.put(player.getUuid(), now);
+                                                            float normalized = 0.2f + ((value - 1) / 9.0f) * 0.8f;
 
-                                .then(CommandManager.literal("add")
-                                        .then(CommandManager.argument("type", StringArgumentType.word())
-                                                .then(CommandManager.argument("value", IntegerArgumentType.integer())
-                                                        .executes(ctx -> modifyTerritory(
-                                                                ctx.getSource(),
-                                                                ctx.getArgument("type", String.class),
-                                                                ctx.getArgument("value", Integer.class),
-                                                                false
-                                                        ))
-                                                )
+                                                            SoundTuningSyncPacket.sendTo(player, normalized, null);
+
+                                                            ctx.getSource().sendFeedback(
+                                                                    () -> Text.translatable(
+                                                                            "eroded.command.sound.volume.set",
+                                                                            value
+                                                                    ),
+                                                                    false
+                                                            );
+                                                            return 1;
+                                                        })
+
                                         )
                                 )
 
-                                .then(CommandManager.literal("set")
-                                        .then(CommandManager.argument("type", StringArgumentType.word())
-                                                .then(CommandManager.argument("value", IntegerArgumentType.integer(0))
-                                                        .executes(ctx -> modifyTerritory(
-                                                                ctx.getSource(),
-                                                                ctx.getArgument("type", String.class),
-                                                                ctx.getArgument("value", Integer.class),
-                                                                true
-                                                        ))
-                                                )
-                                        )
-                                )
-
-                                .then(CommandManager.literal("reset")
-                                        .executes(ctx -> {
-                                            ServerPlayerEntity player = ctx.getSource().getPlayer();
-                                            var world = player.getWorld();
-                                            long tick = world.getServer().getTicks();
-
-                                            TerritoryData data =
-                                                    TerritoryStorage.get(world, new ChunkPos(player.getBlockPos()));
-
-                                            data.addMining(-data.getMining(tick), tick);
-                                            data.addForestation(-data.getForestation(tick), tick);
-                                            data.addPollution(-data.getPollution(tick), tick);
-
-                                            ctx.getSource().sendFeedback(
-                                                    () -> Text.literal("§a[Území] Hodnoty byly resetovány."),
-                                                    false
-                                            );
-                                            return 1;
-                                        })
-                                )
-
-                                .then(CommandManager.literal("ecosystem")
-
-                                        .then(CommandManager.literal("tick")
+                                .then(CommandManager.literal("delay")
+                                        .then(CommandManager.argument("value", IntegerArgumentType.integer(1, 10))
                                                 .executes(ctx -> {
-                                                    MinecraftServer server = ctx.getSource().getServer();
-                                                    TerritoryEcosystemTicker.register();
-                                                    server.getPlayerManager().broadcast(
-                                                            Text.literal("§e[Ekosystém] Testovací tick byl spuštěn."),
-                                                            false
-                                                    );
-                                                    return 1;
-                                                })
-                                        )
 
-                                        .then(CommandManager.literal("preview")
-                                                .executes(ctx -> {
+                                                    int value = IntegerArgumentType.getInteger(ctx, "value");
                                                     ServerPlayerEntity player = ctx.getSource().getPlayer();
-                                                    var world = player.getWorld();
-                                                    long tick = world.getServer().getTicks();
 
-                                                    TerritoryData data =
-                                                            TerritoryStorage.get(world, new ChunkPos(player.getBlockPos()));
+                                                    long now = System.currentTimeMillis();
+                                                    Long last = SOUND_COOLDOWN.get(player.getUuid());
 
-                                                    float threat =
-                                                            TerritoryThreatResolver.computeThreat(data, tick);
+                                                    if (last != null && now - last < SOUND_COOLDOWN_MS) {
+                                                        ctx.getSource().sendError(Text.translatable("eroded.command.sound.cooldown"));
+                                                        return 0;
+                                                    }
 
-                                                    int pollution = data.getPollution(tick);
+                                                    SOUND_COOLDOWN.put(player.getUuid(), now);
+                                                    float normalized = 0.5f + ((value - 1) / 9.0f) * 1.5f;
+
+                                                    SoundTuningSyncPacket.sendTo(player, null, normalized);
 
                                                     ctx.getSource().sendFeedback(
-                                                            () -> Text.literal(
-                                                                    "§6[Náhled ekosystému]\n" +
-                                                                            "§7Degradace: §f" + (threat > 0.6f) + "\n" +
-                                                                            "§7Regenerace: §f" + (threat < 0.25f && pollution < 50) + "\n" +
-                                                                            "§7Trvalé jizvy: §f" + (threat > 0.85f && pollution > 80)
+                                                            () -> Text.translatable(
+                                                                    "eroded.command.sound.delay.set",
+                                                                    value
                                                             ),
                                                             false
                                                     );
@@ -176,48 +124,109 @@ public final class ErodedCommand {
                                                 })
                                         )
                                 )
+                                .then(CommandManager.literal("info")
+                                        .executes(ctx -> {
+                                            ServerPlayerEntity player = ctx.getSource().getPlayer();
+
+                                            long now = System.currentTimeMillis();
+                                            Long last = SOUND_COOLDOWN.get(player.getUuid());
+
+                                            if (last != null && now - last < SOUND_COOLDOWN_MS) {
+                                                ctx.getSource().sendError(Text.translatable("eroded.command.sound.cooldown"));
+                                                return 0;
+                                            }
+
+                                            SOUND_COOLDOWN.put(player.getUuid(), now);
+                                            float volume = cz.mcsworld.eroded.config.darkness.DarknessConfigs
+                                                    .get().client.audio.volumeMultiplier;
+
+                                            float delay = cz.mcsworld.eroded.config.darkness.DarknessConfigs
+                                                    .get().client.audio.delayMultiplier;
+
+                                            int volumeUser = Math.round((volume - 0.2f) / 0.8f * 9f) + 1;
+                                            int delayUser = Math.round((delay - 0.5f) / 1.5f * 9f) + 1;
+
+                                            ctx.getSource().sendFeedback(
+                                                    () -> Text.translatable("eroded.command.sound.info.title")
+                                                            .append(Text.translatable(
+                                                                    "eroded.command.sound.info.volume",
+                                                                    volumeUser
+                                                            ))
+                                                            .append(Text.translatable(
+                                                                    "eroded.command.sound.info.delay",
+                                                                    delayUser
+                                                            )),
+                                                    false
+                                            );
+
+                                            return 1;
+                                        })
+                                )
+                                .then(CommandManager.literal("reset")
+                                        .executes(ctx -> {
+
+                                            ServerPlayerEntity player = ctx.getSource().getPlayer();
+
+                                            long now = System.currentTimeMillis();
+                                            Long last = SOUND_COOLDOWN.get(player.getUuid());
+
+                                            if (last != null && now - last < SOUND_COOLDOWN_MS) {
+                                                ctx.getSource().sendError(Text.translatable("eroded.command.sound.cooldown"));
+                                                return 0;
+                                            }
+
+                                            SOUND_COOLDOWN.put(player.getUuid(), now);
+
+                                            SoundTuningSyncPacket.sendTo(player, 1.0f, 1.0f);
+
+                                            ctx.getSource().sendFeedback(
+                                                    () -> Text.translatable("eroded.command.sound.reset"),
+                                                    false
+                                            );
+
+                                            return 1;
+                                        })
+                                )
+                        )
+
+                        .then(literal("icon")
+                                .then(argument("position", StringArgumentType.word())
+                                        .suggests((ctx, builder) -> {
+                                            for (var pos : EnergyHudPosition.values()) {
+                                                builder.suggest(pos.name().toLowerCase());
+                                            }
+                                            return builder.buildFuture();
+                                        })
+                                        .executes(ctx -> {
+
+                                            String input = StringArgumentType.getString(ctx, "position").toUpperCase();
+
+                                            try {
+                                                EnergyHudPosition newPos = EnergyHudPosition.valueOf(input);
+
+                                                var cfg = EnergyConfig.get().client.hud;
+                                                cfg.hudPosition = newPos;
+
+                                                AutoConfig.getConfigHolder(EnergyConfig.class).save();
+
+                                                ctx.getSource().sendFeedback(
+                                                        () -> Text.translatable(
+                                                                "eroded.energy.hud.position.changed",
+                                                                newPos.getTranslation()
+                                                        ),
+                                                        false
+                                                );
+
+                                            } catch (IllegalArgumentException e) {
+                                                ctx.getSource().sendError(
+                                                        Text.translatable("eroded.energy.hud.position.invalid")
+                                                );
+                                            }
+
+                                            return 1;
+                                        })
+                                )
                         )
         );
-    }
-
-    private static int modifyTerritory(
-            ServerCommandSource source,
-            String type,
-            int value,
-            boolean absolute
-    ) {
-        ServerPlayerEntity player = source.getPlayer();
-        var world = player.getWorld();
-        long tick = world.getServer().getTicks();
-
-        TerritoryData data =
-                TerritoryStorage.get(world, new ChunkPos(player.getBlockPos()));
-
-        int current;
-
-        switch (type.toLowerCase()) {
-            case "mining" -> {
-                current = data.getMining(tick);
-                data.addMining(absolute ? value - current : value, tick);
-            }
-            case "forest", "forestation" -> {
-                current = data.getForestation(tick);
-                data.addForestation(absolute ? value - current : value, tick);
-            }
-            case "pollution" -> {
-                current = data.getPollution(tick);
-                data.addPollution(absolute ? value - current : value, tick);
-            }
-            default -> {
-                source.sendError(Text.literal("§cNeznámý typ hodnoty: " + type));
-                return 0;
-            }
-        }
-
-        source.sendFeedback(
-                () -> Text.literal("§a[Území] Hodnota '" + type + "' byla upravena."),
-                false
-        );
-        return 1;
     }
 }

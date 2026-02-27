@@ -1,7 +1,5 @@
 package cz.mcsworld.eroded.crafting;
 
-import cz.mcsworld.eroded.ErodedMod;
-import cz.mcsworld.eroded.config.debug.DebugConfig;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.registry.RegistryKeys;
@@ -31,13 +29,6 @@ public final class RecipeDifficultyResolver {
             difficulty = RecipeDifficulty.NORMAL;
         } else {
             difficulty = RecipeDifficulty.COMPLEX;
-        }
-
-        if (DebugConfig.get().logRecipeDifficulty) {
-            ErodedMod.LOGGER.info(
-                    "{}",
-                    difficulty
-            );
         }
 
         return difficulty;

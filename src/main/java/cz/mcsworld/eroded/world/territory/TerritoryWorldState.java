@@ -15,13 +15,25 @@ public final class TerritoryWorldState extends PersistentState {
 
     private static final String ID = "eroded_territory";
     private final Map<TerritoryCellKey, TerritoryCell> cells = new HashMap<>();
-    private record CellEntry(int x, int z, int mining) {}
+    private record CellEntry(
+            int x,
+            int z,
+            int miningScore,
+            int mining,
+            int pollution,
+            int forestation,
+            long lastTick
+    ) {}
 
     private static final Codec<CellEntry> CELL_ENTRY_CODEC =
             RecordCodecBuilder.create(instance -> instance.group(
                     Codec.INT.fieldOf("x").forGetter(CellEntry::x),
                     Codec.INT.fieldOf("z").forGetter(CellEntry::z),
-                    Codec.INT.fieldOf("mining").forGetter(CellEntry::mining)
+                    Codec.INT.fieldOf("miningScore").forGetter(CellEntry::miningScore),
+                    Codec.INT.fieldOf("mining").forGetter(CellEntry::mining),
+                    Codec.INT.fieldOf("pollution").forGetter(CellEntry::pollution),
+                    Codec.INT.fieldOf("forestation").forGetter(CellEntry::forestation),
+                    Codec.LONG.fieldOf("lastTick").forGetter(CellEntry::lastTick)
             ).apply(instance, CellEntry::new));
 
     private static final Codec<TerritoryWorldState> CODEC =
@@ -30,7 +42,11 @@ public final class TerritoryWorldState extends PersistentState {
                         TerritoryWorldState state = new TerritoryWorldState();
                         for (CellEntry e : entries) {
                             TerritoryCell cell = new TerritoryCell();
-                            cell.setMiningScore(e.mining());
+                            cell.setMiningScore(e.miningScore());
+                            cell.setMining(e.mining());
+                            cell.setPollution(e.pollution());
+                            cell.setForestation(e.forestation());
+                            cell.setLastTick(e.lastTick());
                             state.cells.put(
                                     new TerritoryCellKey(e.x(), e.z()),
                                     cell
@@ -48,7 +64,11 @@ public final class TerritoryWorldState extends PersistentState {
                                     new CellEntry(
                                             key.cellX(),
                                             key.cellZ(),
-                                            cell.getMiningScore()
+                                            cell.getMiningScore(),
+                                            cell.getMiningRaw(),
+                                            cell.getPollutionRaw(),
+                                            cell.getForestationRaw(),
+                                            cell.getLastTick()
                                     )
                             );
                         }

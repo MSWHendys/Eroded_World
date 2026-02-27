@@ -1,13 +1,14 @@
 package cz.mcsworld.eroded.world.darkness;
 
+import cz.mcsworld.eroded.config.darkness.DarknessConfigs;
 import net.minecraft.util.math.BlockPos;
 
 import java.util.HashMap;
 import java.util.Map;
 
+
 public final class DarknessFlickerState {
 
-    public static final int MAX_STAGE = 3;
 
     private static final Map<BlockPos, Integer> STAGES = new HashMap<>();
 
@@ -18,9 +19,10 @@ public final class DarknessFlickerState {
     }
 
     public static boolean advance(BlockPos pos) {
+        var cfg = DarknessConfigs.get().server;
         int next = STAGES.getOrDefault(pos, 0) + 1;
 
-        if (next >= MAX_STAGE) {
+        if (next >= cfg.flickerStages) {
             STAGES.remove(pos);
             return true;
         }

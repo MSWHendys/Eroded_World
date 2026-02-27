@@ -35,8 +35,11 @@ public class SmithingScreenHandlerMixin {
 
         SkillData data = SkillManager.get(serverPlayer);
 
-        EnergyConfig energyCfg = EnergyConfig.get();
-        CraftingConfig craftingCfg = CraftingConfig.get();
+        var energyRoot = EnergyConfig.get();
+        var energyCfg = energyRoot.server.core;
+
+        var root = CraftingConfig.get();
+        var craftingCfg = root.energy;
 
         int baseCost = EnergyCostResolver.getBaseCraftingCost(stack);
 

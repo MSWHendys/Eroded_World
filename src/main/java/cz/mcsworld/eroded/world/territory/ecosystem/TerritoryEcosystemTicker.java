@@ -1,29 +1,28 @@
 package cz.mcsworld.eroded.world.territory.ecosystem;
 
-import cz.mcsworld.eroded.config.debug.DebugConfig;
-import cz.mcsworld.eroded.world.territory.*;
+import cz.mcsworld.eroded.config.territory.TerritoryConfig;
+import cz.mcsworld.eroded.world.territory.TerritoryCell;
+import cz.mcsworld.eroded.world.territory.TerritoryCellKey;
+import cz.mcsworld.eroded.world.territory.TerritoryThreatResolver;
+import cz.mcsworld.eroded.world.territory.TerritoryWorldState;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
-import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.random.Random;
 import net.minecraft.world.Heightmap;
 
+import java.util.List;
+
 public final class TerritoryEcosystemTicker {
 
-    private static final int INTERVAL_TICKS = 100;
-
-    private static final int POLLUTION_REGEN_BLOCK = 50;
-    private static final int POLLUTION_SCAR = 80;
-
-    private static int counter = 0;
+    private static final int FALLBACK_INTERVAL_TICKS = 20;
+    private static int rrIndex = 0;
+    private static int tickCounter = 0;
 
     private TerritoryEcosystemTicker() {}
 
@@ -32,9 +31,14 @@ public final class TerritoryEcosystemTicker {
     }
 
     private static void onTick(MinecraftServer server) {
+        var root = TerritoryConfig.get();
+        var cfg = root.server;
+        if (!cfg.enabled || !cfg.ecosystemEnabled) return;
 
-        if (++counter < INTERVAL_TICKS) return;
-        counter = 0;
+        int interval = cfg.ecosystemIntervalTicks > 0 ? cfg.ecosystemIntervalTicks : FALLBACK_INTERVAL_TICKS;
+
+        if (++tickCounter < interval) return;
+        tickCounter = 0;
 
         for (ServerWorld world : server.getWorlds()) {
             tickWorld(world);
@@ -42,249 +46,172 @@ public final class TerritoryEcosystemTicker {
     }
 
     private static void tickWorld(ServerWorld world) {
+        var cfg = TerritoryConfig.get().server;
+
+        List<ServerPlayerEntity> players = world.getPlayers();
+        if (players.isEmpty()) return;
+
         long tick = world.getServer().getTicks();
         Random random = world.getRandom();
-
         TerritoryWorldState state = TerritoryWorldState.get(world);
 
-        for (ServerPlayerEntity player : world.getPlayers()) {
+        int radius = Math.max(8, cfg.ecosystemVisibleRadiusBlocks);
+        int maxPlayers = Math.max(1, cfg.ecosystemMaxPlayersPerSlice);
+
+        int attemptsPerPlayer = Math.max(0, cfg.ecosystemAttemptsPerPlayer);
+        int surfaceAttempts = Math.max(0, cfg.ecosystemSurfaceAttempts);
+        int leafAttempts = Math.max(0, cfg.ecosystemLeafAttempts);
+
+        if (attemptsPerPlayer <= 0 && surfaceAttempts <= 0 && leafAttempts <= 0) return;
+
+        if (surfaceAttempts + leafAttempts <= 0) {
+            surfaceAttempts = attemptsPerPlayer;
+            leafAttempts = 0;
+        }
+
+        int leafMinY = Math.min(cfg.ecosystemLeafMinY, cfg.ecosystemLeafMaxY);
+        int leafMaxY = Math.max(cfg.ecosystemLeafMinY, cfg.ecosystemLeafMaxY);
+
+        float degradeThr = cfg.ecosystemDegradeThreatThreshold;
+
+        int count = Math.min(maxPlayers, players.size());
+
+        for (int i = 0; i < count; i++) {
+            int idx = rrIndex++ % players.size();
+            ServerPlayerEntity player = players.get(idx);
+
             ChunkPos cp = new ChunkPos(player.getBlockPos());
             TerritoryCellKey key = TerritoryCellKey.fromChunk(cp.x, cp.z);
-
             TerritoryCell cell = state.getOrCreateCell(key);
-            TerritoryData data = TerritoryStorage.get(world, cp);
 
-            float threat = TerritoryThreatResolver.computeThreat(data, tick);
-            int pollution = data.getPollution(tick);
+            float threat = TerritoryThreatResolver.computeThreat(cell, tick);
+            int pollution = cell.getPollution(tick);
+            int miningScore = cell.getMiningScore();
+            long lastMiningTick = cell.getLastMiningActivityTick();
+            long ticksSinceMining = lastMiningTick == 0 ? Integer.MAX_VALUE : tick - lastMiningTick;
 
-            maybeErodeStone(world, key, cell, threat, random);
+            int calmDownDelay = cfg.ecosystemCalmDownDelay;
+            boolean recentlyMining = ticksSinceMining < calmDownDelay;
 
-            if (threat > 0.6f) {
-                maybeDegradeGrass(world, key, random);
+            if (threat < 0.10f && pollution < 10) continue;
+
+            boolean doDegrade = threat > degradeThr && recentlyMining;
+            boolean doRegen = !recentlyMining;
+
+            if (!doDegrade && !doRegen) continue;
+
+            BlockPos center = player.getBlockPos();
+
+            if (doDegrade) {
+                for (int a = 0; a < surfaceAttempts; a++) {
+                    maybeDegradeSurfaceNearPlayer(world, center, radius, random);
+                }
+                for (int a = 0; a < leafAttempts; a++) {
+                    maybeWitherLeavesNearPlayer(world, center, radius, leafMinY, leafMaxY, random, cfg);
+                }
+            } else {
+                cell.addForestation(1, tick);
+                cell.addPollution(-1, tick);
+                cell.addMining(-1, tick);
+
+                for (int a = 0; a < surfaceAttempts; a++) {
+                    maybeRegrowNearPlayer(world, center, radius, random);
+                }
             }
-
-            if (threat < 0.25f && pollution < POLLUTION_REGEN_BLOCK) {
-                maybeRegrowGrass(world, key, random);
-            }
-
-            if (threat > 0.85f && pollution > POLLUTION_SCAR) {
-                maybeApplyPermanentScar(world, key, random);
-            }
-
-            maybePlayAtmosphere(world, key, threat, pollution, random);
         }
     }
 
-    private static void maybeErodeStone(
-            ServerWorld world,
-            TerritoryCellKey key,
-            TerritoryCell cell,
-            float threat,
-            Random random
-    ) {
-        if (threat < 0.6f) return;
-        if (cell.getMiningScore() < 300) return;
-        if (random.nextFloat() >  0.25f) return;
+    private static void maybeDegradeSurfaceNearPlayer(ServerWorld world, BlockPos center, int radius, Random random) {
 
-        ChunkPos cp = randomChunkFromCell(key, random);
-        if (!world.isChunkLoaded(cp.x, cp.z)) return;
+        var cfg = TerritoryConfig.get().server;
+        if (random.nextFloat() > cfg.grassDegradeChance) return;
 
-        BlockPos pos = randomUndergroundPos(cp, random);
-        if (world.getBlockState(pos).isOf(Blocks.STONE)) {
-            world.setBlockState(pos, Blocks.GRAVEL.getDefaultState(), 2);
-        }
-
-    }
-
-    private static void maybeDegradeGrass(
-            ServerWorld world,
-            TerritoryCellKey key,
-            Random random
-    ) {
-        if (random.nextFloat() > 0.25f) return;
-
-        ChunkPos cp = randomChunkFromCell(key, random);
-        if (!world.isChunkLoaded(cp.x, cp.z)) return;
-
-        BlockPos groundPos = randomSurfacePos(world, cp, random);
+        BlockPos groundPos = randomSurfaceNearPlayer(world, center, radius, random);
         if (groundPos == null) return;
 
-        BlockPos abovePos = groundPos.up();
+        BlockState old = world.getBlockState(groundPos);
+        BlockState newState = null;
 
-        var groundState = world.getBlockState(groundPos);
-        var aboveState  = world.getBlockState(abovePos);
-
-        boolean changed = false;
-
-        if (groundState.isOf(Blocks.GRASS_BLOCK)) {
-            world.setBlockState(
-                    groundPos,
-                    Blocks.COARSE_DIRT.getDefaultState(),
-                    2
-            );
-            changed = true;
+        if (old.isOf(Blocks.GRASS_BLOCK)) {
+            newState = Blocks.DIRT.getDefaultState();
+        } else if (old.isOf(Blocks.DIRT)) {
+            newState = Blocks.COARSE_DIRT.getDefaultState();
+        } else if (old.isOf(Blocks.COARSE_DIRT) && random.nextFloat() < 0.20f) {
+            newState = Blocks.PODZOL.getDefaultState();
+        } else if (old.isOf(Blocks.MOSS_BLOCK) && random.nextFloat() < 0.60f) {
+            newState = Blocks.DIRT.getDefaultState();
+        } else if (old.isOf(Blocks.PODZOL) && random.nextFloat() < 0.10f) {
+            newState = Blocks.DIRT.getDefaultState();
         }
 
-        if (aboveState.isOf(Blocks.TALL_GRASS)
-                || aboveState.isOf(Blocks.SHORT_GRASS)
-                || aboveState.isOf(Blocks.FERN)
-                || aboveState.isOf(Blocks.LARGE_FERN)) {
-
-            world.breakBlock(abovePos, false);
-            changed = true;
+        if (newState != null && newState != old) {
+            world.setBlockState(groundPos, newState, 2);
         }
 
-        if (changed && DebugConfig.get().ecosystem.enabled) {
-            world.getServer().getPlayerManager().broadcast(
-                    Text.translatable(
-                            "eroded.ecosystem.surface_degraded",
-                            cp.x,
-                            cp.z
-                    ),
-                    false
-            );
-        }
+        if (random.nextFloat() < 0.70f) {
+            BlockPos above = groundPos.up();
+            BlockState a = world.getBlockState(above);
 
+            if (a.isAir()) return;
+
+            world.breakBlock(above, false);
+        }
     }
 
-    private static void maybeRegrowGrass(
-            ServerWorld world,
-            TerritoryCellKey key,
-            Random random
-    ) {
-        if (random.nextFloat() > 0.01f) return;
+    private static void maybeRegrowNearPlayer(ServerWorld world, BlockPos center, int radius, Random random) {
 
-        ChunkPos cp = randomChunkFromCell(key, random);
-        if (!world.isChunkLoaded(cp.x, cp.z)) return;
+        var cfg = TerritoryConfig.get().server;
+        if (random.nextFloat() > cfg.grassRegrowChance) return;
 
-        BlockPos pos = randomSurfacePos(world, cp, random);
+        BlockPos pos = randomSurfaceNearPlayer(world, center, radius, random);
         if (pos == null) return;
+
         if (world.getLightLevel(pos.up()) < 9) return;
 
-        var state = world.getBlockState(pos);
+        BlockState old = world.getBlockState(pos);
 
-        if (state.isOf(Blocks.DIRT) || state.isOf(Blocks.COARSE_DIRT)) {
+        if (old.isOf(Blocks.DIRT) || old.isOf(Blocks.COARSE_DIRT)) {
             world.setBlockState(pos, Blocks.GRASS_BLOCK.getDefaultState(), 2);
-        } else if (state.isOf(Blocks.STONE) && random.nextFloat() < 0.2f) {
-            world.setBlockState(pos, Blocks.MOSS_BLOCK.getDefaultState(), 2);
         }
     }
 
-    private static void maybeApplyPermanentScar(
+    private static void maybeWitherLeavesNearPlayer(
             ServerWorld world,
-            TerritoryCellKey key,
-            Random random
+            BlockPos center,
+            int radius,
+            int leafMinY,
+            int leafMaxY,
+            Random random,
+            TerritoryConfig.Server cfg
     ) {
-        if (random.nextFloat() > 0.01f) return;
 
-        ChunkPos cp = randomChunkFromCell(key, random);
-        if (!world.isChunkLoaded(cp.x, cp.z)) return;
+        float leafAttemptChance = cfg.permanentScarChance * cfg.ecosystemLeafLossMultiplier;
+        leafAttemptChance = Math.max(cfg.ecosystemLeafLossMinChance, leafAttemptChance);
+        leafAttemptChance = Math.min(cfg.ecosystemLeafLossMaxChance, leafAttemptChance);
 
-        BlockPos pos = randomSurfacePos(world, cp, random);
-        if (pos == null) return;
+        if (random.nextFloat() > leafAttemptChance) return;
 
-        var state = world.getBlockState(pos);
+        BlockPos base = randomSurfaceNearPlayer(world, center, radius, random);
+        if (base == null) return;
 
-        if (state.isOf(Blocks.GRASS_BLOCK)
-                || state.isOf(Blocks.DIRT)
-                || state.isOf(Blocks.COARSE_DIRT)) {
+        for (int y = 2; y <= 20; y++) {
+            BlockPos checkPos = base.up(y);
+            BlockState state = world.getBlockState(checkPos);
 
-            world.setBlockState(pos, Blocks.PODZOL.getDefaultState(), 2);
-        }
+            if (state.isAir()) continue;
 
-        if (state.isOf(Blocks.GRAVEL)) {
-            world.setBlockState(pos, Blocks.TUFF.getDefaultState(), 2);
-        }
-
-        if (state.isOf(Blocks.STONE)) {
-            world.setBlockState(pos, Blocks.ANDESITE.getDefaultState(), 2);
-        }
-    }
-
-    private static void maybePlayAtmosphere(
-            ServerWorld world,
-            TerritoryCellKey key,
-            float threat,
-            int pollution,
-            Random random
-    ) {
-        if (threat < 0.7f && pollution < 60) return;
-        if (random.nextFloat() > 0.05f) return;
-
-        ChunkPos cp = randomChunkFromCell(key, random);
-        BlockPos pos = randomSurfacePos(world, cp, random);
-        if (pos == null) return;
-
-        if (world.getClosestPlayer(
-                pos.getX(), pos.getY(), pos.getZ(),
-                32,
-                false
-        ) == null) return;
-
-        world.spawnParticles(
-                ParticleTypes.ASH,
-                pos.getX() + 0.5,
-                pos.getY() + 1.2,
-                pos.getZ() + 0.5,
-                6,
-                0.3, 0.2, 0.3,
-                0.01
-        );
-
-        if (random.nextFloat() < 0.3f) {
-            world.playSound(
-                    null,
-                    pos,
-                    SoundEvents.BLOCK_CAMPFIRE_CRACKLE,
-                    SoundCategory.AMBIENT,
-                    0.3f,
-                    0.7f
-            );
+            world.breakBlock(checkPos, false);
+            return;
         }
     }
 
-    private static ChunkPos randomChunkFromCell(
-            TerritoryCellKey key,
-            Random random
-    ) {
-        int baseX = key.cellX() * TerritoryCellKey.CELL_SIZE;
-        int baseZ = key.cellZ() * TerritoryCellKey.CELL_SIZE;
+    private static BlockPos randomSurfaceNearPlayer(ServerWorld world, BlockPos center, int radius, Random random) {
+        int x = center.getX() + random.nextInt(radius * 2 + 1) - radius;
+        int z = center.getZ() + random.nextInt(radius * 2 + 1) - radius;
 
-        return new ChunkPos(
-                baseX + random.nextInt(TerritoryCellKey.CELL_SIZE),
-                baseZ + random.nextInt(TerritoryCellKey.CELL_SIZE)
-        );
-    }
-
-    private static BlockPos randomSurfacePos(
-            ServerWorld world,
-            ChunkPos cp,
-            Random random
-    ) {
-        int x = cp.getStartX() + random.nextInt(16);
-        int z = cp.getStartZ() + random.nextInt(16);
-
-        int y = world.getTopY(
-                Heightmap.Type.MOTION_BLOCKING_NO_LEAVES,
-                x,
-                z
-        ) - 1;
-
+        int y = world.getTopY(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
         if (y < world.getBottomY()) return null;
+
         return new BlockPos(x, y, z);
     }
-
-    private static BlockPos randomUndergroundPos(
-            ChunkPos cp,
-            Random random
-    ) {
-        int x = cp.getStartX() + random.nextInt(16);
-        int y = random.nextInt(40);
-        int z = cp.getStartZ() + random.nextInt(16);
-        return new BlockPos(x, y, z);
-    }
-    public static void forceTick(ServerWorld world) {
-        tickWorld(world);
-    }
-
 }

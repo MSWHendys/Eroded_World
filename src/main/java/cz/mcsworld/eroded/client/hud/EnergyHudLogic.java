@@ -1,5 +1,6 @@
 package cz.mcsworld.eroded.client.hud;
 
+import cz.mcsworld.eroded.config.energy.EnergyConfig;
 import cz.mcsworld.eroded.skills.SkillData;
 
 public final class EnergyHudLogic {
@@ -19,6 +20,9 @@ public final class EnergyHudLogic {
     public record SegmentVisual(boolean visible, int color, float scale) {}
 
     public static SegmentVisual resolve(int index, int total, int energy, int maxEnergy, boolean isRegenerating, int ticks) {
+        var root = EnergyConfig.get();
+        var cfg = root.server.hudThresholds;
+
         if (maxEnergy <= 0) return new SegmentVisual(false, EMPTY, 1.0f);
 
         float ratio = energy / (float) maxEnergy;
@@ -38,14 +42,14 @@ public final class EnergyHudLogic {
         }
 
         boolean blinkOn = ((ticks / 10) % 2 == 0);
-        boolean baseBlink = percent <= 20f;
+        boolean baseBlink = percent <= cfg.blinkBelowPercent;
 
         int lastActiveIndex = (int) (ratio * total);
         boolean isLeadingIcon = (index == lastActiveIndex);
 
         boolean isRegenIcon = isRegenerating && isLeadingIcon;
 
-        boolean blink = isRegenIcon ? percent <= 20f : (isLeadingIcon && baseBlink);
+        boolean blink = isRegenIcon ? percent <= cfg.blinkBelowPercent : (isLeadingIcon && baseBlink);
         if (blink && !blinkOn) {
             return new SegmentVisual(false, EMPTY, 1.0f);
         }
@@ -60,7 +64,7 @@ public final class EnergyHudLogic {
 
         return new SegmentVisual(true, color, scale);
     }
-
+/**
     public static SkillData.EnergyState getCurrentState(int energy, int maxEnergy) {
         if (maxEnergy <= 0) return SkillData.EnergyState.NORMAL;
         float percent = (energy / (float) maxEnergy) * 100f;
@@ -69,7 +73,7 @@ public final class EnergyHudLogic {
         if (percent <= 35f) return SkillData.EnergyState.EXHAUSTED;
         if (percent <= 51f) return SkillData.EnergyState.TIRED;
         return SkillData.EnergyState.NORMAL;
-    }
+    } */
 
     public static String getWarningTranslationKey(SkillData.EnergyState state) {
         return switch (state) {
@@ -81,9 +85,12 @@ public final class EnergyHudLogic {
     }
 
     private static int baseColorByPercent(float percent) {
-        if (percent >= 51f) return GREEN;
-        if (percent >= 35f) return YELLOW;
-        if (percent >= 25f) return ORANGE;
+        var root = EnergyConfig.get();
+        var cfg = root.server.hudThresholds;
+        if (percent >= cfg.greenFromPercent) return GREEN;
+        if (percent >= cfg.yellowFromPercent) return YELLOW;
+        if (percent >= cfg.orangeFromPercent) return ORANGE;
         return RED;
     }
+
 }

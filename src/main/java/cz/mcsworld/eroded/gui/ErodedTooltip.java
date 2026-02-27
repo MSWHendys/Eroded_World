@@ -21,7 +21,8 @@ public class ErodedTooltip {
                     Quality quality = ItemQuality.get(stack);
                     if (quality == Quality.STANDARD) return;
 
-                    CraftingConfig cfg = CraftingConfig.get();
+                    var root = CraftingConfig.get();
+                    var cfg = root.quality;
 
                     lines.add(Text.literal(""));
 

@@ -1,5 +1,6 @@
 package cz.mcsworld.eroded.combat;
 
+import cz.mcsworld.eroded.config.combat.CombatConfig;
 import cz.mcsworld.eroded.network.EnergyWarningPacket;
 import cz.mcsworld.eroded.network.EnergySyncPacket;
 import cz.mcsworld.eroded.network.SafeNetworkUtil;
@@ -15,9 +16,6 @@ import java.util.UUID;
 
 public final class SprintEnergyHandler {
 
-    private static final int DRAIN_INTERVAL_TICKS = 10;
-    private static final int ENERGY_PER_INTERVAL = 1;
-    private static final int MIN_ENERGY_TO_SPRINT = 2;
 
     private static final Map<UUID, Integer> sprintTicks = new HashMap<>();
 
@@ -26,6 +24,11 @@ public final class SprintEnergyHandler {
     }
 
     private static void onWorldTick(ServerWorld world) {
+
+        CombatConfig root = CombatConfig.get();
+        if (!root.enabled || !root.sprint.enabled) return;
+        CombatConfig.Sprint cfg = root.sprint;
+
         for (ServerPlayerEntity player : world.getPlayers()) {
 
             if (!player.isAlive()) {
@@ -45,29 +48,33 @@ public final class SprintEnergyHandler {
             UUID id = player.getUuid();
             SkillData data = SkillManager.get(player);
 
+
             if (!player.isSprinting()) {
                 sprintTicks.remove(id);
                 continue;
             }
 
-            if (data.getEnergy() < MIN_ENERGY_TO_SPRINT) {
-                if (!player.isUsingItem()) {
+            int currentEnergy = data.getEnergy();
+
+            if (currentEnergy < cfg.minEnergyToSprint) {
+
+                if (cfg.stopSprintWhenEmpty) {
                     player.setSprinting(false);
                 }
+
                 sprintTicks.remove(id);
 
                 SafeNetworkUtil.safeSend(player, new EnergySyncPacket(data.getEnergy()));
-                SafeNetworkUtil.safeSend(player, new EnergyWarningPacket());
                 continue;
             }
 
             int ticks = sprintTicks.getOrDefault(id, 0) + 1;
 
-            if (ticks >= DRAIN_INTERVAL_TICKS) {
-                data.consumeEnergy(ENERGY_PER_INTERVAL);
+            if (ticks >= cfg.drainIntervalTicks) {
+                data.consumeEnergy(cfg.energyPerInterval);
                 ticks = 0;
 
-                SafeNetworkUtil.safeSend(player, new EnergySyncPacket(data.getEnergy()));
+                SafeNetworkUtil.safeSend(player, new EnergySyncPacket(currentEnergy));
             }
 
             sprintTicks.put(id, ticks);

@@ -1,5 +1,6 @@
 package cz.mcsworld.eroded.world.darkness;
 
+import cz.mcsworld.eroded.config.darkness.DarknessConfigs;
 import net.minecraft.entity.ai.goal.Goal;
 import net.minecraft.entity.mob.HostileEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -24,6 +25,7 @@ public final class LightStartleImpulseGoal extends Goal {
 
     @Override
     public boolean canStart() {
+        var cfg = DarknessConfigs.get().server;
         if (!mob.isAlive()) return false;
         if (!(mob.getWorld() instanceof ServerWorld world)) return false;
 
@@ -34,7 +36,7 @@ public final class LightStartleImpulseGoal extends Goal {
         if (!DarknessEnvironment.isDarkForMobs(world, pos)) return false;
 
         int blockLight = world.getLightLevel(LightType.BLOCK, pos);
-        if (blockLight < DarknessLightResolver.FEAR_LIGHT_THRESHOLD) return false;
+        if (blockLight < cfg.fearLightThreshold) return false;
 
         BlockPos light = DarknessLightResolver.findNearbyBlockLight(world, pos);
         if (light == null || light.equals(lastLight)) return false;

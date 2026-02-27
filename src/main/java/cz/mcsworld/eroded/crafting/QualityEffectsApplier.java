@@ -10,7 +10,8 @@ public class QualityEffectsApplier {
 
         if (!stack.isDamageable()) return;
 
-        CraftingConfig cfg = CraftingConfig.get();
+        var root = CraftingConfig.get();
+        var cfg = root.quality;
 
         int vanillaMax = stack.getMaxDamage();
         float mult = switch (quality) {

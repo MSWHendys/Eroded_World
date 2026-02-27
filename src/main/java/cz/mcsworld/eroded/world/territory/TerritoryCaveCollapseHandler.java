@@ -1,5 +1,6 @@
 package cz.mcsworld.eroded.world.territory;
 
+import cz.mcsworld.eroded.config.territory.TerritoryConfig;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
@@ -9,6 +10,7 @@ import net.minecraft.entity.mob.HostileEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.particle.BlockStateParticleEffect;
 import net.minecraft.particle.ParticleTypes;
+import net.minecraft.registry.tag.BlockTags;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
@@ -19,45 +21,44 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
 public final class TerritoryCaveCollapseHandler {
 
-    private static final Logger LOGGER =
-            LoggerFactory.getLogger("Eroded-Collapse");
 
     private static final Random RANDOM = new Random();
 
-    private static final long CELL_COOLDOWN_MS = 30_000;
-    private static final int MINING_THRESHOLD = 300;
-    private static final int STABILIZER_RADIUS = 3;
-    private static final float MOB_SPAWN_CHANCE = 0.25f;
-    private static final int MOB_SPAWN_ATTEMPTS = 5;
 
     private static final Map<TerritoryCellKey, Long> LAST_COLLAPSE =
             new HashMap<>();
 
     private TerritoryCaveCollapseHandler() {}
-    private static final EntityType<? extends HostileEntity>[] COLLAPSE_MOBS = new EntityType[] {
-            EntityType.ZOMBIE,
-            EntityType.SKELETON,
-            EntityType.SPIDER,
-            EntityType.CREEPER
-    };
-    public static void register() {
 
+    private static final List<EntityType<? extends HostileEntity>> COLLAPSE_MOBS =
+            List.of(
+                    EntityType.ZOMBIE,
+                    EntityType.SKELETON,
+                    EntityType.SPIDER,
+                    EntityType.CREEPER
+            );
+    public static void register() {
+        var root = TerritoryConfig.get();
+        var cfg = root.server;
+
+        if (!cfg.enabled || !cfg.caveCollapseEnabled) return;
         PlayerBlockBreakEvents.AFTER.register((world, player, pos, state, blockEntity) -> {
 
             if (!(world instanceof ServerWorld serverWorld)) return;
-            if (pos.getY() > 50) return;
+            if (pos.getY() > cfg.collapseMaxY) return;
 
             ChunkPos chunk = new ChunkPos(pos);
             TerritoryCellKey key =
                     TerritoryCellKey.fromChunk(chunk.x, chunk.z);
 
             long now = System.currentTimeMillis();
-            if (now - LAST_COLLAPSE.getOrDefault(key, 0L) < CELL_COOLDOWN_MS) {
+            if (now - LAST_COLLAPSE.getOrDefault(key, 0L) < cfg.collapseCooldownMs) {
                 return;
             }
 
@@ -67,52 +68,59 @@ public final class TerritoryCaveCollapseHandler {
                     stateData.getOrCreateCell(key);
 
             int score = cell.getMiningScore();
-            if (score < MINING_THRESHOLD) return;
+
+            if (score < cfg.miningThreshold) return;
 
             double chance = collapseChance(score);
             if (RANDOM.nextDouble() > chance) return;
 
-            if (hasStabilizerNearby(serverWorld, pos)) {
+            BlockPos collapseOrigin = pos.offset(
+                    player.getHorizontalFacing().getOpposite(),
+                    2
+            );
+            if (hasStabilizerNearby(serverWorld, collapseOrigin)) {
 
                 serverWorld.playSound(
                         null,
                         pos.getX() + 0.5,
                         pos.getY() + 0.5,
                         pos.getZ() + 0.5,
-                        SoundEvents.BLOCK_WOOD_PLACE,
+                        SoundEvents.ENTITY_CREAKING_AMBIENT,
                         SoundCategory.BLOCKS,
-                        0.5f,
-                        1.2f
+                        0.2f,
+                        0.2f
                 );
 
-                LOGGER.debug("Collapse prevented by stabilizer at {}", pos);
                 return;
             }
 
             triggerCollapse(serverWorld, player, pos);
             LAST_COLLAPSE.put(key, now);
 
-            LOGGER.info("Collapse triggered at {} (score={})", pos, score);
 
-            if (RANDOM.nextFloat() < MOB_SPAWN_CHANCE) {
+
+            if (RANDOM.nextFloat() < cfg.collapseMobSpawnChance) {
                 trySpawnCollapseMob(serverWorld, player, pos);
             }
         });
     }
 
     private static double collapseChance(int miningScore) {
-        if (miningScore < 500) return 0.005;
-        if (miningScore < 1000) return 0.02;
-        return 0.05;
+        var root = TerritoryConfig.get();
+        var cfg = root.server;
+        if (miningScore < 500) return cfg.collapseChanceLow; //0.005
+        if (miningScore < 1000) return cfg.collapseChanceMid; //0.02
+        return cfg.collapseChanceHigh;
     }
 
     private static boolean hasStabilizerNearby(ServerWorld world, BlockPos origin) {
-
+        var root = TerritoryConfig.get();
+        var cfg = root.server;
         BlockPos.Mutable check = new BlockPos.Mutable();
 
-        for (int dx = -STABILIZER_RADIUS; dx <= STABILIZER_RADIUS; dx++) {
-            for (int dy = -STABILIZER_RADIUS; dy <= STABILIZER_RADIUS; dy++) {
-                for (int dz = -STABILIZER_RADIUS; dz <= STABILIZER_RADIUS; dz++) {
+        for (int dx = -cfg.stabilizerRadius; dx <= cfg.stabilizerRadius; dx++) {
+            for (int dy = -cfg.stabilizerRadius; dy <= cfg.stabilizerRadius; dy++) {
+                for (int dz = -cfg.stabilizerRadius; dz <= cfg.stabilizerRadius; dz++) {
 
                     check.set(
                             origin.getX() + dx,
@@ -130,8 +138,7 @@ public final class TerritoryCaveCollapseHandler {
     }
 
     private static boolean isStabilizer(BlockState state) {
-        return state.isOf(Blocks.OAK_LOG)
-                || state.isOf(Blocks.STRIPPED_OAK_LOG);
+        return state.isIn(BlockTags.LOGS);
     }
 
     private static void triggerCollapse(ServerWorld world, PlayerEntity player, BlockPos origin) {
@@ -139,10 +146,10 @@ public final class TerritoryCaveCollapseHandler {
         Direction behind =
                 player.getHorizontalFacing().getOpposite();
 
-        int widthRadius = 1;
-        int height = 3;
-        int depth = 4;
-        int startOffset = 2;
+        int widthRadius = 2;
+        int height = 4;
+        int depth = 6;
+        int startOffset = 5;
 
         world.playSound(
                 null,
@@ -230,7 +237,7 @@ public final class TerritoryCaveCollapseHandler {
 
         Direction behind = player.getHorizontalFacing().getOpposite();
 
-        for (int i = 0; i < MOB_SPAWN_ATTEMPTS; i++) {
+        for (int i = 0; i < TerritoryConfig.get().server.collapseMobSpawnAttempts; i++) {
 
             BlockPos basePos =
                     origin.offset(behind, 4 + RANDOM.nextInt(4));
@@ -247,7 +254,7 @@ public final class TerritoryCaveCollapseHandler {
             }
 
             EntityType<? extends HostileEntity> type =
-                    COLLAPSE_MOBS[RANDOM.nextInt(COLLAPSE_MOBS.length)];
+                    COLLAPSE_MOBS.get(RANDOM.nextInt(COLLAPSE_MOBS.size()));
 
 
             HostileEntity mob = type.spawn(
@@ -261,11 +268,6 @@ public final class TerritoryCaveCollapseHandler {
 
             if (mob == null) return;
 
-            LOGGER.info(
-                    "Collapse attracted {} at {}",
-                    mob.getType().getTranslationKey(),
-                    spawnPos
-            );
             return;
         }
     }
