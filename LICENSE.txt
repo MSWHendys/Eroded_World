@@ -1,3 +1,4 @@
 Copyright (c) 2026
 Currently under internal / custom license.
+
 License details may change in the future.
