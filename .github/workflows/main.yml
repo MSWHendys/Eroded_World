@@ -1,4 +1,4 @@
-name: Build & Publish Eroded World
+name: Publish CurseForge
 
 on:
   release:
