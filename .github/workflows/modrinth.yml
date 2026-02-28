@@ -46,7 +46,7 @@ jobs:
       - name: Upload to Modrinth
         uses: Kir-Antipov/mc-publish@v3
         with:
-          modrinth-id: eroded-world   # slug nebo project ID
+          modrinth-id: KOumCdpA   # slug nebo project ID
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
 
           files: ${{ steps.findjar.outputs.jar_path }}
