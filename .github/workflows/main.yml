@@ -1,4 +1,4 @@
-name: Build & Upload Eroded World
+name: Build & Publish Eroded World
 
 on:
   release:
@@ -24,11 +24,27 @@ jobs:
       - name: Build mod
         run: ./gradlew build
 
+      - name: List build output (debug)
+        run: ls -R build/libs
+
       - name: Find built JAR
         id: findjar
         run: |
-          JAR_FILE=$(ls build/libs/eroded_world-*.jar | grep -v sources | head -n 1)
+          JAR_FILE=$(ls build/libs/*.jar | grep -v sources | head -n 1)
+          echo "Found JAR: $JAR_FILE"
           echo "jar_path=$JAR_FILE" >> $GITHUB_OUTPUT
+
+      - name: Detect release type
+        id: releasetype
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          if [[ "$TAG" == *alpha* ]]; then
+            echo "type=alpha" >> $GITHUB_OUTPUT
+          elif [[ "$TAG" == *beta* ]]; then
+            echo "type=beta" >> $GITHUB_OUTPUT
+          else
+            echo "type=release" >> $GITHUB_OUTPUT
+          fi
 
       - name: Upload to CurseForge
         uses: itsmeow/curseforge-upload@v3
@@ -37,4 +53,13 @@ jobs:
           project_id: 1460705
           game_endpoint: minecraft
           file_path: ${{ steps.findjar.outputs.jar_path }}
-          release_type: alpha
+          release_type: ${{ steps.releasetype.outputs.type }}
+          changelog: ${{ github.event.release.body }}
+          changelog_type: markdown
+          game_versions: |
+            1.21.8
+          mod_loaders: |
+            Fabric
+          java_versions: |
+            Java 21
+          environment: both
