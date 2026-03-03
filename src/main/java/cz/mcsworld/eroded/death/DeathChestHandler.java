@@ -74,7 +74,8 @@ public final class DeathChestHandler {
                         world.setBlockState(chestPos, ErodedBlocks.DEATH_ENDER_CHEST.getDefaultState(), 3);
 
                         long deathValue = DeathValueCalculator.calculate(snapshot);
-                        long baseTimeMs = DeathConfig.get().chest.protectionTicks * 50L;
+                        long baseTimeMs = DeathProtectionCalculator
+                                .calculateProtectionMillis(player, deathPos);
                         long untilEpochMs = System.currentTimeMillis() + baseTimeMs;
 
                         ErodedDeathMemory memory = new ErodedDeathMemory(

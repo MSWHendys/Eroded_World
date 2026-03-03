@@ -95,7 +95,10 @@ public final class DeathHologramHandler {
                     .collect(Collectors.toSet());
 
             for (Entity e : world.iterateEntities()) {
-                if (e.getCommandTags().contains(TAG)) {
+                if (e == null || e.isRemoved()) continue;
+
+                Set<String> tags = e.getCommandTags();
+                if (tags.contains(TAG)) {
                     UUID hid = getHologramIdFromTags(e);
                     if (hid != null && !activeHids.contains(hid)) {
                         e.discard();
@@ -119,7 +122,10 @@ public final class DeathHologramHandler {
 
             Box box = new Box(pos).expand(1.0, 4.0, 1.0);
             for (Entity e : world.getOtherEntities(null, box)) {
-                if (!e.getCommandTags().contains(hidTag)) continue;
+                if (e == null || e.isRemoved()) continue;
+
+                Set<String> tags = e.getCommandTags();
+                if (!tags.contains(hidTag)) continue;
 
                 if (e instanceof ArmorStandEntity stand && e.getCommandTags().contains(TAG_HEAD)) {
                     float yaw = (world.getServer().getTicks() * cfg.rotationSpeed) % 360f;
@@ -146,6 +152,8 @@ public final class DeathHologramHandler {
     public static void removeById(ServerWorld world, UUID hologramId) {
         String hidTag = TAG_HOLOGRAM_ID + hologramId;
         for (Entity e : world.iterateEntities()) {
+            if (e == null || e.isRemoved()) continue;
+
             if (e.getCommandTags().contains(hidTag)) {
                 e.discard();
             }

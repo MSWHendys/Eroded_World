@@ -14,14 +14,6 @@ public class DeathConfig implements ConfigData {
                 .getConfig();
     }
 
-    @ConfigEntry.Gui.Tooltip
-    public int deathProtectionMinutes = 5;
-
-    @ConfigEntry.Gui.Tooltip
-    public String compassEmptyKey = "eroded.compass.empty";
-
-    @ConfigEntry.Gui.Tooltip
-    public String compassWhisperKey = "eroded.compass.whisper";
 
     @ConfigEntry.Gui.CollapsibleObject
     public Compass compass = new Compass();
@@ -87,5 +79,25 @@ public class DeathConfig implements ConfigData {
 
         @ConfigEntry.Gui.Tooltip
         public float bobbingAmplitude = 0.05f;
+    }
+    @ConfigEntry.Gui.CollapsibleObject
+    public Protection protection = new Protection();
+
+    public static class Protection {
+
+        @ConfigEntry.Gui.Tooltip
+        public boolean distanceBased = true;
+
+        @ConfigEntry.Gui.Tooltip
+        public int minMinutes = 3;
+
+        @ConfigEntry.Gui.Tooltip
+        public int maxMinutes = 20;
+
+        @ConfigEntry.Gui.Tooltip
+        public double minutesPerBlock = 0.01;
+
+        @ConfigEntry.Gui.Tooltip
+        public boolean useSpawnIfNoBed = true;
     }
 }
