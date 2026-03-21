@@ -46,7 +46,7 @@ jobs:
       - name: Upload to Modrinth
         uses: Kir-Antipov/mc-publish@v3
         with:
-          modrinth-id: lvxpnYQB   # slug nebo project ID
+          modrinth-id: lvxpnYQB
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
 
           files: ${{ steps.findjar.outputs.jar_path }}
