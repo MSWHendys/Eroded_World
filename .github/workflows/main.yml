@@ -50,7 +50,7 @@ jobs:
         uses: itsmeow/curseforge-upload@v3
         with:
           token: ${{ secrets.CURSEFORGE_TOKEN }}
-          project_id: 1460705a
+          project_id: 1460705
           game_endpoint: minecraft
           file_path: ${{ steps.findjar.outputs.jar_path }}
           release_type: ${{ steps.releasetype.outputs.type }}
