@@ -59,8 +59,28 @@
   "eroded.command.sound.reset": "§a[Eroded] Heartbeat settings reset.",
   "eroded.command.sound.info.title": "§6[Eroded] Heartbeat settings:",
   "eroded.command.sound.info.volume": "\n  §eVolume: §f%s",
-  "eroded.command.sound.info.delay": "\n  §eDelay: §f%s"
+  "eroded.command.sound.info.delay": "\n  §eDelay: §f%s",
+  "eroded.loot.chest.protected": "§cThe chest is protected.",
 
-
+  "eroded.gui.energy.prefix": "Energy: ",
+  "eroded.debug.cell.title": "Eroded Cell",
+  "eroded.debug.cell.mining_blocks": "Mining Blocks: ",
+  "eroded.debug.cell.mining": "Mining: ",
+  "eroded.debug.cell.pollution": "Pollution: ",
+  "eroded.debug.cell.forest": "Forest: ",
+  "eroded.debug.cell.threat": "Threat: ",
+  "key.eroded.debug": "Toggle Eroded Debug",
+  "category.eroded": "Eroded Mod",
+  "eroded.command.chest.success": "§aYou received a loot chest.",
+  "eroded.config.title.combat": "Combat & Movement",
+  "eroded.config.title.crafting": "Crafting & Quality",
+  "eroded.config.title.darkness": "Darkness",
+  "eroded.config.title.death": "Death System",
+  "eroded.config.title.energy": "Energy",
+  "eroded.config.title.loot": "Loot System",
+  "eroded.config.title.territory": "Territory & Ecosystem",
+  "eroded.mob.title.forsaken": "Forsaken",
+  "eroded.mob.title.eroded": "Eroded",
+  "eroded.mob.title.apocalypse": "Apocalypse"
 
 }

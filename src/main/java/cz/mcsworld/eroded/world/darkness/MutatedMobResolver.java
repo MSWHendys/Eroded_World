@@ -33,7 +33,6 @@ public final class MutatedMobResolver {
         if (threat < 0.65f) return false;
 
         float chance = (threat - 0.65f) * 2.0f;
-        System.out.println("[Eroded] Mutation check | Threat=" + threat + " | Chance=" + chance);
         return world.random.nextFloat() < chance;
 
     }

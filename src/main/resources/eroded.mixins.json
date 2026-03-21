@@ -13,7 +13,12 @@
     "EntityPortalMixin",
     "CraftingResultSlotAccessor",
     "ItemMixin",
-    "ItemStackMixin"
+    "ItemStackMixin",
+    "PlayerBlockBreakMixin",
+    "ExplosionProtectionMixin",
+    "PlayerBlockPlaceMixin",
+    "BucketProtectionMixin",
+    "PistonProtectionMixin"
   ],
   "client": [
     "InGameHudMixin",

@@ -1,9 +1,10 @@
 package cz.mcsworld.eroded.death;
 
-import cz.mcsworld.eroded.config.death.DeathConfig;
-import cz.mcsworld.eroded.death.block.ErodedBlocks;
+import com.mojang.authlib.GameProfile;
 import cz.mcsworld.eroded.core.ErodedItems;
+import cz.mcsworld.eroded.death.block.ErodedBlocks;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -13,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -20,19 +22,39 @@ import java.util.UUID;
 public final class DeathChestHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger("ErodedDeath");
 
+    private record PendingChest(
+            ServerWorld world,
+            BlockPos pos,
+            UUID playerUuid,
+            GameProfile profile,
+            List<ItemStack> items,
+            long executeAtTick
+    ) {}
+
+    private static final List<PendingChest> PENDING_CHESTS = new ArrayList<>();
+
     public static void register() {
         ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {
             if (entity instanceof ServerPlayerEntity player) {
-
                 boolean isInvulnerable = player.isInvulnerableTo(player.getWorld(), source);
-
                 if (amount >= player.getHealth() && !isInvulnerable && !hasTotem(player)) {
-                    LOGGER.info("Detekováno fatální poškození pro {} (Příčina: {}). Zálohuji inventář.",
-                            player.getName().getString(), source.getName());
                     handleDeath(player);
                 }
             }
             return true;
+        });
+
+        ServerTickEvents.END_SERVER_TICK.register(server -> {
+            long currentTick = server.getTicks();
+            Iterator<PendingChest> iterator = PENDING_CHESTS.iterator();
+
+            while (iterator.hasNext()) {
+                PendingChest pending = iterator.next();
+                if (currentTick >= pending.executeAtTick()) {
+                    createDeathChest(pending);
+                    iterator.remove();
+                }
+            }
         });
     }
 
@@ -57,46 +79,59 @@ public final class DeathChestHandler {
 
         if (snapshot.isEmpty()) return;
 
-        UUID hologramId = UUID.randomUUID();
         BlockPos deathPos = player.getBlockPos().toImmutable();
-        UUID playerUuid = player.getUuid();
-        var gameProfile = player.getGameProfile();
+        long executeAt = world.getServer().getTicks() + 5;
 
-        new Thread(() -> {
-            try {
-                Thread.sleep(250);
+        PENDING_CHESTS.add(new PendingChest(
+                world,
+                deathPos,
+                player.getUuid(),
+                player.getGameProfile(),
+                snapshot,
+                executeAt
+        ));
+    }
 
-                world.getServer().execute(() -> {
-                    try {
+    private static void createDeathChest(PendingChest pending) {
+        ServerWorld world = pending.world();
+        BlockPos deathPos = pending.pos();
+        UUID playerUuid = pending.playerUuid();
 
-                        BlockPos chestPos = findSurfacePos(world, deathPos);
+        try {
+            BlockPos chestPos = findSurfacePos(world, deathPos);
+            world.setBlockState(chestPos, ErodedBlocks.DEATH_ENDER_CHEST.getDefaultState(), 3);
 
-                        world.setBlockState(chestPos, ErodedBlocks.DEATH_ENDER_CHEST.getDefaultState(), 3);
+            UUID hologramId = UUID.randomUUID();
+            long deathValue = DeathValueCalculator.calculate(pending.items());
 
-                        long deathValue = DeathValueCalculator.calculate(snapshot);
-                        long baseTimeMs = DeathProtectionCalculator
-                                .calculateProtectionMillis(player, deathPos);
-                        long untilEpochMs = System.currentTimeMillis() + baseTimeMs;
+            ServerPlayerEntity player = world.getServer().getPlayerManager().getPlayer(playerUuid);
 
-                        ErodedDeathMemory memory = new ErodedDeathMemory(
-                                chestPos, world.getRegistryKey(), untilEpochMs, deathValue, hologramId
-                        );
-
-                        ErodedDeathStorage.putIfMoreValuable(playerUuid, memory);
-                        Map<Integer, DeathChestState.StoredStack> stored = DeathChestState.fromInventory(snapshot);
-                        DeathChestState.get(world).put(chestPos, playerUuid, untilEpochMs, stored, hologramId);
-
-                        ErodedCompassHandler.onPlayerDeath(player, chestPos, true);
-                        DeathHologramHandler.spawn(world, chestPos, gameProfile, (int)(baseTimeMs/1000), hologramId);
-
-                    } catch (Exception e) {
-                        LOGGER.error("Chyba v odloženém zápisu: ", e);
-                    }
-                });
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+            long baseTimeMs;
+            if (player != null) {
+                baseTimeMs = DeathProtectionCalculator.calculateProtectionMillis(player, chestPos);
+            } else {
+                baseTimeMs = 300_000L;
             }
-        }).start();
+
+            long untilEpochMs = System.currentTimeMillis() + baseTimeMs;
+
+            ErodedDeathMemory memory = new ErodedDeathMemory(
+                    chestPos, world.getRegistryKey(), untilEpochMs, deathValue, hologramId
+            );
+
+            ErodedDeathStorage.putIfMoreValuable(playerUuid, memory);
+            Map<Integer, DeathChestState.StoredStack> stored = DeathChestState.fromInventory(pending.items());
+            DeathChestState.get(world).put(chestPos, playerUuid, untilEpochMs, stored, hologramId);
+
+            if (player != null) {
+                ErodedCompassHandler.onPlayerDeath(player, chestPos, true);
+            }
+
+            DeathHologramHandler.spawn(world, chestPos, pending.profile(), (int)(baseTimeMs / 1000), hologramId);
+
+        } catch (Exception e) {
+            LOGGER.error("Chyba při vytváření Death Chest: ", e);
+        }
     }
 
     private static BlockPos findSurfacePos(ServerWorld world, BlockPos startPos) {

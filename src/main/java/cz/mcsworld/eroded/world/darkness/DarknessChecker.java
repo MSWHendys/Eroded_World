@@ -64,4 +64,9 @@ public final class DarknessChecker {
         int total = Math.max(block, sky);
         return total < 3;
     }
+    public static void cleanup(UUID playerId) {
+        if (LAST_STATE.containsKey(playerId)) {
+            LAST_STATE.remove(playerId);
+        }
+    }
 }

@@ -2,8 +2,10 @@ package cz.mcsworld.eroded;
 
 import cz.mcsworld.eroded.client.ClientSystems;
 import cz.mcsworld.eroded.client.ErodedCompassClientTicker;
+import cz.mcsworld.eroded.client.ErodedKeybinds;
 import cz.mcsworld.eroded.client.audio.CalmDownEffect;
 import cz.mcsworld.eroded.client.data.ClientEnergyData;
+import cz.mcsworld.eroded.client.debug.TerritoryDebugOverlay;
 import cz.mcsworld.eroded.client.gui.EnergyScreenOverlay;
 import cz.mcsworld.eroded.client.hud.EnergyHud;
 import cz.mcsworld.eroded.client.input.DodgeInputHandler;
@@ -43,6 +45,8 @@ public class ErodedModClient implements ClientModInitializer {
         ErodedTooltip.register();
         ErodedCompassTooltip.register();
         EnergyWarningClientHandler.register();
+        ErodedKeybinds.register();
+        TerritoryDebugOverlay.register();
 
         DodgeInputHandler.register();
 
@@ -136,6 +140,12 @@ public class ErodedModClient implements ClientModInitializer {
                     });
                 }
         );
+
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            if (client.player != null && client.world != null) {
+                cz.mcsworld.eroded.client.data.DarknessClientData.updateLighLevel(client);
+            }
+        });
     }
 
 }

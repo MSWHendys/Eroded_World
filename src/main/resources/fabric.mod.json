@@ -8,7 +8,7 @@
     "MSWHendys"
   ],
   "license": "MIT",
-  "icon": "assets/eroded/logo.png",
+  "icon": "assets/eroded/icon.png",
   "environment": "*",
   "entrypoints": {
     "main": [

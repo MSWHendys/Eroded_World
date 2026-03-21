@@ -12,7 +12,6 @@ public final class TerritoryCell {
     private long lastMiningActivityTick;
     private int miningScore;
 
-    // ECO
     private int mining;
     private int pollution;
     private int forestation;
@@ -35,7 +34,7 @@ public final class TerritoryCell {
         this.lastTick = value;
     }
 
-// ===== RAW GETTERY (pro NBT save) =====
+
 
     public int getMiningRaw() {
         return mining;

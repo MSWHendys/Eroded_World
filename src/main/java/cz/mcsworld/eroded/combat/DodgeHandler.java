@@ -33,6 +33,7 @@ public final class DodgeHandler {
                     );
                 }
         );
+
     }
 
     private static void handle(ServerPlayerEntity player, DodgeRequestPacket pkt) {
@@ -114,5 +115,8 @@ public final class DodgeHandler {
         }
 
         return lastSafe.equals(start) ? null : lastSafe;
+    }
+    public static void cleanup(UUID playerId) {
+        COOLDOWNS.remove(playerId);
     }
 }

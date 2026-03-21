@@ -2,15 +2,19 @@ package cz.mcsworld.eroded.world.darkness;
 
 import cz.mcsworld.eroded.config.darkness.DarknessConfigs;
 import net.minecraft.util.math.BlockPos;
-
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
-
 
 public final class DarknessFlickerState {
 
 
-    private static final Map<BlockPos, Integer> STAGES = new HashMap<>();
+    private static final int MAX_ENTRIES = 1000;
+    private static final Map<BlockPos, Integer> STAGES = new LinkedHashMap<>() {
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<BlockPos, Integer> eldest) {
+            return size() > MAX_ENTRIES;
+        }
+    };
 
     private DarknessFlickerState() {}
 

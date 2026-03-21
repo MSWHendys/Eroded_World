@@ -37,6 +37,7 @@ public class EnergyHud implements HudRenderCallback {
     @Override
     public void onHudRender(DrawContext context, RenderTickCounter tickCounter) {
         MinecraftClient client = MinecraftClient.getInstance();
+
         if (client.player == null || !ClientEnergyData.isInitialized()) return;
 
         var root = EnergyConfig.get();
@@ -180,5 +181,6 @@ public class EnergyHud implements HudRenderCallback {
                 activeWarningState = null;
             }
         }
+
     }
 }

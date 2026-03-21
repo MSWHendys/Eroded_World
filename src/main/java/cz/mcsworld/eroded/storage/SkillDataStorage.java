@@ -21,7 +21,9 @@ public final class SkillDataStorage {
     }
 
     public static void remove(UUID uuid) {
-        DATA.remove(uuid);
+        if (DATA.containsKey(uuid)) {
+            DATA.remove(uuid);
+        }
     }
 
     public static Map<UUID, SkillData> getAll() {

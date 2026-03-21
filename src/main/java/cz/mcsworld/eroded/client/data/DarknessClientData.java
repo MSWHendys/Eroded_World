@@ -6,35 +6,28 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.LightType;
 
-
 public final class DarknessClientData {
 
     private static float smoothedLocalDarkness = 0.0f;
     private static float smoothedEyeTarget = 0.0f;
     private static boolean darknessLatched = false;
     private static int lightGraceTicks = 0;
-
     private static float alpha = 0.0f;
-
     private static boolean hasServerState = false;
-    private DarknessClientData() {}
     private static int darknessStableTicks = 0;
     private static final int ENTER_STABLE_TICKS = 20;
-
     private static boolean wasInDarkness = false;
-
-
     public static boolean SHOW_DEBUG_PANEL = false;
     private static boolean serverInDarkness = false;
 
+    private DarknessClientData() {}
+
     public static void update(boolean value) {
         hasServerState = true;
-
         wasInDarkness = serverInDarkness;
         serverInDarkness = value;
-
-
     }
+
     public static boolean isServerInDarkness() {
         return hasServerState && serverInDarkness;
     }
@@ -46,7 +39,6 @@ public final class DarknessClientData {
     }
 
     public static float tickAndGetAlpha() {
-
         var root = DarknessConfigs.get();
         if (!root.enabled) return 0.0f;
 
@@ -54,7 +46,6 @@ public final class DarknessClientData {
         if (!cfg.visualDarknessEnabled) return 0.0f;
 
         float target = isServerInDarkness() ? 1.0f : 0.0f;
-
         float targetSmoothing = cfg.eyeSmoothing;
         smoothedEyeTarget += (target - smoothedEyeTarget) * targetSmoothing;
 
@@ -69,14 +60,14 @@ public final class DarknessClientData {
         return alpha;
     }
 
-    public static float getLocalLightDarkness() {
-
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client.world == null || client.player == null)
-            return smoothedLocalDarkness;
+    public static void updateLighLevel(MinecraftClient client) {
+        if (client.world == null || client.player == null) return;
 
         var root = DarknessConfigs.get();
-        if (!root.enabled) return 0.0f;
+        if (!root.enabled) {
+            smoothedLocalDarkness = 0.0f;
+            return;
+        }
 
         var cfg = root.client;
         var world = client.world;
@@ -90,36 +81,30 @@ public final class DarknessClientData {
 
         for (int i = 0; i < samples; i++) {
             float dist = (float) (cfg.sampleStart + i * cfg.sampleStep);
-
             BlockPos p = basePos.add(
                     MathHelper.floor(look.x * dist),
                     MathHelper.floor(look.y * dist),
                     MathHelper.floor(look.z * dist)
             );
-
             totalBlockLight += world.getLightLevel(LightType.BLOCK, p);
         }
 
         float avgBlock = totalBlockLight / samples;
 
-
         if (avgBlock >= 12f) {
             smoothedLocalDarkness += (0f - smoothedLocalDarkness) * 0.4f;
-            return smoothedLocalDarkness;
+            return;
         }
 
-        float blockDarkness =
-                1.0f - MathHelper.clamp((avgBlock - 2f) / 7f, 0f, 1f);
-
+        float blockDarkness = 1.0f - MathHelper.clamp((avgBlock - 2f) / 7f, 0f, 1f);
         blockDarkness = (float) Math.pow(blockDarkness, cfg.blockCurve);
 
-
-        smoothedLocalDarkness +=
-                (blockDarkness - smoothedLocalDarkness) * cfg.localSmoothing;
-
-        return smoothedLocalDarkness;
+        smoothedLocalDarkness += (blockDarkness - smoothedLocalDarkness) * cfg.localSmoothing;
     }
 
+    public static float getLocalLightDarkness() {
+        return smoothedLocalDarkness;
+    }
 
     public static float getSkyLimiter() {
         var root = DarknessConfigs.get();
@@ -135,15 +120,12 @@ public final class DarknessClientData {
         BlockPos pos = player.getBlockPos();
 
         int sky = world.getLightLevel(LightType.SKY, pos);
-
         float limiter = 1.0f - MathHelper.clamp((sky - 2f) / 11f, 0f, 1f);
 
         return (float) Math.pow(limiter, cfg.skyCurve);
     }
 
-
     public static float getBlockLightLimiter() {
-
         MinecraftClient client = MinecraftClient.getInstance();
         if (client.world == null || client.player == null)
             return 1.0f;
@@ -153,12 +135,10 @@ public final class DarknessClientData {
         BlockPos pos = player.getBlockPos();
 
         int block = world.getLightLevel(LightType.BLOCK, pos);
-
         float limiter = 1.0f - MathHelper.clamp((block - 2f) / 10f, 0f, 1f);
 
         return (float) Math.pow(limiter, 1.3f);
     }
-
 
     public static float getEyeAlphaDebug() {
         return alpha;
@@ -169,16 +149,13 @@ public final class DarknessClientData {
     }
 
     public static boolean isDarknessActive() {
-
         var root = DarknessConfigs.get();
         if (!root.enabled) return false;
 
         var cfg = root.client;
         if (!cfg.visualDarknessEnabled) return false;
-
         if (!hasServerState) return false;
 
-        float local = getLocalLightDarkness();
         boolean current = serverInDarkness;
 
         if (current) {

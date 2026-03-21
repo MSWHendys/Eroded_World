@@ -50,8 +50,8 @@
   "eroded.energy.hud.position.changed": "Pozice energie nastavena na: %s",
   "eroded.energy.hud.position.invalid": "Neplatná pozice.",
 
-  "eroded.command.reload.success": "§a[Eroded] Konfigurace a systémy byly úspěšně restartovány.",
-  "eroded.command.reload.error": "§c[Eroded] Při reloadu došlo k chybě!",
+  "eroded.command.reload.success": "§a[Eroded] Všechny konfigurační soubory byly znovu načteny..",
+  "eroded.command.reload.error": "§c[Eroded] Nepodařilo se znovu načíst konfigurační soubory!",
 
   "eroded.command.sound.cooldown": "§c[Eroded] Počkej chvíli před další změnou.",
   "eroded.command.sound.volume.set": "§a[Eroded] Heartbeat hlasitost nastavena na %s",
@@ -59,6 +59,27 @@
   "eroded.command.sound.reset": "§a[Eroded] Heartbeat nastavení bylo resetováno.",
   "eroded.command.sound.info.title": "§6[Eroded] Heartbeat nastavení:",
   "eroded.command.sound.info.volume": "\n  §eHlasitost: §f%s",
-  "eroded.command.sound.info.delay": "\n  §ePauza: §f%s"
+  "eroded.command.sound.info.delay": "\n  §ePauza: §f%s",
+  "eroded.loot.chest.protected": "§cTruhla je chráněna.",
+  "eroded.gui.energy.prefix": "Energie: ",
+  "eroded.debug.cell.title": "Eroded Buňka",
+  "eroded.debug.cell.mining_blocks": "Těžební bloky: ",
+  "eroded.debug.cell.mining": "Těžba: ",
+  "eroded.debug.cell.pollution": "Znečištění: ",
+  "eroded.debug.cell.forest": "Les: ",
+  "eroded.debug.cell.threat": "Hrozba: ",
+  "key.eroded.debug": "Přepnout Eroded Debug",
+  "category.eroded": "Eroded Mod",
+  "eroded.command.chest.success": "§aDostal jsi truhlici s kořistí.",
+  "eroded.config.title.combat": "Boj a pohyb",
+  "eroded.config.title.crafting": "Výroba a kvalita",
+  "eroded.config.title.darkness": "Temnota",
+  "eroded.config.title.death": "Systém smrti",
+  "eroded.config.title.energy": "Energie",
+  "eroded.config.title.loot": "Loot systém",
+  "eroded.config.title.territory": "Území a ekosystém",
+  "eroded.mob.title.forsaken": "Opuštěný",
+  "eroded.mob.title.eroded": "Erodovaný",
+  "eroded.mob.title.apocalypse": "Apokalyptický"
 
 }

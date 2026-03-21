@@ -9,6 +9,15 @@ import me.shedaniel.autoconfig.annotation.ConfigEntry;
 @Config(name = "ErodedWorld/energy")
 public class EnergyConfig implements ConfigData {
 
+    @ConfigEntry.Gui.CollapsibleObject
+    public Server server = new Server();
+
+    /* ======================================================
+       SERVER ČÁST – OVLIVŇUJE GAMEPLAY
+       ====================================================== */
+    @ConfigEntry.Gui.CollapsibleObject
+    public Client client = new Client();
+
     public static EnergyConfig get() {
         return AutoConfig
                 .getConfigHolder(EnergyConfig.class)
@@ -16,15 +25,14 @@ public class EnergyConfig implements ConfigData {
     }
 
     /* ======================================================
-       SERVER ČÁST – OVLIVŇUJE GAMEPLAY
+       CLIENT ČÁST – POUZE VIZUÁL
        ====================================================== */
-
-    @ConfigEntry.Gui.CollapsibleObject
-    public Server server = new Server();
 
     public static class Server {
 
-        /** Globální zapnutí / vypnutí ENERGY systému */
+        /**
+         * Globální zapnutí / vypnutí ENERGY systému
+         */
         @ConfigEntry.Gui.Tooltip
         public boolean enabled = true;
 
@@ -32,6 +40,30 @@ public class EnergyConfig implements ConfigData {
 
         @ConfigEntry.Gui.CollapsibleObject
         public Core core = new Core();
+        @ConfigEntry.Gui.CollapsibleObject
+        public Regen regen = new Regen();
+
+        /* ---------- REGENERACE ---------- */
+        @ConfigEntry.Gui.CollapsibleObject
+        public Sleep sleep = new Sleep();
+        @ConfigEntry.Gui.CollapsibleObject
+        public Food food = new Food();
+
+        /* ---------- SPÁNEK ---------- */
+        @ConfigEntry.Gui.CollapsibleObject
+        public Collapse collapse = new Collapse();
+        @ConfigEntry.Gui.CollapsibleObject
+        public Warnings warnings = new Warnings();
+
+        /* ---------- JÍDLO ---------- */
+        @ConfigEntry.Gui.CollapsibleObject
+        public Thresholds thresholds = new Thresholds();
+        @ConfigEntry.Gui.CollapsibleObject
+        public HudThresholds hudThresholds = new HudThresholds();
+
+        /* ---------- KOLAPS ---------- */
+        @ConfigEntry.Gui.Tooltip // Dostane hráč únavu při stavu EXHAUSTED?
+        public boolean fatigueWhenExhausted = true;
 
         public static class Core {
 
@@ -43,12 +75,12 @@ public class EnergyConfig implements ConfigData {
 
             @ConfigEntry.Gui.Tooltip // Zakáže práci pokud je energie 0
             public boolean blockWorkAtZero = true;
+
+            @ConfigEntry.Gui.Tooltip // Kolik energie stojí vytěžení jednoho bloku
+            public float miningCost = 0.001f;
         }
 
-        /* ---------- REGENERACE ---------- */
-
-        @ConfigEntry.Gui.CollapsibleObject
-        public Regen regen = new Regen();
+        /* ---------- VAROVÁNÍ ---------- */
 
         public static class Regen {
 
@@ -59,52 +91,34 @@ public class EnergyConfig implements ConfigData {
             public int regenIntervalSeconds = 15;
         }
 
-        /* ---------- SPÁNEK ---------- */
-
-        @ConfigEntry.Gui.CollapsibleObject
-        public Sleep sleep = new Sleep();
-
         public static class Sleep {
 
             @ConfigEntry.Gui.Tooltip // Spánek obnoví plnou energii
             public boolean sleepRestoresFull = true;
         }
 
-        /* ---------- JÍDLO ---------- */
-
-        @ConfigEntry.Gui.CollapsibleObject
-        public Food food = new Food();
-
         public static class Food {
 
-            @ConfigEntry.Gui.Tooltip // Obnovení energie – malá svačina
-            public int foodRestoreSnack = 2;
 
-            @ConfigEntry.Gui.Tooltip // Jednoduché jídlo
-            public int foodRestoreSimple = 5;
+            @ConfigEntry.Gui.Tooltip
+            public int snackRestore = 2;
 
-            @ConfigEntry.Gui.Tooltip // Plnohodnotné jídlo
-            public int foodRestoreMeal = 10;
+            @ConfigEntry.Gui.Tooltip
+            public int simpleRestore = 5;
 
-            @ConfigEntry.Gui.Tooltip // Hostina
-            public int foodRestoreFeast = 18;
+            @ConfigEntry.Gui.Tooltip
+            public int bowlRestore = 15;
+
+            @ConfigEntry.Gui.Tooltip
+            public int feastRestore = 30;
+
         }
-
-        /* ---------- KOLAPS ---------- */
-
-        @ConfigEntry.Gui.CollapsibleObject
-        public Collapse collapse = new Collapse();
 
         public static class Collapse {
 
             @ConfigEntry.Gui.Tooltip //Délka před regenerací energie hráče v ms
             public int collapseDelayMs = 5000;
         }
-
-        /* ---------- VAROVÁNÍ ---------- */
-
-        @ConfigEntry.Gui.CollapsibleObject
-        public Warnings warnings = new Warnings();
 
         public static class Warnings {
 
@@ -114,9 +128,6 @@ public class EnergyConfig implements ConfigData {
             @ConfigEntry.Gui.Tooltip // Cooldown mezi varováními (ms)
             public int warningCooldownMs = 1500;
         }
-
-        @ConfigEntry.Gui.CollapsibleObject
-        public Thresholds thresholds = new Thresholds();
 
         public static class Thresholds {
 
@@ -129,9 +140,6 @@ public class EnergyConfig implements ConfigData {
             @ConfigEntry.Gui.Tooltip // % a méně = TIRED (default 51 %)
             public float tiredPercent = 51f;
         }
-
-        @ConfigEntry.Gui.CollapsibleObject
-        public HudThresholds hudThresholds = new HudThresholds();
 
         public static class HudThresholds {
 
@@ -146,15 +154,12 @@ public class EnergyConfig implements ConfigData {
 
             @ConfigEntry.Gui.Tooltip // Pod kolika % začne blinkovat “leading icon” (default 20 %)
             public float blinkBelowPercent = 20f;
+
+
         }
+
+
     }
-
-    /* ======================================================
-       CLIENT ČÁST – POUZE VIZUÁL
-       ====================================================== */
-
-    @ConfigEntry.Gui.CollapsibleObject
-    public Client client = new Client();
 
     public static class Client {
 
@@ -182,7 +187,7 @@ public class EnergyConfig implements ConfigData {
             public int posIconHUD_Y = 15;
 
             @ConfigEntry.Gui.Tooltip
-            public int posTextHUD_Y = 10;
+            public int posTextHUD_Y = 40;
 
             @ConfigEntry.Gui.Tooltip // Doba zobrazení varování
             public int warningMessageTime = 60;

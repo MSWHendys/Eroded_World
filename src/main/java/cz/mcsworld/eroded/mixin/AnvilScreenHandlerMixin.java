@@ -120,7 +120,7 @@ public class AnvilScreenHandlerMixin {
                 serverPlayer,
                 Text.translatable(
                         "eroded.anvil.quality_degraded",
-                        newQuality.name()
+                        Text.translatable("eroded.crafting.quality." + newQuality.name().toLowerCase())
                 )
         );
     }

@@ -8,6 +8,7 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.mob.HostileEntity;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.*;
 
@@ -28,28 +29,28 @@ public final class DarknessLightEater {
     private static void onTick(MinecraftServer server) {
         var root = DarknessConfigs.get();
         if (!root.enabled) return;
-
         var cfg = root.server;
 
-        if (!DarknessConfigs.get().enabled) return;
-        if (!cfg.lightEaterEnabled) return;
         tickCounter++;
         if (tickCounter % cfg.lightEaterCheckInterval != 0) return;
 
         actions = 0;
 
         for (ServerWorld world : server.getWorlds()) {
-
             long tick = world.getServer().getTicks();
             Map<ChunkPos, Float> threatCache = new HashMap<>();
 
-            for (HostileEntity mob : world.getEntitiesByClass(
-                    HostileEntity.class,
-                    Box.of(Vec3d.of(world.getSpawnPos()), 256, 256, 256),
-                    e -> e.getCommandTags().contains(MutatedMobResolver.MUTATED_TAG)
-            )) {
-                if (actions >= cfg.maxLightActionsPerTick) return;
-                tryExtinguish(world, mob, threatCache, tick, cfg);
+            for (ServerPlayerEntity player : world.getPlayers()) {
+                Box playerZone = new Box(player.getBlockPos()).expand(48);
+
+                for (HostileEntity mob : world.getEntitiesByClass(
+                        HostileEntity.class,
+                        playerZone,
+                        e -> e.getCommandTags().contains(MutatedMobResolver.MUTATED_TAG)
+                )) {
+                    if (actions >= cfg.maxLightActionsPerTick) return;
+                    tryExtinguish(world, mob, threatCache, tick, cfg);
+                }
             }
         }
     }

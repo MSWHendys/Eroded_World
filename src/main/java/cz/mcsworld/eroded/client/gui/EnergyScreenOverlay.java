@@ -119,7 +119,8 @@ public final class EnergyScreenOverlay {
         }
 
         else {
-            textToDraw = Text.literal(energy + " / " + maxEnergy);
+
+            textToDraw = Text.translatable("eroded.gui.energy.prefix").append(Text.literal(energy + " / " + maxEnergy));
         }
 
         if (textToDraw != null) {

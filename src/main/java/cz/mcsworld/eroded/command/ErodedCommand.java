@@ -10,10 +10,15 @@ import cz.mcsworld.eroded.network.SoundTuningSyncPacket;
 import cz.mcsworld.eroded.world.territory.*;
 import me.shedaniel.autoconfig.AutoConfig;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.NbtComponent;
+import net.minecraft.nbt.NbtCompound;
 
 import static net.minecraft.server.command.CommandManager.literal;
 import static net.minecraft.server.command.CommandManager.argument;
@@ -42,18 +47,47 @@ public final class ErodedCommand {
                                 .executes(ctx -> {
                                     try {
                                         ErodedConfigs.reload();
+
                                         ctx.getSource().sendFeedback(
                                                 () -> Text.translatable("eroded.command.reload.success"),
                                                 false
                                         );
+
                                         return 1;
+
                                     } catch (Exception e) {
+
                                         ctx.getSource().sendError(
                                                 Text.translatable("eroded.command.reload.error")
                                         );
+
                                         e.printStackTrace();
                                         return 0;
                                     }
+                                })
+                        )
+                        .then(CommandManager.literal("chest")
+                                .requires(src -> src.hasPermissionLevel(2))
+                                .executes(ctx -> {
+
+                                    ServerPlayerEntity player = ctx.getSource().getPlayer();
+
+                                    ItemStack stack = new ItemStack(Items.CHEST);
+
+                                    NbtCompound tag = new NbtCompound();
+                                    tag.putBoolean("eroded_loot_chest", true);
+
+                                    stack.set(DataComponentTypes.CUSTOM_DATA, NbtComponent.of(tag));
+
+                                    player.giveItemStack(stack);
+
+                                    player.giveItemStack(stack);
+                                    ctx.getSource().sendFeedback(
+                                            () -> Text.translatable("eroded.command.chest.success"),
+                                            false
+                                    );
+
+                                    return 1;
                                 })
                         )
 

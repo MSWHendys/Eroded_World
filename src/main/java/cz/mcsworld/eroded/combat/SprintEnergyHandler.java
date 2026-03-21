@@ -80,5 +80,11 @@ public final class SprintEnergyHandler {
             sprintTicks.put(id, ticks);
         }
     }
+    public static void cleanup(UUID playerId) {
+        if (sprintTicks.containsKey(playerId)) {
+            sprintTicks.remove(playerId);
+
+        }
+    }
 
 }
