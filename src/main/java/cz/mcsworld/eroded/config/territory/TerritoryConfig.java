@@ -12,7 +12,7 @@ public class TerritoryConfig implements ConfigData {
     public Server server = new Server();
 
     public static TerritoryConfig get() {
-        return AutoConfig.getConfigHolder(TerritoryConfig.class).getConfig();
+        return AutoConfig.getConfigHolder(TerritoryConfig.class).get();
     }
 
     public static class Server {

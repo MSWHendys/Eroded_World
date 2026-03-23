@@ -23,9 +23,21 @@ public final class EnergySyncHandler {
 
     public static void register() {
 
-        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) ->
-                forceSync(handler.getPlayer())
-        );
+        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
+
+            ServerPlayerEntity player = handler.getPlayer();
+
+            SkillData data = SkillManager.get(player);
+
+
+            var state = EnergyPersistentState.get(server.getOverworld());
+            int saved = state.getEnergy(player.getUuid(), data.getMaxEnergy());
+
+            data.setEnergy(saved);
+
+            forceSync(player);
+        });
+
 
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) ->
                 LAST_SENT.remove(handler.getPlayer().getUuid())
@@ -61,6 +73,10 @@ public final class EnergySyncHandler {
         if (energy == last) return false;
 
         LAST_SENT.put(player.getUuid(), energy);
+
+        var state = EnergyPersistentState.get(player.getServer().getOverworld());
+        state.setEnergy(player.getUuid(), energy);
+
         SafeNetworkUtil.safeSend(player, new EnergySyncPacket(energy));
         return true;
     }

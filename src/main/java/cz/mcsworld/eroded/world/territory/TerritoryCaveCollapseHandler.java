@@ -43,12 +43,10 @@ public final class TerritoryCaveCollapseHandler {
             );
 
     public static void register() {
-        var root = TerritoryConfig.get();
-        var cfg = root.server;
-
-        if (!cfg.enabled || !cfg.caveCollapseEnabled) return;
-
         PlayerBlockBreakEvents.AFTER.register((world, player, pos, state, blockEntity) -> {
+
+            var cfg = TerritoryConfig.get().server;
+            if (!cfg.enabled || !cfg.caveCollapseEnabled) return;
             if (!(world instanceof ServerWorld serverWorld)) return;
 
             if (!player.isCreative()) {

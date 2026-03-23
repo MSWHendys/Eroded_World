@@ -11,19 +11,27 @@ import cz.mcsworld.eroded.config.territory.TerritoryConfig;
 import me.shedaniel.autoconfig.AutoConfig;
 
 public final class ErodedConfigs {
-
     private ErodedConfigs() {}
+
     public static LootConfig LOOT;
+
     public static void reload() {
 
-        AutoConfig.getConfigHolder(CombatConfig.class).load();
-        AutoConfig.getConfigHolder(CraftingConfig.class).load();
-        AutoConfig.getConfigHolder(DarknessConfigs.class).load();
-        AutoConfig.getConfigHolder(DeathConfig.class).load();
-        AutoConfig.getConfigHolder(EnergyConfig.class).load();
-        AutoConfig.getConfigHolder(TerritoryConfig.class).load();
-        AutoConfig.getConfigHolder(LootConfig.class).load();
-        LOOT = AutoConfig.getConfigHolder(LootConfig.class).getConfig();
+        reloadSingle(CombatConfig.class);
+        reloadSingle(CraftingConfig.class);
+        reloadSingle(DarknessConfigs.class);
+        reloadSingle(DeathConfig.class);
+        reloadSingle(EnergyConfig.class);
+        reloadSingle(TerritoryConfig.class);
+        reloadSingle(LootConfig.class);
 
+        LOOT = AutoConfig.getConfigHolder(LootConfig.class).get();
+
+        System.out.println("[Eroded] Konfigurace synchronizovány pro 1.21.6 - 1.21.8");
+    }
+
+    private static <T extends me.shedaniel.autoconfig.ConfigData> void reloadSingle(Class<T> clazz) {
+        var holder = AutoConfig.getConfigHolder(clazz);
+        holder.load();
     }
 }
