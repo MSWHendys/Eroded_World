@@ -54,7 +54,7 @@ public final class DodgeHandler {
         if (!data.tryConsumeEnergy(cfg.energyCost)) {
             return;
         }
-
+        SkillManager.save(player);
         Vec3d dir = resolveDirection(player, pkt);
         Vec3d start = player.getPos();
         Vec3d safeTarget = findSafeTarget(

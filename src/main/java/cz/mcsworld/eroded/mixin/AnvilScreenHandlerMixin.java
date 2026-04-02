@@ -2,19 +2,16 @@ package cz.mcsworld.eroded.mixin;
 
 import cz.mcsworld.eroded.config.crafting.CraftingConfig;
 import cz.mcsworld.eroded.config.energy.EnergyConfig;
-import cz.mcsworld.eroded.crafting.ItemQuality;
-import cz.mcsworld.eroded.crafting.Quality;
-import cz.mcsworld.eroded.crafting.QualityRepairModifier;
-import cz.mcsworld.eroded.crafting.QualityResolver;
+import cz.mcsworld.eroded.crafting.*;
 import cz.mcsworld.eroded.energy.EnergyCostResolver;
+import cz.mcsworld.eroded.network.AnvilFeedbackPacket;
+import cz.mcsworld.eroded.network.SafeNetworkUtil;
 import cz.mcsworld.eroded.skills.SkillData;
 import cz.mcsworld.eroded.skills.SkillManager;
-import cz.mcsworld.eroded.util.ActionBarUtil;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.screen.AnvilScreenHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -43,11 +40,30 @@ public class AnvilScreenHandlerMixin {
     }
 
     @Inject(
+            method = "updateResult",
+            at = @At("HEAD"),
+            cancellable = true
+    )
+    private void eroded$blockTooDamaged(CallbackInfo ci) {
+
+        AnvilScreenHandler self = (AnvilScreenHandler)(Object)this;
+
+        ItemStack input = self.getSlot(0).getStack();
+        if (input.isEmpty()) return;
+
+        if (ItemQuality.get(input) == Quality.POOR) {
+
+            self.getSlot(2).setStack(ItemStack.EMPTY);
+            ci.cancel();
+        }
+    }
+
+    @Inject(
             method = "onTakeOutput",
             at = @At("HEAD"),
             cancellable = true
     )
-    private void eroded$anvilEnergyCost(
+    private void eroded$anvilProcess(
             PlayerEntity player,
             ItemStack stack,
             CallbackInfo ci
@@ -60,19 +76,7 @@ public class AnvilScreenHandlerMixin {
         ItemStack input = self.getSlot(0).getStack();
         if (input.isEmpty()) return;
 
-        Quality currentQuality = ItemQuality.get(input);
-
-        if (currentQuality == Quality.POOR) {
-            ActionBarUtil.send(
-                    serverPlayer,
-                    Text.translatable("eroded.anvil.too_damaged")
-            );
-            ci.cancel();
-            return;
-        }
-
         SkillData data = SkillManager.get(serverPlayer);
-
 
         var root = CraftingConfig.get();
         var craftingCfg = root.energy;
@@ -100,13 +104,23 @@ public class AnvilScreenHandlerMixin {
 
         if (!data.hasEnoughEnergy(energyCost)) {
             if (energyCfg.blockWorkAtZero) {
+
+                SafeNetworkUtil.safeSend(
+                        serverPlayer,
+                        // new AnvilFeedbackPacket("eroded.anvil.no_energy", "NONE")
+                        new AnvilFeedbackPacket("eroded.energy.state.empty", "NONE")
+                );
+
                 stack.setCount(0);
                 ci.cancel();
+
                 return;
             }
         }
 
         data.consumeEnergy(energyCost);
+
+        Quality currentQuality = ItemQuality.get(input);
 
         Quality newQuality = switch (currentQuality) {
             case EXCELLENT -> Quality.STANDARD;
@@ -114,13 +128,13 @@ public class AnvilScreenHandlerMixin {
             default -> currentQuality;
         };
 
-        ItemQuality.set(stack, newQuality);
+        CraftingQualityApplier.apply(stack, newQuality);
 
-        ActionBarUtil.send(
+        SafeNetworkUtil.safeSend(
                 serverPlayer,
-                Text.translatable(
+                new AnvilFeedbackPacket(
                         "eroded.anvil.quality_degraded",
-                        Text.translatable("eroded.crafting.quality." + newQuality.name().toLowerCase())
+                        newQuality.name()
                 )
         );
     }

@@ -22,6 +22,7 @@ import cz.mcsworld.eroded.loot.ErodedContainerHandler;
 import cz.mcsworld.eroded.loot.ErodedContainerPlacementHandler;
 import cz.mcsworld.eroded.loot.ErodedContainerProtectionHandler;
 import cz.mcsworld.eroded.network.NetworkPayloads;
+import cz.mcsworld.eroded.skills.SkillManager;
 import cz.mcsworld.eroded.storage.SkillDataStorage;
 import cz.mcsworld.eroded.world.darkness.*;
 import cz.mcsworld.eroded.world.loot.MutatedMobLootHandler;
@@ -62,7 +63,9 @@ public class ErodedMod implements ModInitializer {
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
             UUID uuid = handler.getPlayer().getUuid();
 
-            SkillDataStorage.remove(uuid);
+            SkillManager.save(handler.getPlayer());
+            SkillManager.remove(uuid);
+
             DodgeHandler.cleanup(uuid);
             SprintEnergyHandler.cleanup(uuid);
             DarknessChecker.cleanup(uuid);

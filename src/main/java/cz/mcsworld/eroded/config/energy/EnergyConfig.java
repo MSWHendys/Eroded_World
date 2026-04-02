@@ -12,9 +12,6 @@ public class EnergyConfig implements ConfigData {
     @ConfigEntry.Gui.CollapsibleObject
     public Server server = new Server();
 
-    /* ======================================================
-       SERVER ČÁST – OVLIVŇUJE GAMEPLAY
-       ====================================================== */
     @ConfigEntry.Gui.CollapsibleObject
     public Client client = new Client();
 
@@ -24,76 +21,64 @@ public class EnergyConfig implements ConfigData {
                 .getConfig();
     }
 
-    /* ======================================================
-       CLIENT ČÁST – POUZE VIZUÁL
-       ====================================================== */
 
     public static class Server {
 
-        /**
-         * Globální zapnutí / vypnutí ENERGY systému
-         */
         @ConfigEntry.Gui.Tooltip
         public boolean enabled = true;
 
-        /* ---------- CORE ---------- */
 
         @ConfigEntry.Gui.CollapsibleObject
         public Core core = new Core();
         @ConfigEntry.Gui.CollapsibleObject
         public Regen regen = new Regen();
 
-        /* ---------- REGENERACE ---------- */
         @ConfigEntry.Gui.CollapsibleObject
         public Sleep sleep = new Sleep();
         @ConfigEntry.Gui.CollapsibleObject
         public Food food = new Food();
 
-        /* ---------- SPÁNEK ---------- */
         @ConfigEntry.Gui.CollapsibleObject
         public Collapse collapse = new Collapse();
         @ConfigEntry.Gui.CollapsibleObject
         public Warnings warnings = new Warnings();
 
-        /* ---------- JÍDLO ---------- */
         @ConfigEntry.Gui.CollapsibleObject
         public Thresholds thresholds = new Thresholds();
         @ConfigEntry.Gui.CollapsibleObject
         public HudThresholds hudThresholds = new HudThresholds();
 
-        /* ---------- KOLAPS ---------- */
-        @ConfigEntry.Gui.Tooltip // Dostane hráč únavu při stavu EXHAUSTED?
+        @ConfigEntry.Gui.Tooltip
         public boolean fatigueWhenExhausted = true;
 
         public static class Core {
 
-            @ConfigEntry.Gui.Tooltip // Maximální energie hráče
+            @ConfigEntry.Gui.Tooltip
             public int maxEnergy = 100;
 
-            @ConfigEntry.Gui.Tooltip // Kolik energie má jeden segment
+            @ConfigEntry.Gui.Tooltip
             public int energyPerSegment = 1;
 
-            @ConfigEntry.Gui.Tooltip // Zakáže práci pokud je energie 0
+            @ConfigEntry.Gui.Tooltip
             public boolean blockWorkAtZero = true;
 
-            @ConfigEntry.Gui.Tooltip // Kolik energie stojí vytěžení jednoho bloku
+            @ConfigEntry.Gui.Tooltip
             public float miningCost = 0.001f;
         }
 
-        /* ---------- VAROVÁNÍ ---------- */
 
         public static class Regen {
 
-            @ConfigEntry.Gui.Tooltip //Zapnout pasivní regeneraci
+            @ConfigEntry.Gui.Tooltip
             public boolean passiveRegenEnabled = true;
 
-            @ConfigEntry.Gui.Tooltip //Interval regenerace (sekundy)
+            @ConfigEntry.Gui.Tooltip
             public int regenIntervalSeconds = 15;
         }
 
         public static class Sleep {
 
-            @ConfigEntry.Gui.Tooltip // Spánek obnoví plnou energii
+            @ConfigEntry.Gui.Tooltip
             public boolean sleepRestoresFull = true;
         }
 
@@ -101,58 +86,72 @@ public class EnergyConfig implements ConfigData {
 
 
             @ConfigEntry.Gui.Tooltip
-            public int snackRestore = 2;
+            public int fruitBase = 2;
+            @ConfigEntry.Gui.Tooltip
+            public int vegetableBase = 2;
+            @ConfigEntry.Gui.Tooltip
+            public int grainBase = 3;
+            @ConfigEntry.Gui.Tooltip
+            public int meatBase = 4;
+            @ConfigEntry.Gui.Tooltip
+            public int fishBase = 3;
+            @ConfigEntry.Gui.Tooltip
+            public int mealBase = 6;
 
             @ConfigEntry.Gui.Tooltip
-            public int simpleRestore = 5;
+            public float rawMultiplier = 0.6f;
+            @ConfigEntry.Gui.Tooltip
+            public float cookedMultiplier = 1.2f;
+            @ConfigEntry.Gui.Tooltip
+            public float processedMultiplier = 1.5f;
 
             @ConfigEntry.Gui.Tooltip
-            public int bowlRestore = 15;
+            public float specialMultiplier = 2.0f;
 
             @ConfigEntry.Gui.Tooltip
-            public int feastRestore = 30;
+            public int dangerousEnergyPenalty = 4;
 
         }
 
         public static class Collapse {
 
-            @ConfigEntry.Gui.Tooltip //Délka před regenerací energie hráče v ms
+            @ConfigEntry.Gui.Tooltip
             public int collapseDelayMs = 5000;
         }
 
         public static class Warnings {
 
-            @ConfigEntry.Gui.Tooltip // Zapnout varování
+            @ConfigEntry.Gui.Tooltip
             public boolean warningsEnabled = true;
 
-            @ConfigEntry.Gui.Tooltip // Cooldown mezi varováními (ms)
+            @ConfigEntry.Gui.Tooltip
             public int warningCooldownMs = 1500;
         }
 
         public static class Thresholds {
 
-            @ConfigEntry.Gui.Tooltip // % a méně = EMPTY (default 1 %)
+            @ConfigEntry.Gui.Tooltip
             public float emptyPercent = 1f;
 
-            @ConfigEntry.Gui.Tooltip // % a méně = EXHAUSTED (default 25 %)
+            @ConfigEntry.Gui.Tooltip
             public float exhaustedPercent = 25f;
 
-            @ConfigEntry.Gui.Tooltip // % a méně = TIRED (default 51 %)
+            @ConfigEntry.Gui.Tooltip
             public float tiredPercent = 51f;
         }
 
         public static class HudThresholds {
 
-            @ConfigEntry.Gui.Tooltip // Od kolika % je barva GREEN (default 51 %)
+            @ConfigEntry.Gui.Tooltip
             public float greenFromPercent = 51f;
 
-            @ConfigEntry.Gui.Tooltip // Od kolika % je barva YELLOW (default 35 %)
+            @ConfigEntry.Gui.Tooltip
             public float yellowFromPercent = 35f;
 
-            @ConfigEntry.Gui.Tooltip // Od kolika % je barva ORANGE (default 25 %)
+            @ConfigEntry.Gui.Tooltip
             public float orangeFromPercent = 25f;
 
-            @ConfigEntry.Gui.Tooltip // Pod kolika % začne blinkovat “leading icon” (default 20 %)
+            @ConfigEntry.Gui.Tooltip
             public float blinkBelowPercent = 20f;
 
 
@@ -168,16 +167,16 @@ public class EnergyConfig implements ConfigData {
 
         public static class Hud {
 
-            @ConfigEntry.Gui.Tooltip // Zapnout HUD
+            @ConfigEntry.Gui.Tooltip
             public boolean energyHudEnabled = true;
 
-            @ConfigEntry.Gui.Tooltip // Zobrazovat i při plné energii
+            @ConfigEntry.Gui.Tooltip
             public boolean showHudWhenFull = false;
 
-            @ConfigEntry.Gui.Tooltip // Počet segmentů
+            @ConfigEntry.Gui.Tooltip
             public int numberEnergyFlashes = 10;
 
-            @ConfigEntry.Gui.Tooltip // Pozice HUD
+            @ConfigEntry.Gui.Tooltip
             public EnergyHudPosition hudPosition = EnergyHudPosition.LEFT_DOWN;
 
             @ConfigEntry.Gui.Tooltip
@@ -189,7 +188,7 @@ public class EnergyConfig implements ConfigData {
             @ConfigEntry.Gui.Tooltip
             public int posTextHUD_Y = 40;
 
-            @ConfigEntry.Gui.Tooltip // Doba zobrazení varování
+            @ConfigEntry.Gui.Tooltip
             public int warningMessageTime = 60;
 
         }

@@ -204,27 +204,14 @@ public class SkillData {
     }
 
 
-    private int lastFlashes = -1;
-/**
-    public boolean areFlashesDecreasing() {
-        var root = EnergyConfig.get();
-        var cfg = root;
-        int flashes = getCurrentFlashes(root);
-
-        if (lastFlashes == -1) {
-            lastFlashes = flashes;
-            return false;
-        }
-
-        boolean decreasing = flashes < lastFlashes;
-        lastFlashes = flashes;
-        return decreasing;
+    public Map<SkillType, Float> getAllCg() {
+        return cgMap;
     }
 
-    private int getCurrentFlashes(EnergyConfig cfg) {
-        float energyPerFlash = (float) getMaxEnergy() / cfg.client.hud.numberEnergyFlashes;
-        return (int) (energy / energyPerFlash);
-    } */
+    public void setAllCg(Map<SkillType, Float> map) {
+        cgMap.clear();
+        cgMap.putAll(map);
+    }
 
     private EnergyConfig getConfig() {
         return EnergyConfig.get();

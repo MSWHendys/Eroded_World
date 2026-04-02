@@ -72,6 +72,7 @@ public final class SprintEnergyHandler {
 
             if (ticks >= cfg.drainIntervalTicks) {
                 data.consumeEnergy(cfg.energyPerInterval);
+                SkillManager.save(player);
                 ticks = 0;
 
                 SafeNetworkUtil.safeSend(player, new EnergySyncPacket(currentEnergy));

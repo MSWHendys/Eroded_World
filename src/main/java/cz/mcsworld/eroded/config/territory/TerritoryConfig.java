@@ -38,7 +38,7 @@ public class TerritoryConfig implements ConfigData {
         public int miningThreshold = 150;
 
         @ConfigEntry.Gui.Tooltip
-        public long collapseCooldownMs = 20000;
+        public long collapseCooldownMs = 3000;
 
         @ConfigEntry.Gui.Tooltip
         public int stabilizerRadius = 4;
@@ -47,16 +47,16 @@ public class TerritoryConfig implements ConfigData {
         public int collapseMaxY = 50;
 
         @ConfigEntry.Gui.Tooltip
-        public float collapseChanceLow = 0.01f; // 1%
+        public float collapseChanceLow = 0.08f;
 
         @ConfigEntry.Gui.Tooltip
-        public float collapseChanceMid = 0.03f; // 3%
+        public float collapseChanceMid = 0.18f;
 
         @ConfigEntry.Gui.Tooltip
-        public float collapseChanceHigh = 0.08f; // 8%
+        public float collapseChanceHigh = 0.35f;
 
         @ConfigEntry.Gui.Tooltip
-        public float collapseMobSpawnChance = 0.20f;
+        public float collapseMobSpawnChance = 0.25f;
 
         /* ===================== EKOSYSTÉM ====================== */
         @ConfigEntry.Gui.Tooltip

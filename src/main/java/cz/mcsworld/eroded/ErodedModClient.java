@@ -5,6 +5,7 @@ import cz.mcsworld.eroded.client.ErodedCompassClientTicker;
 import cz.mcsworld.eroded.client.ErodedKeybinds;
 import cz.mcsworld.eroded.client.audio.CalmDownEffect;
 import cz.mcsworld.eroded.client.data.ClientEnergyData;
+import cz.mcsworld.eroded.client.data.ClientSkillData;
 import cz.mcsworld.eroded.client.debug.TerritoryDebugOverlay;
 import cz.mcsworld.eroded.client.gui.EnergyScreenOverlay;
 import cz.mcsworld.eroded.client.hud.EnergyHud;
@@ -26,6 +27,7 @@ import cz.mcsworld.eroded.client.data.ErodedCompassClientData;
 
 import net.minecraft.client.gui.screen.ingame.HandledScreens;
 import net.minecraft.client.render.block.entity.BlockEntityRendererFactories;
+import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 
 import static cz.mcsworld.eroded.death.block.ErodedBlocks.DEATH_ENDER_CHEST;
@@ -82,6 +84,38 @@ public class ErodedModClient implements ClientModInitializer {
                     );
                 }
         );
+
+        ClientPlayNetworking.registerGlobalReceiver(
+                SkillSyncPacket.ID,
+                (payload, context) -> {
+
+                    context.client().execute(() -> {
+                        ClientSkillData.update(
+                                payload.woodworking(),
+                                payload.smelting()
+                        );
+                    });
+                }
+        );
+
+        ClientPlayNetworking.registerGlobalReceiver(
+                AnvilFeedbackPacket.ID,
+                (payload, context) -> {
+
+                    context.client().execute(() -> {
+                        EnergyScreenOverlay.showAnvilMessage(
+                                Text.translatable(
+                                        payload.key(),
+                                        Text.translatable("eroded.crafting.quality." + payload.quality().toLowerCase())
+                                ),
+                                payload.quality()
+                        );
+                    });
+
+                }
+        );
+
+
 
         ClientPlayNetworking.registerGlobalReceiver(
                 DarknessStatePacket.ID,

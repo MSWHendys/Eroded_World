@@ -27,6 +27,7 @@ public final class TraumaEffectHandler {
 
                     SkillData data = SkillManager.get(newPlayer);
                     data.setEnergyAfterDeath(0.35f);
+                    SkillManager.save(newPlayer);
 
                     newPlayer.addStatusEffect(
                             new StatusEffectInstance(

@@ -7,6 +7,7 @@ import cz.mcsworld.eroded.energy.EnergyCostResolver;
 import cz.mcsworld.eroded.network.CraftingFailPacket;
 import cz.mcsworld.eroded.network.EnergySyncPacket;
 import cz.mcsworld.eroded.network.SafeNetworkUtil;
+import cz.mcsworld.eroded.network.SkillSyncPacket;
 import cz.mcsworld.eroded.skills.SkillData;
 import cz.mcsworld.eroded.skills.SkillManager;
 import cz.mcsworld.eroded.skills.SkillType;
@@ -65,6 +66,7 @@ public final class CraftingService {
         }
 
         data.consumeEnergy(energyCost);
+        SkillManager.save(player);
         SafeNetworkUtil.safeSend(player, new EnergySyncPacket(data.getEnergy()));
 
         if (cfg.cg.enabled) {
@@ -78,12 +80,21 @@ public final class CraftingService {
             };
 
             data.addCg(skill, baseCg * diffCgMult);
+            SkillManager.save(player);
+            SafeNetworkUtil.safeSend(player,
+                    new SkillSyncPacket(
+                            data.getCg(SkillType.WOODWORKING),
+                            data.getCg(SkillType.SMELTING)
+                    )
+            );
         }
 
         if (cfg.quality.enabled && applyQuality) {
             CraftingQualityApplier.apply(result, quality);
         }
-
+        System.out.println("SERVER CG WOOD: " + data.getCg(SkillType.WOODWORKING));
+        System.out.println("SERVER CG SMELT: " + data.getCg(SkillType.SMELTING));
         return true;
     }
+
 }

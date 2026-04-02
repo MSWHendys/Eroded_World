@@ -25,8 +25,8 @@
   "eroded.tooltip.durability": "Výdrž",
   "eroded.tooltip.repair": "Opravy",
   "eroded.tooltip.multiplier": "%s: %s %%",
-  "eroded.anvil.too_damaged": "❌ Tento předmět je příliš opotřebený na další opravy.",
-  "eroded.anvil.quality_degraded": "🔧 Oprava provedena – kvalita snížena na %s",
+  "eroded.anvil.too_damaged": "Tento předmět je příliš opotřebený na další opravy.",
+  "eroded.anvil.quality_degraded": "Oprava provedena – kvalita snížena na %s",
   "eroded.crafting.result": "⚒ Energie: %s / %s | %s +%s CG",
   "eroded.skill.woodworking": "Truhlářství",
   "eroded.skill.smelting": "Tavení",
@@ -50,7 +50,7 @@
   "eroded.energy.hud.position.changed": "Pozice energie nastavena na: %s",
   "eroded.energy.hud.position.invalid": "Neplatná pozice.",
 
-  "eroded.command.reload.success": "§a[Eroded] Všechny konfigurační soubory byly znovu načteny..",
+  "eroded.command.reload.success": "§a[Eroded] Všechny konfigurační soubory byly znovu načteny.",
   "eroded.command.reload.error": "§c[Eroded] Nepodařilo se znovu načíst konfigurační soubory!",
 
   "eroded.command.sound.cooldown": "§c[Eroded] Počkej chvíli před další změnou.",
@@ -62,8 +62,8 @@
   "eroded.command.sound.info.delay": "\n  §ePauza: §f%s",
   "eroded.loot.chest.protected": "§cTruhla je chráněna.",
   "eroded.gui.energy.prefix": "Energie: ",
-  "eroded.debug.cell.title": "Eroded Buňka",
-  "eroded.debug.cell.mining_blocks": "Těžební bloky: ",
+  "eroded.debug.cell.title": "OBLAST:",
+  "eroded.debug.cell.mining_blocks": "Vytěžené bloky: ",
   "eroded.debug.cell.mining": "Těžba: ",
   "eroded.debug.cell.pollution": "Znečištění: ",
   "eroded.debug.cell.forest": "Les: ",
@@ -80,6 +80,13 @@
   "eroded.config.title.territory": "Území a ekosystém",
   "eroded.mob.title.forsaken": "Opuštěný",
   "eroded.mob.title.eroded": "Erodovaný",
-  "eroded.mob.title.apocalypse": "Apokalyptický"
+  "eroded.mob.title.apocalypse": "Apokalyptický",
+  "eroded.debug.energy.state": "Stav",
+  "eroded.debug.cg": "CG:",
+  "eroded.text.quality.line": "KVALITA:",
+  "eroded.crafting.quality.poor.standard": "Špatná → Standardní:",
+  "eroded.crafting.quality.standard.excellent": "Standardní → Výborná:",
+  "eroded.crafting.predicted": "Předpokládaná: "
+
 
 }

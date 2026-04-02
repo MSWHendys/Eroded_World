@@ -1,6 +1,7 @@
 package cz.mcsworld.eroded.mixin;
 
 import cz.mcsworld.eroded.energy.EnergyFoodHandler;
+import net.minecraft.component.DataComponentTypes;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
@@ -22,8 +23,13 @@ public abstract class ItemStackFinishUsingMixin {
             LivingEntity user,
             CallbackInfoReturnable<ItemStack> cir
     ) {
-        if (!world.isClient && user instanceof PlayerEntity player) {
-            EnergyFoodHandler.onEat(player, (ItemStack)(Object)this);
-        }
+        if (world.isClient) return;
+        if (!(user instanceof PlayerEntity player)) return;
+
+        ItemStack stack = (ItemStack)(Object)this;
+
+        if (stack.get(DataComponentTypes.FOOD) == null) return;
+
+        EnergyFoodHandler.onEat(player, stack);
     }
 }

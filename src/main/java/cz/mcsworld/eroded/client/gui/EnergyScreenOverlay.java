@@ -13,7 +13,7 @@ import net.minecraft.text.Text;
 public final class EnergyScreenOverlay {
 
     private static final String ICON = "⚡";
-
+    private static String anvilQuality = null;
     private static int lastEnergyValue = -1;
     private static boolean isRegenerating = false;
 
@@ -21,6 +21,9 @@ public final class EnergyScreenOverlay {
 
     private static int warningTicks = 0;
     private static SkillData.EnergyState activeWarningState = null;
+
+    private static int anvilMessageTicks = 0;
+    private static Text anvilMessage = null;
 
     private EnergyScreenOverlay() {}
 
@@ -37,6 +40,12 @@ public final class EnergyScreenOverlay {
 
     public static void onCraftingFail() {
         craftingFailTicks = EnergyConfig.get().client.hud.warningMessageTime;
+    }
+
+    public static void showAnvilMessage(Text text, String quality) {
+        anvilMessage = text;
+        anvilQuality = quality;
+        anvilMessageTicks = EnergyConfig.get().client.hud.warningMessageTime * 5;
     }
 
     private static void render(Screen screen, DrawContext context, int mouseX, int mouseY, float delta) {
@@ -101,7 +110,24 @@ public final class EnergyScreenOverlay {
         Text textToDraw = null;
         int textColor = 0xFFFFFFFF;
 
-        if (craftingFailTicks > 0) {
+        if (anvilMessageTicks > 0 && anvilMessage != null) {
+            textToDraw = anvilMessage;
+
+            if (anvilQuality != null) {
+                switch (anvilQuality) {
+                    case "POOR" -> textColor = EnergyHudLogic.RED;
+                    case "STANDARD" -> textColor = EnergyHudLogic.YELLOW;
+                    case "EXCELLENT" -> textColor = EnergyHudLogic.GREEN;
+                    default -> textColor = 0xFFFFFFFF;
+                }
+            } else {
+                textColor = 0xFFFFFFFF;
+            }
+
+            anvilMessageTicks--;
+        }
+
+        else if (craftingFailTicks > 0) {
             textToDraw = Text.translatable("eroded.crafting.not_enough_energy");
             textColor = EnergyHudLogic.RED;
             craftingFailTicks--;
@@ -119,8 +145,8 @@ public final class EnergyScreenOverlay {
         }
 
         else {
-
-            textToDraw = Text.translatable("eroded.gui.energy.prefix").append(Text.literal(energy + " / " + maxEnergy));
+            textToDraw = Text.translatable("eroded.gui.energy.prefix")
+                    .append(Text.literal(energy + " / " + maxEnergy));
         }
 
         if (textToDraw != null) {
@@ -136,3 +162,4 @@ public final class EnergyScreenOverlay {
         }
     }
 }
+

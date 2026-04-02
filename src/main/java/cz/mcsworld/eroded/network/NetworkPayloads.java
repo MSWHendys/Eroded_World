@@ -11,8 +11,9 @@ public final class NetworkPayloads {
         PayloadTypeRegistry.playS2C().register(DarknessStatePacket.ID, DarknessStatePacket.CODEC);
         PayloadTypeRegistry.playS2C().register(ErodedCompassSyncPacket.ID, ErodedCompassSyncPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(DodgeRequestPacket.ID, DodgeRequestPacket.CODEC);
-        PayloadTypeRegistry.playS2C().register(SoundTuningSyncPacket.ID,SoundTuningSyncPacket.CODEC
-        );
+        PayloadTypeRegistry.playS2C().register(SoundTuningSyncPacket.ID,SoundTuningSyncPacket.CODEC);
+        PayloadTypeRegistry.playS2C().register(SkillSyncPacket.ID, SkillSyncPacket.CODEC);
+        PayloadTypeRegistry.playS2C().register( AnvilFeedbackPacket.ID, AnvilFeedbackPacket.CODEC );
     }
 
     public static void init() {

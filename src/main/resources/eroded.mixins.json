@@ -13,7 +13,6 @@
     "EntityPortalMixin",
     "CraftingResultSlotAccessor",
     "ItemMixin",
-    "ItemStackMixin",
     "PlayerBlockBreakMixin",
     "ExplosionProtectionMixin",
     "PlayerBlockPlaceMixin",

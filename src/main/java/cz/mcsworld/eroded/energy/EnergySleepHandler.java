@@ -28,6 +28,7 @@ public final class EnergySleepHandler {
 
         SkillData data = SkillManager.get(player);
         data.addEnergy(data.getMaxEnergy());
+        SkillManager.save(player);
 
         SafeNetworkUtil.safeSend(
                 player,

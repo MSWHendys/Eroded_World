@@ -22,7 +22,17 @@ public class CraftingQualityApplier {
         List<Text> lines = new ArrayList<>();
 
         if (existing != null) {
-            lines.addAll(existing.lines());
+            for (Text line : existing.lines()) {
+
+                String str = line.getString();
+
+                if (str.contains("Kvalita")
+                        || str.contains("Quality")) {
+                    continue;
+                }
+
+                lines.add(line);
+            }
         }
 
         if (!lines.isEmpty()) {

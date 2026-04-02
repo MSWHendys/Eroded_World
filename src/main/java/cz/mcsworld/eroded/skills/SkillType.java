@@ -1,5 +1,7 @@
 package cz.mcsworld.eroded.skills;
 
+import com.mojang.serialization.Codec;
+
 public enum SkillType {
 
     WOODWORKING("eroded.skill.woodworking"),
@@ -14,4 +16,10 @@ public enum SkillType {
     public String getTranslationKey() {
         return translationKey;
     }
+
+    public static final Codec<SkillType> CODEC =
+            Codec.STRING.xmap(
+                    SkillType::valueOf,
+                    SkillType::name
+            );
 }

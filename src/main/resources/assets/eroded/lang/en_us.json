@@ -25,8 +25,8 @@
   "eroded.tooltip.durability": "Durability",
   "eroded.tooltip.repair": "Repairs",
   "eroded.tooltip.multiplier": "%s: %s %%",
-  "eroded.anvil.too_damaged": "❌ This item is too damaged for further repairs.",
-  "eroded.anvil.quality_degraded": "🔧 Repair completed – quality reduced to %s",
+  "eroded.anvil.too_damaged": "This item is too damaged for further repairs.",
+  "eroded.anvil.quality_degraded": "Repair completed – quality reduced to %s",
   "eroded.crafting.result": "⚒ Energy: %s / %s | %s +%s CG",
   "eroded.skill.woodworking": "Woodworking",
   "eroded.skill.smelting": "Smelting",
@@ -63,7 +63,7 @@
   "eroded.loot.chest.protected": "§cThe chest is protected.",
 
   "eroded.gui.energy.prefix": "Energy: ",
-  "eroded.debug.cell.title": "Eroded Cell",
+  "eroded.debug.cell.title": "AREA:",
   "eroded.debug.cell.mining_blocks": "Mining Blocks: ",
   "eroded.debug.cell.mining": "Mining: ",
   "eroded.debug.cell.pollution": "Pollution: ",
@@ -81,6 +81,12 @@
   "eroded.config.title.territory": "Territory & Ecosystem",
   "eroded.mob.title.forsaken": "Forsaken",
   "eroded.mob.title.eroded": "Eroded",
-  "eroded.mob.title.apocalypse": "Apocalypse"
+  "eroded.mob.title.apocalypse": "Apocalypse",
+  "eroded.debug.energy.state": "State",
+  "eroded.debug.cg": "CG:",
+  "eroded.text.quality.line": "QUALITY:",
+  "eroded.crafting.quality.poor.standard": "Poor → Standard:",
+  "eroded.crafting.quality.standard.excellent": "Standard → Excellent:",
+  "eroded.crafting.predicted": "Predicted:"
 
 }
