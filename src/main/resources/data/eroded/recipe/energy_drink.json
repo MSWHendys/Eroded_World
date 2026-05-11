@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "S O",
+    " A ",
+    "W G"
+  ],
+  "key": {
+    "S": "minecraft:sugar",
+    "W": "minecraft:water_bucket",
+    "G": "minecraft:glass",
+    "O": "minecraft:orange_dye",
+    "A": "minecraft:apple"
+  },
+  "result": {
+    "id": "eroded:energy_drink",
+    "count": 1
+  }
+}

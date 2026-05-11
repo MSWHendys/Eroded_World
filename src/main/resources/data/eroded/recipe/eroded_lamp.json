@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " E ",
+    "OLS",
+    " T "
+  ],
+  "key": {
+    "E": "eroded:eroded_block",
+    "L": "minecraft:soul_lantern",
+    "T": "minecraft:tnt",
+    "O": "minecraft:oak_log",
+    "S": "minecraft:shield"
+  },
+  "result": {
+    "id": "eroded:eroded_lamp",
+    "count": 1
+  }
+}

@@ -86,7 +86,16 @@
   "eroded.text.quality.line": "KVALITA:",
   "eroded.crafting.quality.poor.standard": "Špatná → Standardní:",
   "eroded.crafting.quality.standard.excellent": "Standardní → Výborná:",
-  "eroded.crafting.predicted": "Předpokládaná: "
-
-
+  "eroded.crafting.predicted": "Předpokládaná: ",
+  "item.eroded.energy_drink": "Energy drink",
+  "item.eroded.eroded_lamp": "Ochranná lampa",
+  "item.eroded.adrenaline_shot": "Energetický stabilizátor",
+  "item.eroded.eroded_block": "Eroded blok",
+  "eroded.lamp_blocked_collapse": "Lampa zadržela zával.",
+  "eroded.adrenaline.active": "Energie je dočasně uzamčena.",
+  "eroded.energy.full": "Energie je plná.",
+  "eroded.crafting.requires_level_10": "Tento předmět vyžaduje Vanilla XP Level 10!",
+  "eroded.tooltip.energy_drink_effect": "Doplní energii na 100 %",
+  "eroded.tooltip.adrenaline_duration": "Doba adrenalinu: %s",
+  "eroded.tooltip.lamp_duration": "Výdrž lampy: %s"
 }

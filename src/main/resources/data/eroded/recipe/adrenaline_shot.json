@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "S B",
+    " A ",
+    "W G"
+  ],
+  "key": {
+    "S": "minecraft:sugar",
+    "W": "minecraft:water_bucket",
+    "G": "minecraft:glass",
+    "B": "minecraft:light_blue_dye",
+    "A": "minecraft:golden_apple"
+  },
+  "result": {
+    "id": "eroded:adrenaline_shot",
+    "count": 1
+  }
+}

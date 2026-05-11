@@ -1,9 +1,6 @@
 package cz.mcsworld.eroded.combat;
 
 import cz.mcsworld.eroded.config.combat.CombatConfig;
-import cz.mcsworld.eroded.network.EnergyWarningPacket;
-import cz.mcsworld.eroded.network.EnergySyncPacket;
-import cz.mcsworld.eroded.network.SafeNetworkUtil;
 import cz.mcsworld.eroded.skills.SkillData;
 import cz.mcsworld.eroded.skills.SkillManager;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
@@ -16,7 +13,6 @@ import java.util.UUID;
 
 public final class SprintEnergyHandler {
 
-
     private static final Map<UUID, Integer> sprintTicks = new HashMap<>();
 
     public static void register() {
@@ -24,7 +20,6 @@ public final class SprintEnergyHandler {
     }
 
     private static void onWorldTick(ServerWorld world) {
-
         CombatConfig root = CombatConfig.get();
         if (!root.enabled || !root.sprint.enabled) return;
         CombatConfig.Sprint cfg = root.sprint;
@@ -48,7 +43,6 @@ public final class SprintEnergyHandler {
             UUID id = player.getUuid();
             SkillData data = SkillManager.get(player);
 
-
             if (!player.isSprinting()) {
                 sprintTicks.remove(id);
                 continue;
@@ -57,14 +51,13 @@ public final class SprintEnergyHandler {
             int currentEnergy = data.getEnergy();
 
             if (currentEnergy < cfg.minEnergyToSprint) {
-
                 if (cfg.stopSprintWhenEmpty) {
                     player.setSprinting(false);
                 }
 
                 sprintTicks.remove(id);
 
-                SafeNetworkUtil.safeSend(player, new EnergySyncPacket(data.getEnergy()));
+                SkillManager.sync(player);
                 continue;
             }
 
@@ -74,18 +67,17 @@ public final class SprintEnergyHandler {
                 data.consumeEnergy(cfg.energyPerInterval);
                 SkillManager.save(player);
                 ticks = 0;
-
-                SafeNetworkUtil.safeSend(player, new EnergySyncPacket(currentEnergy));
             }
 
             sprintTicks.put(id, ticks);
+
+            if (world.getTime() % 20 == 0 && data.isImmune()) {
+                SkillManager.sync(player);
+            }
         }
     }
+
     public static void cleanup(UUID playerId) {
-        if (sprintTicks.containsKey(playerId)) {
-            sprintTicks.remove(playerId);
-
-        }
+        sprintTicks.remove(playerId);
     }
-
 }

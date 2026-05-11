@@ -156,7 +156,13 @@ public class EnergyConfig implements ConfigData {
 
 
         }
+        @ConfigEntry.Gui.CollapsibleObject
+        public AdrenalineShot adrenalineShot = new AdrenalineShot();
+        public static class AdrenalineShot {
 
+            @ConfigEntry.Gui.Tooltip
+            public int immunitySeconds = 120;
+        }
 
     }
 

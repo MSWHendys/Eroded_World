@@ -1,0 +1,59 @@
+{
+	"format_version": "1.21.8",
+	"credit": "Michal",
+	"texture_size": [256, 256],
+	"textures": {
+		"1": "eroded:block/death_ender_chest_5",
+		"2": "eroded:block/death_ender_chest_4",
+		"3": "eroded:block/death_ender_chest_3",
+		"4": "eroded:block/death_ender_chest_2",
+		"5": "eroded:block/death_ender_chest_1",
+		"particle": "eroded:block/death_ender_chest_6"
+	},
+	"elements": [
+		{
+			"from": [0, 0, 0],
+			"to": [16, 16, 16],
+			"rotation": {"angle": 0, "axis": "y", "origin": [8, 8, 8]},
+			"faces": {
+				"north": {"uv": [0, 0, 16, 16], "texture": "#5"},
+				"east": {"uv": [0, 0, 16, 16], "texture": "#1"},
+				"south": {"uv": [0, 0, 16, 16], "texture": "#3"},
+				"west": {"uv": [0, 0, 16, 16], "texture": "#particle"},
+				"up": {"uv": [0, 0, 16, 16], "texture": "#4"},
+				"down": {"uv": [0, 0, 16, 16], "texture": "#2"}
+			}
+		}
+	],
+	"display": {
+		"thirdperson_righthand": {
+			"rotation": [75, 45, 0],
+			"translation": [0, 2.5, 0],
+			"scale": [0.375, 0.375, 0.375]
+		},
+		"thirdperson_lefthand": {
+			"rotation": [75, 135, 0],
+			"translation": [0, 2.5, 0],
+			"scale": [0.37, 0.37, 0.37]
+		},
+		"firstperson_righthand": {
+			"rotation": [0, -135, 0],
+			"scale": [0.4, 0.4, 0.4]
+		},
+		"firstperson_lefthand": {
+			"rotation": [0, 44, 0],
+			"scale": [0.4, 0.4, 0.4]
+		},
+		"ground": {
+			"translation": [0, 3, 0],
+			"scale": [0.25, 0.25, 0.25]
+		},
+		"gui": {
+			"rotation": [30, -135, 0],
+			"scale": [0.625, 0.625, 0.625]
+		},
+		"fixed": {
+			"translation": [0, 0, 5.5]
+		}
+	}
+}

@@ -46,6 +46,9 @@ public class EnergyHud implements HudRenderCallback {
 
         int energy = ClientEnergyData.getEnergy();
         int maxEnergy = ClientEnergyData.getMaxEnergy();
+        boolean isImmune = ClientEnergyData.isImmune();
+        int immunitySecs = ClientEnergyData.getImmunitySeconds();
+
         if (maxEnergy <= 0) maxEnergy = root.server.core.maxEnergy;
 
         if (energy > lastEnergyValue && lastEnergyValue != -1) {
@@ -58,7 +61,7 @@ public class EnergyHud implements HudRenderCallback {
         }
         lastEnergyValue = energy;
 
-        if (!cfg.showHudWhenFull && energy >= maxEnergy) return;
+        if (!cfg.showHudWhenFull && energy >= maxEnergy && !isImmune) return;
 
         int total = cfg.numberEnergyFlashes;
         int ticks = client.inGameHud.getTicks();
@@ -118,6 +121,8 @@ public class EnergyHud implements HudRenderCallback {
                     continue;
                 }
 
+                int iconColor = isImmune ? 0xFFFFD700 : visual.color();
+
                 var matrices = context.getMatrices();
                 matrices.pushMatrix();
                 float cx = drawX + 4;
@@ -131,15 +136,27 @@ public class EnergyHud implements HudRenderCallback {
                         ICON,
                         drawX,
                         y,
-                        (0xFF << 24) | (visual.color() & 0x00FFFFFF),
+                        (0xFF << 24) | (iconColor & 0x00FFFFFF),
                         true
                 );
                 matrices.popMatrix();
             }
+
+            if (isImmune) {
+                int barWidth = hudWidth;
+                int barHeight = 2;
+                int barX = x;
+                int barY = y + 10;
+                float progress = Math.min(1.0f, immunitySecs / 120.0f);
+
+                context.fill(barX, barY, barX + barWidth, barY + barHeight, 0xAA000000);
+
+                context.fill(barX, barY, barX + (int)(barWidth * progress), barY + barHeight, 0xFFFFD700);
+
+            }
         }
 
         if (warningTicks > 0 && !isRegenerating && root.server.warnings.warningsEnabled) {
-
             String key = (activeWarningState == null)
                     ? null
                     : EnergyHudLogic.getWarningTranslationKey(activeWarningState);
@@ -147,40 +164,19 @@ public class EnergyHud implements HudRenderCallback {
             if (key != null) {
                 Text text = Text.translatable(key);
                 int textWidth = client.textRenderer.getWidth(text);
-
                 int textX = (screenW - textWidth) / 2;
                 int textY = y - posTextHUD_Y;
-
                 int padding = 4;
 
-                context.fill(
-                        textX - padding,
-                        textY - padding,
-                        textX + textWidth + padding,
-                        textY + client.textRenderer.fontHeight + padding,
-                        0xCC000000
-                );
-
-                context.drawText(
-                        client.textRenderer,
-                        text,
-                        textX,
-                        textY,
-                        EnergyHudLogic.RED,
-                        true
-                );
+                context.fill(textX - padding, textY - padding, textX + textWidth + padding, textY + client.textRenderer.fontHeight + padding, 0xCC000000);
+                context.drawText(client.textRenderer, text, textX, textY, EnergyHudLogic.RED, true);
 
                 warningTicks--;
-
-                if (warningTicks <= 0) {
-                    activeWarningState = null;
-                }
+                if (warningTicks <= 0) activeWarningState = null;
             } else {
-
                 warningTicks = 0;
                 activeWarningState = null;
             }
         }
-
     }
 }

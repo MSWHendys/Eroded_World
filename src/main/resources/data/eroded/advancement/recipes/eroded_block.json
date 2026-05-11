@@ -1,0 +1,40 @@
+{
+  "parent": "minecraft:recipes/root",
+  "rewards": {
+    "recipes": [
+      "eroded:eroded_block"
+    ]
+  },
+  "criteria": {
+    "has_cobblestone": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "minecraft:cobblestone"
+          }
+        ]
+      }
+    },
+    "has_lapis_lazuli": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "minecraft:lapis_lazuli"
+          }
+        ]
+      }
+    },
+    "has_diamond": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "minecraft:diamond"
+          }
+        ]
+      }
+    }
+  }
+}

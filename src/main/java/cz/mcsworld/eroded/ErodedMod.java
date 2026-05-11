@@ -1,9 +1,10 @@
 package cz.mcsworld.eroded;
 
+import cz.mcsworld.eroded.block.ErodedBlockInteractionHandler;
 import cz.mcsworld.eroded.combat.DodgeHandler;
 import cz.mcsworld.eroded.combat.SprintEnergyHandler;
 import cz.mcsworld.eroded.command.ErodedCommand;
-import cz.mcsworld.eroded.config.ErodedConfigs;
+import cz.mcsworld.eroded.config.*;
 import cz.mcsworld.eroded.config.combat.CombatConfig;
 import cz.mcsworld.eroded.config.crafting.CraftingConfig;
 import cz.mcsworld.eroded.config.darkness.DarknessConfigs;
@@ -23,13 +24,13 @@ import cz.mcsworld.eroded.loot.ErodedContainerPlacementHandler;
 import cz.mcsworld.eroded.loot.ErodedContainerProtectionHandler;
 import cz.mcsworld.eroded.network.NetworkPayloads;
 import cz.mcsworld.eroded.skills.SkillManager;
-import cz.mcsworld.eroded.storage.SkillDataStorage;
+
 import cz.mcsworld.eroded.world.darkness.*;
 import cz.mcsworld.eroded.world.loot.MutatedMobLootHandler;
 import cz.mcsworld.eroded.world.spawn.SpawnProtectionSpawnBlocker;
 import cz.mcsworld.eroded.world.spawn.SpawnProtectionTicker;
-import cz.mcsworld.eroded.world.territory.TerritoryCaveCollapseHandler;
-import cz.mcsworld.eroded.world.territory.TerritoryMobSpawnHandler;
+
+import cz.mcsworld.eroded.world.territory.*;
 import cz.mcsworld.eroded.world.territory.ecosystem.TerritoryEcosystemTicker;
 import cz.mcsworld.eroded.world.territory.TerritoryMiningListener;
 import me.shedaniel.autoconfig.AutoConfig;
@@ -63,12 +64,17 @@ public class ErodedMod implements ModInitializer {
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
             UUID uuid = handler.getPlayer().getUuid();
 
+            var world = handler.getPlayer().getWorld();
+
             SkillManager.save(handler.getPlayer());
             SkillManager.remove(uuid);
 
             DodgeHandler.cleanup(uuid);
             SprintEnergyHandler.cleanup(uuid);
             DarknessChecker.cleanup(uuid);
+
+            ErodedLampHandler.cleanup(uuid, world);
+
         });
 
         ErodedItems.register();
@@ -81,6 +87,7 @@ public class ErodedMod implements ModInitializer {
         ErodedContainerProtectionHandler.register();
 
         CombatConfig combat = CombatConfig.get();
+
 
         if (combat.enabled) {
 
@@ -123,6 +130,8 @@ public class ErodedMod implements ModInitializer {
         SpawnProtectionTicker.register();
         SpawnProtectionSpawnBlocker.register();
 
+        ErodedLampHandler.register();
+        ErodedBlockInteractionHandler.register();
 
         LOGGER.info("[Eroded World] - mod initialized – death system stabilized.");
     }

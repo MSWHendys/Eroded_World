@@ -107,7 +107,7 @@ public class AnvilScreenHandlerMixin {
 
                 SafeNetworkUtil.safeSend(
                         serverPlayer,
-                        // new AnvilFeedbackPacket("eroded.anvil.no_energy", "NONE")
+
                         new AnvilFeedbackPacket("eroded.energy.state.empty", "NONE")
                 );
 

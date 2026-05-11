@@ -51,7 +51,6 @@ public final class TerritoryCell {
     public long getLastTick() {
         return lastTick;
     }
-    // ================= GEO =================
 
     public void incrementMiningScore() {
         miningScore++;
@@ -60,8 +59,6 @@ public final class TerritoryCell {
     public int getMiningScore() {
         return miningScore;
     }
-
-    // ================= ECO =================
 
     public int getMining(long tick) {
         applyDecay(tick);

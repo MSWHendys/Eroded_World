@@ -1,0 +1,73 @@
+{
+  "parent": "minecraft:recipes/root",
+  "rewards": {
+    "recipes": [
+      "eroded:eroded_lamp"
+    ]
+  },
+  "criteria": {
+    "level_10": {
+      "trigger": "minecraft:location",
+      "conditions": {
+        "player": {
+          "type_specific": {
+            "type": "player",
+            "level": {
+              "min": 10
+            }
+          }
+        }
+      }
+    },
+    "has_eroded_block": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "eroded:eroded_block"
+          }
+        ]
+      }
+    },
+    "has_tnt": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "minecraft:tnt"
+          }
+        ]
+      }
+    },
+    "has_soul_lantern": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "minecraft:soul_lantern"
+          }
+        ]
+      }
+    },
+    "has_oak_log": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "minecraft:oak_log"
+          }
+        ]
+      }
+    },
+    "has_shield": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "minecraft:shield"
+          }
+        ]
+      }
+    }
+  }
+}

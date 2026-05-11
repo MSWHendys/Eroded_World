@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "SSS",
+    "SLS",
+    "SIS"
+  ],
+  "key": {
+    "S": "minecraft:cobblestone",
+    "L": "minecraft:lapis_lazuli",
+    "I": "minecraft:diamond"
+  },
+  "result": {
+    "id": "eroded:eroded_block",
+    "count": 1
+  }
+}

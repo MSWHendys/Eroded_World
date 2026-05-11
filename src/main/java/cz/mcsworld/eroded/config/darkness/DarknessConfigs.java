@@ -76,6 +76,24 @@ public class DarknessConfigs implements ConfigData {
 
         @ConfigEntry.Gui.Tooltip
         public int escapeDistance = 5;
+
+        @ConfigEntry.Gui.CollapsibleObject
+        public WardingLamp wardingLamp = new WardingLamp();
+
+        public static class WardingLamp {
+
+            @ConfigEntry.Gui.Tooltip
+            public int durationSeconds = 120;
+
+            @ConfigEntry.Gui.Tooltip
+            public int skyLightMax = 7;
+
+            @ConfigEntry.Gui.Tooltip
+            public int undergroundY = 60;
+
+            @ConfigEntry.Gui.Tooltip
+            public int lightLevel = 15;
+        }
     }
 
 

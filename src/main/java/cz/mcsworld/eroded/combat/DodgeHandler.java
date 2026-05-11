@@ -51,9 +51,7 @@ public final class DodgeHandler {
         if (ticks - last < cfg.cooldownTicks) return;
 
         SkillData data = SkillManager.get(player);
-        if (!data.tryConsumeEnergy(cfg.energyCost)) {
-            return;
-        }
+
         SkillManager.save(player);
         Vec3d dir = resolveDirection(player, pkt);
         Vec3d start = player.getPos();
@@ -66,7 +64,9 @@ public final class DodgeHandler {
         );
 
         if (safeTarget == null) return;
-
+        if (!data.tryConsumeEnergy(cfg.energyCost)) {
+            return;
+        }
         player.requestTeleport(
                 safeTarget.x,
                 player.getY(),

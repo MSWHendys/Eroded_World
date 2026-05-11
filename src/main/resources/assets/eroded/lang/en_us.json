@@ -87,6 +87,16 @@
   "eroded.text.quality.line": "QUALITY:",
   "eroded.crafting.quality.poor.standard": "Poor → Standard:",
   "eroded.crafting.quality.standard.excellent": "Standard → Excellent:",
-  "eroded.crafting.predicted": "Predicted:"
-
+  "eroded.crafting.predicted": "Predicted:",
+  "item.eroded.energy_drink": "Energy Drink",
+  "item.eroded.eroded_lamp": "Warding Lamp",
+  "item.eroded.adrenaline_shot": "Energy Stabilizer",
+  "item.eroded.eroded_block": "Eroded Block",
+  "eroded.lamp_blocked_collapse": "The lamp held back the cave-in.",
+  "eroded.adrenaline.active": "Energy is temporarily locked.",
+  "eroded.energy.full": "Energy is full.",
+  "eroded.crafting.requires_level_10": "This item requires Vanilla XP Level 10!",
+  "eroded.tooltip.energy_drink_effect": "Fully restores energy",
+  "eroded.tooltip.adrenaline_duration": "Adrenaline lasts: %s",
+  "eroded.tooltip.lamp_duration": "Lamp lasts: %s"
 }

@@ -1,0 +1,28 @@
+{
+  "variants": {
+    "variant=0":  { "model": "eroded:block/eroded_block_00" },
+    "variant=1":  { "model": "eroded:block/eroded_block_01" },
+    "variant=2":  { "model": "eroded:block/eroded_block_02" },
+    "variant=3":  { "model": "eroded:block/eroded_block_03" },
+    "variant=4":  { "model": "eroded:block/eroded_block_04" },
+    "variant=5":  { "model": "eroded:block/eroded_block_05" },
+    "variant=6":  { "model": "eroded:block/eroded_block_06" },
+    "variant=7":  { "model": "eroded:block/eroded_block_07" },
+    "variant=8":  { "model": "eroded:block/eroded_block_08" },
+    "variant=9":  { "model": "eroded:block/eroded_block_09" },
+    "variant=10": { "model": "eroded:block/eroded_block_10" },
+    "variant=11": { "model": "eroded:block/eroded_block_11" },
+    "variant=12": { "model": "eroded:block/eroded_block_12" },
+    "variant=13": { "model": "eroded:block/eroded_block_13" },
+    "variant=14": { "model": "eroded:block/eroded_block_14" },
+    "variant=15": { "model": "eroded:block/eroded_block_15" },
+    "variant=16": { "model": "eroded:block/eroded_block_16" },
+    "variant=17": { "model": "eroded:block/eroded_block_17" },
+    "variant=18": { "model": "eroded:block/eroded_block_18" },
+    "variant=19": { "model": "eroded:block/eroded_block_19" },
+    "variant=20": { "model": "eroded:block/eroded_block_20" },
+    "variant=21": { "model": "eroded:block/eroded_block_21" },
+    "variant=22": { "model": "eroded:block/eroded_block_22" },
+    "variant=23": { "model": "eroded:block/eroded_block_23" }
+  }
+}

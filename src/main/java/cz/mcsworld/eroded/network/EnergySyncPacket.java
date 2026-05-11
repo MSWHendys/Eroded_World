@@ -6,15 +6,16 @@ import net.minecraft.network.codec.PacketCodecs;
 import net.minecraft.network.packet.CustomPayload;
 import net.minecraft.util.Identifier;
 
-public record EnergySyncPacket(int energy) implements CustomPayload {
+public record EnergySyncPacket(int energy, int maxEnergy, int immunitySeconds) implements CustomPayload {
 
     public static final Id<EnergySyncPacket> ID =
             new Id<>(Identifier.of("eroded", "energy_sync"));
 
     public static final PacketCodec<RegistryByteBuf, EnergySyncPacket> CODEC =
             PacketCodec.tuple(
-                    PacketCodecs.VAR_INT,
-                    EnergySyncPacket::energy,
+                    PacketCodecs.VAR_INT, EnergySyncPacket::energy,
+                    PacketCodecs.VAR_INT, EnergySyncPacket::maxEnergy,
+                    PacketCodecs.VAR_INT, EnergySyncPacket::immunitySeconds,
                     EnergySyncPacket::new
             );
 

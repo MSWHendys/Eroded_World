@@ -9,6 +9,7 @@ import cz.mcsworld.eroded.client.data.ClientSkillData;
 import cz.mcsworld.eroded.client.debug.TerritoryDebugOverlay;
 import cz.mcsworld.eroded.client.gui.EnergyScreenOverlay;
 import cz.mcsworld.eroded.client.hud.EnergyHud;
+import cz.mcsworld.eroded.client.hud.EnergyHudLogic;
 import cz.mcsworld.eroded.client.input.DodgeInputHandler;
 import cz.mcsworld.eroded.client.ui.EnergyWarningClientHandler;
 import cz.mcsworld.eroded.config.darkness.DarknessConfigs;
@@ -23,14 +24,9 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import cz.mcsworld.eroded.client.data.ErodedCompassClientData;
-
-
-import net.minecraft.client.gui.screen.ingame.HandledScreens;
-import net.minecraft.client.render.block.entity.BlockEntityRendererFactories;
+import cz.mcsworld.eroded.gui.ErodedSpecialItemTooltip;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
-
-import static cz.mcsworld.eroded.death.block.ErodedBlocks.DEATH_ENDER_CHEST;
 
 
 public class ErodedModClient implements ClientModInitializer {
@@ -52,6 +48,8 @@ public class ErodedModClient implements ClientModInitializer {
 
         DodgeInputHandler.register();
 
+        ErodedSpecialItemTooltip.register();
+
         ClientPlayNetworking.registerGlobalReceiver(
                 CraftingFailPacket.ID,
                 (payload, context) -> {
@@ -66,7 +64,8 @@ public class ErodedModClient implements ClientModInitializer {
                 (payload, context) -> {
                     ClientEnergyData.update(
                             payload.energy(),
-                            ClientEnergyData.getMaxEnergy()
+                            payload.maxEnergy(),
+                            payload.immunitySeconds()
                     );
                 }
         );
@@ -137,6 +136,19 @@ public class ErodedModClient implements ClientModInitializer {
                 CalmDownEffect.trigger();
             }
         });
+
+        ClientPlayNetworking.registerGlobalReceiver(
+                CraftingRequirementPacket.ID,
+                (payload, context) -> {
+                    context.client().execute(() -> {
+                        EnergyScreenOverlay.showCustomMessage(
+                                Text.translatable(payload.key()),
+                                EnergyHudLogic.RED
+                        );
+                    });
+                }
+        );
+
         ClientPlayNetworking.registerGlobalReceiver(
                 SoundTuningSyncPacket.ID,
                 (payload, context) -> {

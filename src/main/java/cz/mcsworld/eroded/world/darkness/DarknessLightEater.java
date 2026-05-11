@@ -1,6 +1,7 @@
 package cz.mcsworld.eroded.world.darkness;
 
 import cz.mcsworld.eroded.config.darkness.DarknessConfigs;
+import cz.mcsworld.eroded.death.block.ErodedBlocks;
 import cz.mcsworld.eroded.world.territory.*;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.block.Block;
@@ -61,23 +62,21 @@ public final class DarknessLightEater {
             Map<ChunkPos, Float> threatCache,
             long tick, DarknessConfigs.Server cfg
     ) {
-
         BlockPos center = mob.getBlockPos();
+
+        for (ServerPlayerEntity player : world.getPlayers()) {
+            if (player.getBlockPos().isWithinDistance(center, 6) && isHoldingLantern(player)) {
+                return;
+            }
+        }
+
         ChunkPos cp = new ChunkPos(center);
-
         float threat = threatCache.computeIfAbsent(cp, c -> {
-
             TerritoryWorldState worldState = TerritoryWorldState.get(world);
-
-            TerritoryCellKey key =
-                    TerritoryCellKey.fromChunk(c.x, c.z);
-
-            TerritoryCell cell =
-                    worldState.getOrCreateCell(key);
-
+            TerritoryCellKey key = TerritoryCellKey.fromChunk(c.x, c.z);
+            TerritoryCell cell = worldState.getOrCreateCell(key);
             return TerritoryThreatResolver.computeThreat(cell, tick);
         });
-
 
         if (threat < cfg.threatRequired) return;
 
@@ -100,7 +99,6 @@ public final class DarknessLightEater {
                     }
 
                     boolean destroy = DarknessFlickerState.advance(pos);
-
                     DarknessFlickerEffects.play(world, pos);
 
                     if (destroy) {
@@ -125,6 +123,12 @@ public final class DarknessLightEater {
                 }
             }
         }
+    }
+
+
+    private static boolean isHoldingLantern(ServerPlayerEntity player) {
+        return player.getMainHandStack().isOf(ErodedBlocks.WARDING_LANTERN.asItem()) ||
+                player.getOffHandStack().isOf(ErodedBlocks.WARDING_LANTERN.asItem());
     }
 
     private static void applyDimVariant(ServerWorld world, BlockPos pos, BlockState state) {

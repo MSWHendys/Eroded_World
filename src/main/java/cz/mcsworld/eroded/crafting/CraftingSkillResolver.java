@@ -1,19 +1,28 @@
 package cz.mcsworld.eroded.crafting;
 
+import cz.mcsworld.eroded.core.ErodedItems;
+import cz.mcsworld.eroded.death.block.ErodedBlocks;
 import cz.mcsworld.eroded.skills.SkillType;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.registry.Registries;
 import net.minecraft.util.Identifier;
 
-/**
- * Rozhoduje, který skill dostane CG podle craftěného předmětu
- */
 public class CraftingSkillResolver {
 
     public static SkillType resolve(ItemStack stack) {
 
-        Identifier id = Registries.ITEM.getId(stack.getItem());
+        Item item = stack.getItem();
+        Identifier id = Registries.ITEM.getId(item);
         String path = id.getPath();
+
+        if (item == ErodedItems.ENERGY_DRINK || item == ErodedItems.ADRENALINE_SHOT) {
+            return SkillType.SMELTING;
+        }
+
+        if (item == ErodedBlocks.WARDING_LANTERN.asItem()) {
+            return SkillType.WOODWORKING;
+        }
 
         if (path.contains("wood")
                 || path.contains("oak")

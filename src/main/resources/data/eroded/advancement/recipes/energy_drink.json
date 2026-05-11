@@ -1,0 +1,73 @@
+{
+  "parent": "minecraft:recipes/root",
+  "rewards": {
+    "recipes": [
+      "eroded:energy_drink"
+    ]
+  },
+  "criteria": {
+    "level_10": {
+      "trigger": "minecraft:location",
+      "conditions": {
+        "player": {
+          "type_specific": {
+            "type": "player",
+            "level": {
+              "min": 10
+            }
+          }
+        }
+      }
+    },
+    "has_sugar": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "minecraft:sugar"
+          }
+        ]
+      }
+    },
+    "has_water_bucket": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "minecraft:water_bucket"
+          }
+        ]
+      }
+    },
+    "has_glass": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "minecraft:glass"
+          }
+        ]
+      }
+    },
+    "has_orange_dye": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "minecraft:orange_dye"
+          }
+        ]
+      }
+    },
+    "has_apple": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "minecraft:apple"
+          }
+        ]
+      }
+    }
+  }
+}

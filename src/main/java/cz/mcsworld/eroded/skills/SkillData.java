@@ -39,6 +39,8 @@ public class SkillData {
     private boolean collapsed = false;
     private long collapseUntilMs = 0;
 
+    private long immunityUntilMs = 0;
+
     public enum EnergyState {
         NORMAL,
         TIRED,
@@ -104,13 +106,29 @@ public class SkillData {
         return getConfig().server.core.maxEnergy;
     }
 
+    public void setImmunity(int seconds) {
+        this.immunityUntilMs = System.currentTimeMillis() + (seconds * 1000L);
+    }
+
+    public boolean isImmune() {
+        return System.currentTimeMillis() < immunityUntilMs;
+    }
+
+    public long getImmunityRemainingMs() {
+        return Math.max(0, immunityUntilMs - System.currentTimeMillis());
+    }
+
+
     public boolean hasEnoughEnergy(int amount) {
         regenerateEnergy();
+
+        if (isImmune() && !collapsed) return true;
         return !collapsed && energy >= amount;
     }
 
     public boolean canAffordEnergy(int amount) {
         regenerateEnergy();
+        if (isImmune() && !collapsed) return true;
         return !collapsed && energy >= amount;
     }
 
@@ -121,6 +139,9 @@ public class SkillData {
     }
 
     public void consumeEnergy(int amount) {
+
+        if (isImmune()) return;
+
         if (collapsed || amount <= 0) return;
 
         regenerateEnergy();
@@ -162,6 +183,7 @@ public class SkillData {
         energy = getMaxEnergy();
         collapsed = false;
         lastRegenTime = System.currentTimeMillis();
+        immunityUntilMs = 0;
 
         lastEnergyState = calculateEnergyState();
     }
@@ -171,6 +193,7 @@ public class SkillData {
         var cfg = energyRoot.server.collapse;
         collapsed = true;
         collapseUntilMs = System.currentTimeMillis() + cfg.collapseDelayMs;
+        immunityUntilMs = 0;
     }
 
     private void regenerateEnergy() {
@@ -203,6 +226,15 @@ public class SkillData {
         }
     }
 
+    public int getLevel(SkillType type) {
+        float cg = getCg(type);
+
+        return Math.min(10, Math.max(0, (int) (cg / 10.0f)));
+    }
+
+    public boolean hasLevel(SkillType type, int requiredLevel) {
+        return getLevel(type) >= requiredLevel;
+    }
 
     public Map<SkillType, Float> getAllCg() {
         return cgMap;

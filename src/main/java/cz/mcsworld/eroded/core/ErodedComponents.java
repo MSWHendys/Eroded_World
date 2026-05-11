@@ -31,6 +31,6 @@ public final class ErodedComponents {
     private ErodedComponents() {}
 
     public static void register() {
-        // init hook
+
     }
 }

@@ -17,11 +17,14 @@
     "ExplosionProtectionMixin",
     "PlayerBlockPlaceMixin",
     "BucketProtectionMixin",
-    "PistonProtectionMixin"
+    "PistonProtectionMixin",
+    "WardingLampMixin"
   ],
   "client": [
     "InGameHudMixin",
-    "client.NumericPropertiesMixin"
+    "client.NumericPropertiesMixin",
+    "client.HeldItemRendererMixin"
+
   ],
   "server": []
 }

@@ -25,6 +25,10 @@ public final class EnergyScreenOverlay {
     private static int anvilMessageTicks = 0;
     private static Text anvilMessage = null;
 
+    private static int customMessageTicks = 0;
+    private static Text customMessage = null;
+    private static int customMessageColor = 0xFFFFFFFF;
+
     private EnergyScreenOverlay() {}
 
     public static void register() {
@@ -127,6 +131,16 @@ public final class EnergyScreenOverlay {
             anvilMessageTicks--;
         }
 
+        else if (customMessageTicks > 0 && customMessage != null) {
+            textToDraw = customMessage;
+            textColor = customMessageColor;
+            customMessageTicks--;
+
+            if (customMessageTicks <= 0) {
+                customMessage = null;
+            }
+        }
+
         else if (craftingFailTicks > 0) {
             textToDraw = Text.translatable("eroded.crafting.not_enough_energy");
             textColor = EnergyHudLogic.RED;
@@ -144,10 +158,12 @@ public final class EnergyScreenOverlay {
             }
         }
 
+
         else {
             textToDraw = Text.translatable("eroded.gui.energy.prefix")
                     .append(Text.literal(energy + " / " + maxEnergy));
         }
+
 
         if (textToDraw != null) {
             int w = client.textRenderer.getWidth(textToDraw);
@@ -160,6 +176,11 @@ public final class EnergyScreenOverlay {
                     true
             );
         }
+    }
+    public static void showCustomMessage(Text text, int color) {
+        customMessage = text;
+        customMessageColor = color;
+        customMessageTicks = EnergyConfig.get().client.hud.warningMessageTime * 2;
     }
 }
 

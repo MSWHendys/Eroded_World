@@ -64,16 +64,6 @@ public final class EnergyHudLogic {
 
         return new SegmentVisual(true, color, scale);
     }
-/**
-    public static SkillData.EnergyState getCurrentState(int energy, int maxEnergy) {
-        if (maxEnergy <= 0) return SkillData.EnergyState.NORMAL;
-        float percent = (energy / (float) maxEnergy) * 100f;
-
-        if (percent <= 1f) return SkillData.EnergyState.EMPTY;
-        if (percent <= 35f) return SkillData.EnergyState.EXHAUSTED;
-        if (percent <= 51f) return SkillData.EnergyState.TIRED;
-        return SkillData.EnergyState.NORMAL;
-    } */
 
     public static String getWarningTranslationKey(SkillData.EnergyState state) {
         return switch (state) {

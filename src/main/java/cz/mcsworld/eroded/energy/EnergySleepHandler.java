@@ -1,8 +1,6 @@
 package cz.mcsworld.eroded.energy;
 
 import cz.mcsworld.eroded.config.energy.EnergyConfig;
-import cz.mcsworld.eroded.network.EnergySyncPacket;
-import cz.mcsworld.eroded.network.SafeNetworkUtil;
 import cz.mcsworld.eroded.skills.SkillData;
 import cz.mcsworld.eroded.skills.SkillManager;
 import net.fabricmc.fabric.api.entity.event.v1.EntitySleepEvents;
@@ -29,12 +27,6 @@ public final class EnergySleepHandler {
         SkillData data = SkillManager.get(player);
         data.addEnergy(data.getMaxEnergy());
         SkillManager.save(player);
-
-        SafeNetworkUtil.safeSend(
-                player,
-                new EnergySyncPacket(data.getEnergy())
-        );
+        SkillManager.sync(player);
     }
-
-
 }

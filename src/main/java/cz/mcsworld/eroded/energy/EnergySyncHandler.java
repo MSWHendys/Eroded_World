@@ -1,7 +1,6 @@
 package cz.mcsworld.eroded.energy;
 
 import cz.mcsworld.eroded.config.energy.EnergyConfig;
-import cz.mcsworld.eroded.network.EnergySyncPacket;
 import cz.mcsworld.eroded.network.EnergyWarningPacket;
 import cz.mcsworld.eroded.network.SafeNetworkUtil;
 import cz.mcsworld.eroded.skills.SkillData;
@@ -22,22 +21,16 @@ public final class EnergySyncHandler {
     private EnergySyncHandler() {}
 
     public static void register() {
-
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
-
             ServerPlayerEntity player = handler.getPlayer();
-
             SkillData data = SkillManager.get(player);
-
 
             var state = EnergyPersistentState.get(server.getOverworld());
             int saved = state.getEnergy(player.getUuid(), data.getMaxEnergy());
 
             data.setEnergy(saved);
-
             forceSync(player);
         });
-
 
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) ->
                 LAST_SENT.remove(handler.getPlayer().getUuid())
@@ -69,15 +62,18 @@ public final class EnergySyncHandler {
         SkillData data = SkillManager.get(player);
         int energy = data.getEnergy();
 
+        int currentImmunity = (int)(data.getImmunityRemainingMs() / 1000);
+
         int last = LAST_SENT.getOrDefault(player.getUuid(), Integer.MIN_VALUE);
-        if (energy == last) return false;
+
+        if (energy == last && !data.isImmune()) return false;
 
         LAST_SENT.put(player.getUuid(), energy);
 
         var state = EnergyPersistentState.get(player.getServer().getOverworld());
         state.setEnergy(player.getUuid(), energy);
 
-        SafeNetworkUtil.safeSend(player, new EnergySyncPacket(energy));
+        SkillManager.sync(player);
         return true;
     }
 
@@ -86,6 +82,7 @@ public final class EnergySyncHandler {
         int energy = data.getEnergy();
 
         LAST_SENT.put(player.getUuid(), energy);
-        SafeNetworkUtil.safeSend(player, new EnergySyncPacket(energy));
+
+        SkillManager.sync(player);
     }
 }

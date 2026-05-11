@@ -31,7 +31,6 @@ public final class HeartbeatClient {
 
         boolean dark = DarknessClientData.isDarknessActive();
 
-        // Pokud už nejsme v darkness → reset
         if (!dark) {
             cooldown = 0;
             return;
@@ -58,8 +57,7 @@ public final class HeartbeatClient {
                 )
         );
 
-        // === Dynamická rychlost podle intenzity ===
-        float intensity = DarknessClientData.getLocalLightDarkness(); // 0–1
+        float intensity = DarknessClientData.getLocalLightDarkness();
 
         int minDelay = 40;
         int maxDelay = 120;

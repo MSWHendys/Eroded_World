@@ -6,10 +6,14 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import cz.mcsworld.eroded.config.ErodedConfigs;
 import cz.mcsworld.eroded.config.energy.EnergyConfig;
 import cz.mcsworld.eroded.config.energy.EnergyHudPosition;
+import cz.mcsworld.eroded.energy.EnergySyncHandler;
 import cz.mcsworld.eroded.network.SoundTuningSyncPacket;
+import cz.mcsworld.eroded.skills.SkillData;
+import cz.mcsworld.eroded.skills.SkillManager;
 import cz.mcsworld.eroded.world.territory.*;
 import me.shedaniel.autoconfig.AutoConfig;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.server.command.CommandManager;
@@ -81,7 +85,6 @@ public final class ErodedCommand {
 
                                     player.giveItemStack(stack);
 
-                                    player.giveItemStack(stack);
                                     ctx.getSource().sendFeedback(
                                             () -> Text.translatable("eroded.command.chest.success"),
                                             false
@@ -89,6 +92,26 @@ public final class ErodedCommand {
 
                                     return 1;
                                 })
+                        )
+
+                        .then(CommandManager.literal("energy")
+                                .requires(src -> src.hasPermissionLevel(2))
+                                .then(CommandManager.argument("player", EntityArgumentType.player())
+                                        .then(CommandManager.argument("amount", IntegerArgumentType.integer(0))
+                                                .executes(ctx -> {
+                                                    ServerPlayerEntity target = EntityArgumentType.getPlayer(ctx, "player");
+                                                    int amount = IntegerArgumentType.getInteger(ctx, "amount");
+
+                                                    SkillData data = SkillManager.get(target);
+                                                    data.setEnergy(amount);
+                                                    SkillManager.save(target);
+                                                    EnergySyncHandler.forceSync(target);
+
+                                                    ctx.getSource().sendFeedback(() -> Text.literal("Energie nastavena."), true);
+                                                    return 1;
+                                                })
+                                        )
+                                )
                         )
 
                         .then(CommandManager.literal("sound")
