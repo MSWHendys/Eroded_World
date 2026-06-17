@@ -18,13 +18,31 @@
     "PlayerBlockPlaceMixin",
     "BucketProtectionMixin",
     "PistonProtectionMixin",
-    "WardingLampMixin"
+    "WardingLampMixin",
+    "PressurePlateProtectionMixin",
+    "RedstoneControlProtectionMixin",
+    "FluidFlowProtectionMixin",
+    "HopperProtectionMixin",
+    "DispenserProtectionMixin",
+    "DropperProtectionMixin",
+    "ExplosiveProjectileBoundaryMixin",
+    "SmallFireballProtectionMixin",
+    "BlockAttachedEntityDamageMixin",
+    "ArmorStandDamageMixin",
+    "EndermanPickUpBlockGoalMixin",
+    "EndermanPlaceBlockGoalMixin",
+    "DoorInteractGoalAccessor",
+    "BreakDoorGoalProtectionMixin",
+    "FarmlandBlockInvoker",
+    "FarmlandTrampleProtectionMixin",
+    "TurtleEggProtectionMixin",
+    "VehicleDamageProtectionMixin"
+
   ],
   "client": [
     "InGameHudMixin",
     "client.NumericPropertiesMixin",
     "client.HeldItemRendererMixin"
-
   ],
   "server": []
 }

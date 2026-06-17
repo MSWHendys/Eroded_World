@@ -16,7 +16,10 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public final class EnergySyncHandler {
 
-    private static final Map<UUID, Integer> LAST_SENT = new ConcurrentHashMap<>();
+    private record LastEnergySync(int energy, int immunitySeconds) {
+    }
+
+    private static final Map<UUID, LastEnergySync> LAST_SENT = new ConcurrentHashMap<>();
 
     private EnergySyncHandler() {}
 
@@ -60,15 +63,18 @@ public final class EnergySyncHandler {
 
     public static boolean syncIfChanged(ServerPlayerEntity player) {
         SkillData data = SkillManager.get(player);
+
         int energy = data.getEnergy();
+        int currentImmunity = (int) (data.getImmunityRemainingMs() / 1000);
 
-        int currentImmunity = (int)(data.getImmunityRemainingMs() / 1000);
+        LastEnergySync current = new LastEnergySync(energy, currentImmunity);
+        LastEnergySync last = LAST_SENT.get(player.getUuid());
 
-        int last = LAST_SENT.getOrDefault(player.getUuid(), Integer.MIN_VALUE);
+        if (current.equals(last)) {
+            return false;
+        }
 
-        if (energy == last && !data.isImmune()) return false;
-
-        LAST_SENT.put(player.getUuid(), energy);
+        LAST_SENT.put(player.getUuid(), current);
 
         var state = EnergyPersistentState.get(player.getServer().getOverworld());
         state.setEnergy(player.getUuid(), energy);
@@ -79,9 +85,14 @@ public final class EnergySyncHandler {
 
     public static void forceSync(ServerPlayerEntity player) {
         SkillData data = SkillManager.get(player);
-        int energy = data.getEnergy();
 
-        LAST_SENT.put(player.getUuid(), energy);
+        int energy = data.getEnergy();
+        int currentImmunity = (int) (data.getImmunityRemainingMs() / 1000);
+
+        LAST_SENT.put(
+                player.getUuid(),
+                new LastEnergySync(energy, currentImmunity)
+        );
 
         SkillManager.sync(player);
     }

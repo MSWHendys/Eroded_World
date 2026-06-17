@@ -20,7 +20,6 @@ public class TerritoryConfig implements ConfigData {
         @ConfigEntry.Gui.Tooltip
         public boolean enabled = true;
 
-        /* ===================== VÝPOČET HROZBY ================= */
         @ConfigEntry.Gui.Tooltip
         public float miningWeight = 0.40f;
 
@@ -30,18 +29,17 @@ public class TerritoryConfig implements ConfigData {
         @ConfigEntry.Gui.Tooltip
         public float forestWeight = 0.40f;
 
-        /* ==================== JESKYNÍ SYSTÉM ================== */
         @ConfigEntry.Gui.Tooltip
         public boolean caveCollapseEnabled = true;
 
         @ConfigEntry.Gui.Tooltip
-        public int miningThreshold = 150;
+        public int miningThreshold = 250;
 
         @ConfigEntry.Gui.Tooltip
         public long collapseCooldownMs = 3000;
 
         @ConfigEntry.Gui.Tooltip
-        public int stabilizerRadius = 4;
+        public int stabilizerRadius = 8;
 
         @ConfigEntry.Gui.Tooltip
         public int collapseMaxY = 50;
@@ -58,21 +56,11 @@ public class TerritoryConfig implements ConfigData {
         @ConfigEntry.Gui.Tooltip
         public float collapseMobSpawnChance = 0.25f;
 
-        /* ===================== EKOSYSTÉM ====================== */
         @ConfigEntry.Gui.Tooltip
         public boolean ecosystemEnabled = true;
 
         @ConfigEntry.Gui.Tooltip
         public int ecosystemIntervalTicks = 100;
-
-        @ConfigEntry.Gui.Tooltip
-        public float grassDegradeChance = 0.20f;
-
-        @ConfigEntry.Gui.Tooltip
-        public float grassRegrowChance = 0.4f;
-
-        @ConfigEntry.Gui.Tooltip
-        public float permanentScarChance = 0.05f;
 
         @ConfigEntry.Gui.Tooltip
         public int ecosystemVisibleRadiusBlocks = 32;
@@ -96,10 +84,22 @@ public class TerritoryConfig implements ConfigData {
         public int ecosystemLeafMaxY = 140;
 
         @ConfigEntry.Gui.Tooltip
+        public int ecosystemCalmDownDelay = 1200;
+
+        @ConfigEntry.Gui.Tooltip
         public float ecosystemDegradeThreatThreshold = 0.60f;
 
         @ConfigEntry.Gui.Tooltip
         public float ecosystemRegenThreatThreshold = 0.30f;
+
+        @ConfigEntry.Gui.Tooltip
+        public float grassDegradeChance = 0.20f;
+
+        @ConfigEntry.Gui.Tooltip
+        public float grassRegrowChance = 0.4f;
+
+        @ConfigEntry.Gui.Tooltip
+        public float permanentScarChance = 0.05f;
 
         @ConfigEntry.Gui.Tooltip
         public float ecosystemLeafLossMultiplier = 0.10f;
@@ -111,10 +111,6 @@ public class TerritoryConfig implements ConfigData {
         public float ecosystemLeafLossMinChance = 0.02f;
 
         @ConfigEntry.Gui.Tooltip
-        public int ecosystemCalmDownDelay = 1200;
-
-        /* =================== SPAWN SYSTÉM ==================== */
-        @ConfigEntry.Gui.Tooltip
         public boolean mobSpawnControlEnabled = true;
 
         @ConfigEntry.Gui.Tooltip
@@ -124,64 +120,79 @@ public class TerritoryConfig implements ConfigData {
         public int undergroundTolerance = 5;
 
         @ConfigEntry.Gui.Tooltip
-        public float spawnKeepMinChance = 0.15f;
-
-        @ConfigEntry.Gui.Tooltip
-        public double mobMaxHp = 40.0;
-
-        @ConfigEntry.Gui.Tooltip
-        public int mobMaxPerChunk = 3;
-
-        @ConfigEntry.Gui.Tooltip
-        public int spawnCheckInterval = 600;
-
-        @ConfigEntry.Gui.Tooltip
-        public int mobDespawnRadius = 64;
-
-        @ConfigEntry.Gui.Tooltip
-        public double spawnMinDistance = 16.0;
-
-        @ConfigEntry.Gui.Tooltip
-        public double spawnMaxDistance = 32.0;
+        public int spawnCheckInterval = 1200;
 
         @ConfigEntry.Gui.Tooltip
         public int spawnAttempts = 20;
 
         @ConfigEntry.Gui.Tooltip
+        public double spawnMinDistance = 14.0;
+
+        @ConfigEntry.Gui.Tooltip
+        public double spawnMaxDistance = 40.0;
+
+        @ConfigEntry.Gui.Tooltip
+        public float spawnKeepMinChance = 0.08f;
+
+        @ConfigEntry.Gui.Tooltip
+        public int mobMaxPerChunk = 3;
+
+        @ConfigEntry.Gui.Tooltip
+        public int maxMobsPerSpawnCycle = 1;
+
+        @ConfigEntry.Gui.Tooltip
+        public int mobDespawnRadius = 64;
+
+        @ConfigEntry.Gui.Tooltip
+        public double mobMaxHp = 40.0;
+
+        @ConfigEntry.Gui.Tooltip
         public boolean MobNameVisible = false;
 
-        /* =================== POSILOVÁNÍ BYTOSTÍ ============== */
         @ConfigEntry.Gui.Tooltip
         public boolean mobBuffEnabled = true;
 
         @ConfigEntry.Gui.Tooltip
-        public float mobBuffThreshold = 0.50f;
+        public float mobBuffThreshold = 0.40f;
 
-
-        /* =============== Názvy a hranice titulů =============== */
         @ConfigEntry.Gui.Tooltip
         public String titleLow = "Forsaken";
+
         @ConfigEntry.Gui.Tooltip
         public String titleMid = "Eroded";
+
         @ConfigEntry.Gui.Tooltip
         public String titleHigh = "Apocalypse";
 
         @ConfigEntry.Gui.Tooltip
         public int titleMidThreshold = 250;
+
         @ConfigEntry.Gui.Tooltip
         public int titleHighThreshold = 1000;
 
-        // --- Počty mobů při spawnu ---
         @ConfigEntry.Gui.Tooltip
-        public int maxMobsPerSpawnCycle = 2;
-        // Maximální počet mobů, který se pokusí spawnout u jednoho hráče v jednom intervalu
+        public float erodedMobSunProofChance = 0.35F;
 
-        /* =================== SPAWN PROTECTION ==================== */
+        @ConfigEntry.Gui.Tooltip
+        public int erodedMobTempProtectionMinTicks = 600;
+
+        @ConfigEntry.Gui.Tooltip
+        public int erodedMobTempProtectionRandomTicks = 1200;
+
+        @ConfigEntry.Gui.Tooltip
+        public float erodedSkeletonBurnSeconds = 8.0F;
+
         @ConfigEntry.Gui.Tooltip
         public boolean spawnProtectionEnabled = true;
 
         @ConfigEntry.Gui.Tooltip
         public int spawnProtectionRadius = 64;
+
+        @ConfigEntry.Gui.Tooltip
+        public boolean bypassCreative = true;
+
+        @ConfigEntry.Gui.Tooltip
+        public boolean bypassOP = true;
 
         @ConfigEntry.Gui.Tooltip
         public boolean preventExplosions = true;
@@ -193,14 +204,90 @@ public class TerritoryConfig implements ConfigData {
         public boolean preventBlockPlace = true;
 
         @ConfigEntry.Gui.Tooltip
+        public boolean preventContainerUse = false;
+
+        @ConfigEntry.Gui.Tooltip
+        public boolean preventRedstoneControls = false;
+
+        @ConfigEntry.Gui.Tooltip
+        public boolean preventPressurePlates = false;
+
+        @ConfigEntry.Gui.Tooltip
+        public boolean preventProtectedEntityInteraction = true;
+
+        @ConfigEntry.Gui.Tooltip
         public boolean preventPistonPush = true;
 
         @ConfigEntry.Gui.Tooltip
-        public boolean bypassCreative = true;
+        public boolean preventFluidFlow = true;
 
         @ConfigEntry.Gui.Tooltip
-        public boolean bypassOP = true;
-        }
+        public boolean preventInventoryAutomationTransfer = true;
 
+        @ConfigEntry.Gui.Tooltip
+        public boolean preventDispenserDropperBoundaryActions = true;
 
+        @ConfigEntry.Gui.Tooltip
+        public boolean spawnPreventProjectileBoundaryActions = true;
+
+        @ConfigEntry.Gui.Tooltip
+        public boolean spawnPreventMobGriefing = true;
+
+        @ConfigEntry.Gui.Tooltip
+        public boolean spawnPreventVehicles = true;
+
+        @ConfigEntry.Gui.Tooltip
+        public boolean spawnPreventSpecialBlockUse = false;
+
+        @ConfigEntry.Gui.Tooltip
+        public boolean playerClaimProtectionEnabled = true;
+
+        @ConfigEntry.Gui.Tooltip
+        public int playerClaimRadius = 10;
+
+        @ConfigEntry.Gui.Tooltip
+        public int playerClaimActivationDelaySeconds = 60;
+
+        @ConfigEntry.Gui.Tooltip
+        public int maxClaimsPerPlayer = 4;
+
+        @ConfigEntry.Gui.Tooltip
+        public boolean preventPlayerClaimOverlap = true;
+
+        @ConfigEntry.Gui.Tooltip
+        public boolean claimCreativeBypass = true;
+
+        @ConfigEntry.Gui.Tooltip
+        public boolean protectClaimBlockBreak = true;
+
+        @ConfigEntry.Gui.Tooltip
+        public boolean protectClaimBlockPlace = true;
+
+        @ConfigEntry.Gui.Tooltip
+        public boolean protectClaimContainers = true;
+
+        @ConfigEntry.Gui.Tooltip
+        public boolean protectClaimFire = true;
+
+        @ConfigEntry.Gui.Tooltip
+        public boolean protectClaimExplosions = true;
+
+        @ConfigEntry.Gui.Tooltip
+        public boolean preventProjectileBoundaryActions = true;
+
+        @ConfigEntry.Gui.Tooltip
+        public boolean protectClaimMobGriefing = true;
+
+        @ConfigEntry.Gui.Tooltip
+        public boolean protectClaimVehicles = true;
+
+        @ConfigEntry.Gui.Tooltip
+        public boolean protectClaimFluidFlow = true;
+
+        @ConfigEntry.Gui.Tooltip
+        public boolean protectClaimInventoryAutomationTransfer = true;
+
+        @ConfigEntry.Gui.Tooltip
+        public boolean protectClaimDispenserDropperBoundaryActions = true;
+    }
 }

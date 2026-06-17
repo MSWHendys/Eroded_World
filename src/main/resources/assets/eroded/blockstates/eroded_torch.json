@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "eroded:block/eroded_torch"
+    }
+  }
+}

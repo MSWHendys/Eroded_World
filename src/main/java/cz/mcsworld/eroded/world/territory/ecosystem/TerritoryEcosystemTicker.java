@@ -8,6 +8,7 @@ import cz.mcsworld.eroded.world.territory.TerritoryWorldState;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
+import net.minecraft.registry.tag.BlockTags;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -73,13 +74,13 @@ public final class TerritoryEcosystemTicker {
         int leafMaxY = Math.max(cfg.ecosystemLeafMinY, cfg.ecosystemLeafMaxY);
 
         float degradeThr = cfg.ecosystemDegradeThreatThreshold;
+        float regenThr = cfg.ecosystemRegenThreatThreshold;
 
         int count = Math.min(maxPlayers, players.size());
 
         for (int i = 0; i < count; i++) {
             int idx = rrIndex++ % players.size();
             ServerPlayerEntity player = players.get(idx);
-
             ChunkPos cp = new ChunkPos(player.getBlockPos());
             TerritoryCellKey key = TerritoryCellKey.fromChunk(cp.x, cp.z);
             TerritoryCell cell = state.getOrCreateCell(key);
@@ -87,16 +88,22 @@ public final class TerritoryEcosystemTicker {
             float threat = TerritoryThreatResolver.computeThreat(cell, tick);
             int pollution = cell.getPollution(tick);
             int miningScore = cell.getMiningScore();
+
             long lastMiningTick = cell.getLastMiningActivityTick();
             long ticksSinceMining = lastMiningTick == 0 ? Integer.MAX_VALUE : tick - lastMiningTick;
 
             int calmDownDelay = cfg.ecosystemCalmDownDelay;
             boolean recentlyMining = ticksSinceMining < calmDownDelay;
 
-            if (threat < 0.10f && pollution < 10) continue;
+            if (threat < 0.10f && pollution < 10 && miningScore <= 0) {
+                continue;
+            }
 
-            boolean doDegrade = threat > degradeThr && recentlyMining;
-            boolean doRegen = !recentlyMining;
+            boolean doDegrade = recentlyMining && threat >= degradeThr;
+
+            boolean doRegen = !recentlyMining
+                    && threat <= regenThr
+                    && (pollution > 0 || miningScore > 0);
 
             if (!doDegrade && !doRegen) continue;
 
@@ -184,24 +191,35 @@ public final class TerritoryEcosystemTicker {
             Random random,
             TerritoryConfig.Server cfg
     ) {
-
         float leafAttemptChance = cfg.permanentScarChance * cfg.ecosystemLeafLossMultiplier;
         leafAttemptChance = Math.max(cfg.ecosystemLeafLossMinChance, leafAttemptChance);
         leafAttemptChance = Math.min(cfg.ecosystemLeafLossMaxChance, leafAttemptChance);
 
-        if (random.nextFloat() > leafAttemptChance) return;
+        if (random.nextFloat() > leafAttemptChance) {
+            return;
+        }
 
-        BlockPos base = randomSurfaceNearPlayer(world, center, radius, random);
-        if (base == null) return;
+        int minY = Math.max(world.getBottomY(), Math.min(leafMinY, leafMaxY));
 
-        for (int y = 2; y <= 20; y++) {
-            BlockPos checkPos = base.up(y);
+        int worldTopY = world.getBottomY() + world.getHeight() - 1;
+        int maxY = Math.min(worldTopY, Math.max(leafMinY, leafMaxY));
+
+        if (maxY <= minY) {
+            return;
+        }
+
+        for (int attempt = 0; attempt < 8; attempt++) {
+            int x = center.getX() + random.nextInt(radius * 2 + 1) - radius;
+            int z = center.getZ() + random.nextInt(radius * 2 + 1) - radius;
+            int y = minY + random.nextInt(maxY - minY + 1);
+
+            BlockPos checkPos = new BlockPos(x, y, z);
             BlockState state = world.getBlockState(checkPos);
 
-            if (state.isAir()) continue;
-
-            world.breakBlock(checkPos, false);
-            return;
+            if (state.isIn(BlockTags.LEAVES)) {
+                world.breakBlock(checkPos, false);
+                return;
+            }
         }
     }
 

@@ -9,6 +9,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.Text;
+import cz.mcsworld.eroded.client.screen.TerritoryModuleScreen;
 
 public final class EnergyScreenOverlay {
 
@@ -53,6 +54,10 @@ public final class EnergyScreenOverlay {
     }
 
     private static void render(Screen screen, DrawContext context, int mouseX, int mouseY, float delta) {
+
+        if (screen instanceof TerritoryModuleScreen) {
+            return;
+        }
 
         MinecraftClient client = MinecraftClient.getInstance();
         if (client == null || client.player == null || !ClientEnergyData.isInitialized()) return;

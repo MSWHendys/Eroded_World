@@ -1,8 +1,8 @@
 package cz.mcsworld.eroded.core;
 
+import com.mojang.serialization.Codec;
 import cz.mcsworld.eroded.ErodedMod;
 import cz.mcsworld.eroded.crafting.Quality;
-import com.mojang.serialization.Codec;
 import net.minecraft.component.ComponentType;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
@@ -16,10 +16,10 @@ public final class ErodedComponents {
                     Identifier.of(ErodedMod.MOD_ID, "quality"),
                     ComponentType.<Quality>builder()
                             .codec(Codec.STRING.xmap(
-                                    s -> {
+                                    value -> {
                                         try {
-                                            return Quality.valueOf(s);
-                                        } catch (Exception e) {
+                                            return Quality.valueOf(value);
+                                        } catch (Exception exception) {
                                             return Quality.STANDARD;
                                         }
                                     },
@@ -28,9 +28,11 @@ public final class ErodedComponents {
                             .build()
             );
 
-    private ErodedComponents() {}
+
+    private ErodedComponents() {
+    }
 
     public static void register() {
-
+        /* ----- */
     }
 }

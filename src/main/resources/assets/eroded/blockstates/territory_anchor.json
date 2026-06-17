@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "active=false,has_module=false": {
+      "model": "eroded:block/territory_anchor_inactive"
+    },
+    "active=false,has_module=true": {
+      "model": "eroded:block/territory_anchor_inactive"
+    },
+    "active=true,has_module=true": {
+      "model": "eroded:block/territory_anchor_active"
+    },
+    "active=true,has_module=false": {
+      "model": "eroded:block/territory_anchor_inactive"
+    }
+  }
+}

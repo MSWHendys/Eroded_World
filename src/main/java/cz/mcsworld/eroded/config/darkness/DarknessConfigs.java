@@ -7,15 +7,6 @@ import me.shedaniel.autoconfig.annotation.ConfigEntry;
 
 @Config(name = "ErodedWorld/darkness")
 public class DarknessConfigs implements ConfigData {
-    public static DarknessConfigs get() {
-        return AutoConfig
-                .getConfigHolder(DarknessConfigs.class)
-                .getConfig();
-    }
-
-    // =========================================================
-    // GLOBAL
-    // =========================================================
 
     @ConfigEntry.Gui.Tooltip
     public boolean enabled = true;
@@ -26,50 +17,31 @@ public class DarknessConfigs implements ConfigData {
     @ConfigEntry.Gui.CollapsibleObject
     public Client client = new Client();
 
+    public static DarknessConfigs get() {
+        return AutoConfig
+                .getConfigHolder(DarknessConfigs.class)
+                .getConfig();
+    }
 
-    // =========================================================
-    // SERVER SECTION (AUTORITA)
-    // =========================================================
     public static class Server {
 
         @ConfigEntry.Gui.Tooltip
         public boolean mobLightFearEnabled = true;
 
         @ConfigEntry.Gui.Tooltip
-        public int fearLightThreshold = 4;            // FEAR_LIGHT_THRESHOLD
+        public int fearLightThreshold = 4;
 
         @ConfigEntry.Gui.Tooltip
-        public int suppressLightThreshold = 7;        // SUPPRESS_LIGHT_THRESHOLD
+        public int suppressLightThreshold = 7;
 
         @ConfigEntry.Gui.Tooltip
-        public int lightSearchRadius = 8;             // MAX_RADIUS
+        public int lightSearchRadius = 8;
 
         @ConfigEntry.Gui.Tooltip
-        public int postLightCooldownTicks = 12;       // DarknessMobLightMemory
+        public int postLightCooldownTicks = 12;
 
         @ConfigEntry.Gui.Tooltip
-        public int flickerStages = 3;                 // DarknessFlickerState.MAX_STAGE
-
-
-        // ---------- Light Eater ----------
-
-        @ConfigEntry.Gui.Tooltip
-        public boolean lightEaterEnabled = true;
-
-        @ConfigEntry.Gui.Tooltip
-        public int lightEaterCheckInterval = 40;      // CHECK_INTERVAL
-
-        @ConfigEntry.Gui.Tooltip
-        public int lightEaterRadius = 2;              // RADIUS
-
-        @ConfigEntry.Gui.Tooltip
-        public int maxLightActionsPerTick = 6;        // MAX_ACTIONS_PER_TICK
-
-        @ConfigEntry.Gui.Tooltip
-        public float threatRequired = 0.6f;           // hardcoded 0.6f
-
-
-        // ---------- AI ----------
+        public int flickerStages = 3;
 
         @ConfigEntry.Gui.Tooltip
         public double escapeSpeed = 1.2;
@@ -77,8 +49,26 @@ public class DarknessConfigs implements ConfigData {
         @ConfigEntry.Gui.Tooltip
         public int escapeDistance = 5;
 
+        @ConfigEntry.Gui.Tooltip
+        public boolean lightEaterEnabled = true;
+
+        @ConfigEntry.Gui.Tooltip
+        public int lightEaterCheckInterval = 40;
+
+        @ConfigEntry.Gui.Tooltip
+        public int lightEaterRadius = 2;
+
+        @ConfigEntry.Gui.Tooltip
+        public int maxLightActionsPerTick = 6;
+
+        @ConfigEntry.Gui.Tooltip
+        public float threatRequired = 0.6f;
+
         @ConfigEntry.Gui.CollapsibleObject
         public WardingLamp wardingLamp = new WardingLamp();
+
+        @ConfigEntry.Gui.CollapsibleObject
+        public ErodedTorch erodedTorch = new ErodedTorch();
 
         public static class WardingLamp {
 
@@ -94,12 +84,41 @@ public class DarknessConfigs implements ConfigData {
             @ConfigEntry.Gui.Tooltip
             public int lightLevel = 15;
         }
+
+        public static class ErodedTorch {
+
+            @ConfigEntry.Gui.Tooltip
+            public boolean enabled = true;
+
+            @ConfigEntry.Gui.Tooltip
+            public int maxChargeTicks = 2400;
+
+            @ConfigEntry.Gui.Tooltip
+            public int rechargeIntervalTicks = 20;
+
+            @ConfigEntry.Gui.Tooltip
+            public int rechargeAmount = 1;
+
+            @ConfigEntry.Gui.Tooltip
+            public boolean drainOnlyInDarkness = true;
+
+            @ConfigEntry.Gui.Tooltip
+            public int placedLightLevel = 15;
+
+            @ConfigEntry.Gui.Tooltip
+            public int activeSkyLightMax = 7;
+
+            @ConfigEntry.Gui.Tooltip
+            public int activeNightStartTime = 12000;
+
+            @ConfigEntry.Gui.Tooltip
+            public int activeNightEndTime = 23000;
+
+            @ConfigEntry.Gui.Tooltip
+            public boolean rechargeHeldWhenInactive = true;
+        }
     }
 
-
-    // =========================================================
-    // CLIENT SECTION (VIZUAL + AUDIO)
-    // =========================================================
     public static class Client {
 
         @ConfigEntry.Gui.Tooltip
@@ -117,8 +136,20 @@ public class DarknessConfigs implements ConfigData {
         @ConfigEntry.Gui.Tooltip
         public int graceTicks = 80;
 
+        @ConfigEntry.Gui.Tooltip
+        public int darknessMaxAlpha = 220;
 
-        // ---------- Local Sampling ----------
+        @ConfigEntry.Gui.Tooltip
+        public float darknessFadeSpeed = 0.08f;
+
+        @ConfigEntry.Gui.Tooltip
+        public boolean darknessVignetteEnabled = false;
+
+        @ConfigEntry.Gui.Tooltip
+        public int darknessVignetteMaxAlpha = 90;
+
+        @ConfigEntry.Gui.Tooltip
+        public float darknessVignetteSize = 0.18f;
 
         @ConfigEntry.Gui.Tooltip
         public int samples = 6;
@@ -138,9 +169,6 @@ public class DarknessConfigs implements ConfigData {
         @ConfigEntry.Gui.Tooltip
         public float localSmoothing = 0.02f;
 
-
-        // ---------- Heartbeat ----------
-
         @ConfigEntry.Gui.Tooltip
         public boolean heartbeatEnabled = true;
 
@@ -155,6 +183,12 @@ public class DarknessConfigs implements ConfigData {
 
         @ConfigEntry.Gui.CollapsibleObject
         public CalmDown calmDown = new CalmDown();
+
+        @ConfigEntry.Gui.CollapsibleObject
+        public AudioTuning audio = new AudioTuning();
+
+        @ConfigEntry.Gui.Tooltip
+        public boolean showTorchChargeHud = true;
 
         public static class CalmDown {
 
@@ -172,36 +206,15 @@ public class DarknessConfigs implements ConfigData {
 
             @ConfigEntry.Gui.Tooltip
             public float pitchRand = 0.2f;
-
-
         }
-
-        @ConfigEntry.Gui.Tooltip
-        public int darknessMaxAlpha = 220;
-
-        @ConfigEntry.Gui.Tooltip
-        public float darknessFadeSpeed = 0.08f;
-
-        @ConfigEntry.Gui.Tooltip
-        public boolean darknessVignetteEnabled = false;
-
-        @ConfigEntry.Gui.Tooltip
-        public int darknessVignetteMaxAlpha = 90;
-
-        @ConfigEntry.Gui.Tooltip
-        public float darknessVignetteSize = 0.18f;
-
-        @ConfigEntry.Gui.CollapsibleObject
-        public AudioTuning audio = new AudioTuning();
 
         public static class AudioTuning {
 
             @ConfigEntry.Gui.Tooltip
-            public float volumeMultiplier = 1.0f; // 0.2 - 1.0
+            public float volumeMultiplier = 1.0f;
 
             @ConfigEntry.Gui.Tooltip
-            public float delayMultiplier = 1.0f;  // 0.5 - 2.0
+            public float delayMultiplier = 1.0f;
         }
     }
-
 }

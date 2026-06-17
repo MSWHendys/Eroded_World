@@ -24,8 +24,6 @@ public final class ErodedLampHandler {
 
     private static final Map<UUID, LastLight> LAST_LIGHT = new ConcurrentHashMap<>();
 
-    private static final Map<UUID, Long> LAST_USAGE_TICK = new ConcurrentHashMap<>();
-
     private ErodedLampHandler() {
     }
 
@@ -53,36 +51,32 @@ public final class ErodedLampHandler {
 
         var lampCfg = DarknessConfigs.get().server.wardingLamp;
 
-        if (ensureLampMaxDamage(lamp, lampCfg.durationSeconds)) {
-            syncLampStack(player);
-        }
+        ensureLampMaxDamage(lamp, lampCfg.durationSeconds);
 
         BlockPos playerPos = player.getBlockPos();
-
         int skyLight = world.getLightLevel(LightType.SKY, playerPos);
 
-        boolean isUnderground =
-                playerPos.getY() < lampCfg.undergroundY
-                        || !world.isSkyVisible(playerPos);
-
-        boolean isDarkEnough =
-                skyLight <= lampCfg.skyLightMax
-                        && isUnderground;
+        boolean isUnderground = playerPos.getY() < lampCfg.undergroundY || !world.isSkyVisible(playerPos);
+        boolean isDarkEnough = skyLight <= lampCfg.skyLightMax && isUnderground;
 
         if (!isDarkEnough) {
             cleanup(uuid, server);
             return;
         }
 
-        BlockPos wantedPos = findLightPos(world, playerPos);
+        if (server.getTicks() % 20 == 0) {
+            int newDamage = lamp.getDamage() + 1;
+            lamp.setDamage(newDamage);
 
-        if (wantedPos == null) {
-            cleanup(uuid, server);
-            return;
+            if (newDamage >= lamp.getMaxDamage()) {
+                lamp.setCount(0);
+                cleanup(uuid, server);
+                return;
+            }
         }
 
-
-        if (!tickLampUsage(server, player, uuid, lamp)) {
+        BlockPos wantedPos = findLightPos(world, playerPos);
+        if (wantedPos == null) {
             cleanup(uuid, server);
             return;
         }
@@ -90,29 +84,17 @@ public final class ErodedLampHandler {
         LastLight oldLight = LAST_LIGHT.get(uuid);
 
         if (oldLight != null) {
-            boolean sameWorld = oldLight.worldKey().equals(world.getRegistryKey());
-
-            if (sameWorld) {
+            if (oldLight.worldKey().equals(world.getRegistryKey())) {
                 BlockPos oldPos = oldLight.pos();
 
-                boolean closeEnough = player.squaredDistanceTo(
-                        oldPos.getX() + 0.5,
-                        oldPos.getY() + 0.5,
-                        oldPos.getZ() + 0.5
-                ) < 2.25;
-
-                if (closeEnough) {
-                    if (world.getBlockState(oldPos).isOf(Blocks.LIGHT)) {
-                        return;
-                    }
-
+                if (player.squaredDistanceTo(oldPos.getX() + 0.5, oldPos.getY() + 0.5, oldPos.getZ() + 0.5) < 2.25) {
+                    if (world.getBlockState(oldPos).isOf(Blocks.LIGHT)) return;
                     if (world.isAir(oldPos)) {
                         placeLightAt(world, oldPos);
                         return;
                     }
                 }
             }
-
             cleanup(uuid, server);
         }
 
@@ -122,89 +104,21 @@ public final class ErodedLampHandler {
         }
     }
 
-    private static boolean tickLampUsage(
-            MinecraftServer server,
-            ServerPlayerEntity player,
-            UUID uuid,
-            ItemStack lamp
-    ) {
-        long nowTick = server.getTicks();
-        int maxDamage = Math.max(2, lamp.getMaxDamage());
+    private static void ensureLampMaxDamage(ItemStack lamp, int durationSeconds) {
+        int targetMax = Math.max(2, durationSeconds);
 
-        if (lamp.getDamage() <= 0) {
-            lamp.setDamage(1);
-            LAST_USAGE_TICK.put(uuid, nowTick);
-            syncLampStack(player);
-            return true;
+        if (lamp.getMaxDamage() != targetMax) {
+            lamp.set(DataComponentTypes.MAX_DAMAGE, targetMax);
+
+            if (lamp.getDamage() >= targetMax) {
+                lamp.setDamage(targetMax - 1);
+            }
         }
-
-        Long lastTickObj = LAST_USAGE_TICK.get(uuid);
-
-        if (lastTickObj == null) {
-            LAST_USAGE_TICK.put(uuid, nowTick);
-            return true;
-        }
-
-        long lastTick = lastTickObj;
-        long elapsedTicks = nowTick - lastTick;
-
-        if (elapsedTicks < 20) {
-            return true;
-        }
-
-        int elapsedSeconds = (int) (elapsedTicks / 20L);
-
-        LAST_USAGE_TICK.put(
-                uuid,
-                lastTick + elapsedSeconds * 20L
-        );
-
-        int newDamage = lamp.getDamage() + elapsedSeconds;
-
-        if (newDamage >= maxDamage) {
-            lamp.setCount(0);
-            syncLampStack(player);
-            return false;
-        }
-
-        lamp.setDamage(newDamage);
-        syncLampStack(player);
-
-        return true;
-    }
-
-    private static boolean ensureLampMaxDamage(ItemStack lamp, int durationSeconds) {
-
-        int newMaxDamage = Math.max(2, durationSeconds + 1);
-        int oldMaxDamage = Math.max(1, lamp.getMaxDamage());
-
-        if (oldMaxDamage == newMaxDamage) {
-            return false;
-        }
-
-        int oldDamage = Math.max(0, lamp.getDamage());
-        float usedRatio = oldDamage / (float) oldMaxDamage;
-
-        int newDamage = Math.round(usedRatio * newMaxDamage);
-        newDamage = Math.max(0, Math.min(newMaxDamage - 1, newDamage));
-
-        lamp.set(DataComponentTypes.MAX_DAMAGE, newMaxDamage);
-        lamp.setDamage(newDamage);
-
-        return true;
     }
 
     private static BlockPos findLightPos(ServerWorld world, BlockPos playerPos) {
-        BlockPos abovePlayer = playerPos.up();
-
-        if (canPlaceLightAt(world, abovePlayer)) {
-            return abovePlayer;
-        }
-
-        if (canPlaceLightAt(world, playerPos)) {
-            return playerPos;
-        }
-
+        if (canPlaceLightAt(world, playerPos.up())) return playerPos.up();
+        if (canPlaceLightAt(world, playerPos)) return playerPos;
         return null;
     }
 
@@ -217,76 +131,39 @@ public final class ErodedLampHandler {
             return;
         }
 
-        int lightLevel = Math.max(
-                1,
-                Math.min(
-                        15,
-                        DarknessConfigs.get().server.wardingLamp.lightLevel
-                )
-        );
+        int lightLevel = Math.min(15, Math.max(1, DarknessConfigs.get().server.wardingLamp.lightLevel));
 
         world.setBlockState(
                 pos,
                 Blocks.LIGHT.getDefaultState().with(LightBlock.LEVEL_15, lightLevel),
-                Block.NOTIFY_ALL_AND_REDRAW
+                Block.NOTIFY_ALL
         );
     }
 
     private static void removeLightAt(ServerWorld world, BlockPos pos) {
-        if (world.getBlockState(pos).isOf(Blocks.LIGHT)) {
-            world.setBlockState(
-                    pos,
-                    Blocks.AIR.getDefaultState(),
-                    Block.NOTIFY_ALL_AND_REDRAW
-            );
+        if (world != null && world.getBlockState(pos).isOf(Blocks.LIGHT)) {
+            world.setBlockState(pos, Blocks.AIR.getDefaultState(), Block.NOTIFY_ALL);
         }
     }
 
     public static void cleanup(UUID uuid, MinecraftServer server) {
-        LAST_USAGE_TICK.remove(uuid);
-
         LastLight lastLight = LAST_LIGHT.remove(uuid);
-
-        if (lastLight == null) {
-            return;
-        }
-
-        ServerWorld world = server.getWorld(lastLight.worldKey());
-
-        if (world != null) {
-            removeLightAt(world, lastLight.pos());
+        if (lastLight != null) {
+            ServerWorld world = server.getWorld(lastLight.worldKey());
+            if (world != null) removeLightAt(world, lastLight.pos());
         }
     }
 
     public static void cleanup(UUID uuid, ServerWorld fallbackWorld) {
-        LAST_USAGE_TICK.remove(uuid);
-
         LastLight lastLight = LAST_LIGHT.remove(uuid);
-
-        if (lastLight == null) {
-            return;
-        }
-
-        if (fallbackWorld.getRegistryKey().equals(lastLight.worldKey())) {
+        if (lastLight != null && fallbackWorld.getRegistryKey().equals(lastLight.worldKey())) {
             removeLightAt(fallbackWorld, lastLight.pos());
         }
     }
 
-    private static void syncLampStack(ServerPlayerEntity player) {
-        player.getInventory().markDirty();
-        player.playerScreenHandler.sendContentUpdates();
-        player.currentScreenHandler.syncState();
-    }
-
     private static ItemStack getHeldLamp(ServerPlayerEntity player) {
-        if (player.getMainHandStack().isOf(ErodedBlocks.WARDING_LANTERN.asItem())) {
-            return player.getMainHandStack();
-        }
-
-        if (player.getOffHandStack().isOf(ErodedBlocks.WARDING_LANTERN.asItem())) {
-            return player.getOffHandStack();
-        }
-
+        if (player.getMainHandStack().isOf(ErodedBlocks.WARDING_LANTERN.asItem())) return player.getMainHandStack();
+        if (player.getOffHandStack().isOf(ErodedBlocks.WARDING_LANTERN.asItem())) return player.getOffHandStack();
         return ItemStack.EMPTY;
     }
 }

@@ -5,7 +5,6 @@ import me.shedaniel.autoconfig.ConfigData;
 import me.shedaniel.autoconfig.annotation.Config;
 import me.shedaniel.autoconfig.annotation.ConfigEntry;
 
-
 @Config(name = "ErodedWorld/energy")
 public class EnergyConfig implements ConfigData {
 
@@ -21,32 +20,37 @@ public class EnergyConfig implements ConfigData {
                 .getConfig();
     }
 
-
     public static class Server {
 
         @ConfigEntry.Gui.Tooltip
         public boolean enabled = true;
 
-
         @ConfigEntry.Gui.CollapsibleObject
         public Core core = new Core();
+
+        @ConfigEntry.Gui.CollapsibleObject
+        public Thresholds thresholds = new Thresholds();
+
+        @ConfigEntry.Gui.CollapsibleObject
+        public HudThresholds hudThresholds = new HudThresholds();
+
         @ConfigEntry.Gui.CollapsibleObject
         public Regen regen = new Regen();
 
         @ConfigEntry.Gui.CollapsibleObject
         public Sleep sleep = new Sleep();
+
         @ConfigEntry.Gui.CollapsibleObject
         public Food food = new Food();
 
         @ConfigEntry.Gui.CollapsibleObject
-        public Collapse collapse = new Collapse();
-        @ConfigEntry.Gui.CollapsibleObject
-        public Warnings warnings = new Warnings();
+        public AdrenalineShot adrenalineShot = new AdrenalineShot();
 
         @ConfigEntry.Gui.CollapsibleObject
-        public Thresholds thresholds = new Thresholds();
+        public Collapse collapse = new Collapse();
+
         @ConfigEntry.Gui.CollapsibleObject
-        public HudThresholds hudThresholds = new HudThresholds();
+        public Warnings warnings = new Warnings();
 
         @ConfigEntry.Gui.Tooltip
         public boolean fatigueWhenExhausted = true;
@@ -64,68 +68,6 @@ public class EnergyConfig implements ConfigData {
 
             @ConfigEntry.Gui.Tooltip
             public float miningCost = 0.001f;
-        }
-
-
-        public static class Regen {
-
-            @ConfigEntry.Gui.Tooltip
-            public boolean passiveRegenEnabled = true;
-
-            @ConfigEntry.Gui.Tooltip
-            public int regenIntervalSeconds = 15;
-        }
-
-        public static class Sleep {
-
-            @ConfigEntry.Gui.Tooltip
-            public boolean sleepRestoresFull = true;
-        }
-
-        public static class Food {
-
-
-            @ConfigEntry.Gui.Tooltip
-            public int fruitBase = 2;
-            @ConfigEntry.Gui.Tooltip
-            public int vegetableBase = 2;
-            @ConfigEntry.Gui.Tooltip
-            public int grainBase = 3;
-            @ConfigEntry.Gui.Tooltip
-            public int meatBase = 4;
-            @ConfigEntry.Gui.Tooltip
-            public int fishBase = 3;
-            @ConfigEntry.Gui.Tooltip
-            public int mealBase = 6;
-
-            @ConfigEntry.Gui.Tooltip
-            public float rawMultiplier = 0.6f;
-            @ConfigEntry.Gui.Tooltip
-            public float cookedMultiplier = 1.2f;
-            @ConfigEntry.Gui.Tooltip
-            public float processedMultiplier = 1.5f;
-
-            @ConfigEntry.Gui.Tooltip
-            public float specialMultiplier = 2.0f;
-
-            @ConfigEntry.Gui.Tooltip
-            public int dangerousEnergyPenalty = 4;
-
-        }
-
-        public static class Collapse {
-
-            @ConfigEntry.Gui.Tooltip
-            public int collapseDelayMs = 5000;
-        }
-
-        public static class Warnings {
-
-            @ConfigEntry.Gui.Tooltip
-            public boolean warningsEnabled = true;
-
-            @ConfigEntry.Gui.Tooltip
-            public int warningCooldownMs = 1500;
         }
 
         public static class Thresholds {
@@ -153,17 +95,79 @@ public class EnergyConfig implements ConfigData {
 
             @ConfigEntry.Gui.Tooltip
             public float blinkBelowPercent = 20f;
-
-
         }
-        @ConfigEntry.Gui.CollapsibleObject
-        public AdrenalineShot adrenalineShot = new AdrenalineShot();
+
+        public static class Regen {
+
+            @ConfigEntry.Gui.Tooltip
+            public boolean passiveRegenEnabled = true;
+
+            @ConfigEntry.Gui.Tooltip
+            public int regenIntervalSeconds = 15;
+        }
+
+        public static class Sleep {
+
+            @ConfigEntry.Gui.Tooltip
+            public boolean sleepRestoresFull = true;
+        }
+
+        public static class Food {
+
+            @ConfigEntry.Gui.Tooltip
+            public int fruitBase = 2;
+
+            @ConfigEntry.Gui.Tooltip
+            public int vegetableBase = 2;
+
+            @ConfigEntry.Gui.Tooltip
+            public int grainBase = 3;
+
+            @ConfigEntry.Gui.Tooltip
+            public int meatBase = 4;
+
+            @ConfigEntry.Gui.Tooltip
+            public int fishBase = 3;
+
+            @ConfigEntry.Gui.Tooltip
+            public int mealBase = 6;
+
+            @ConfigEntry.Gui.Tooltip
+            public float rawMultiplier = 0.6f;
+
+            @ConfigEntry.Gui.Tooltip
+            public float cookedMultiplier = 1.2f;
+
+            @ConfigEntry.Gui.Tooltip
+            public float processedMultiplier = 1.5f;
+
+            @ConfigEntry.Gui.Tooltip
+            public float specialMultiplier = 2.0f;
+
+            @ConfigEntry.Gui.Tooltip
+            public int dangerousEnergyPenalty = 4;
+        }
+
         public static class AdrenalineShot {
 
             @ConfigEntry.Gui.Tooltip
             public int immunitySeconds = 120;
         }
 
+        public static class Collapse {
+
+            @ConfigEntry.Gui.Tooltip
+            public int collapseDelayMs = 5000;
+        }
+
+        public static class Warnings {
+
+            @ConfigEntry.Gui.Tooltip
+            public boolean warningsEnabled = true;
+
+            @ConfigEntry.Gui.Tooltip
+            public int warningCooldownMs = 1500;
+        }
     }
 
     public static class Client {
@@ -196,7 +200,6 @@ public class EnergyConfig implements ConfigData {
 
             @ConfigEntry.Gui.Tooltip
             public int warningMessageTime = 60;
-
         }
     }
 }

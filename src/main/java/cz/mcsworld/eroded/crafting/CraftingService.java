@@ -29,47 +29,40 @@ public final class CraftingService {
         ServerPlayerEntity player = context.getPlayer();
         SkillData data = SkillManager.get(player);
 
-        // --- 1. KONTROLA VANILLA LEVELU (XP) ---
-        // Tato kontrola musí být PRVNÍ. Pokud selže, nic se neodečte.
         if (!checkVanillaLevelRequirement(player, result)) {
             SafeNetworkUtil.safeSend(player, new CraftingFailPacket());
             return false;
         }
 
-        // --- 2. VÝPOČET ENERGIE (POUZE VÝPOČET, NE ODEČET) ---
         var energyCfg = EnergyConfig.get().server.core;
         int energyCost = calculateEnergyCost(cfg, data, context, result);
 
-        // --- 3. KONTROLA DOSTATKU ENERGIE ---
         if (cfg.energy.enabled && energyCfg.blockWorkAtZero) {
             if (!data.canAffordEnergy(energyCost)) {
-                player.sendMessage(Text.literal("Nemáš dostatek energie na výrobu!")
-                        .formatted(Formatting.RED), true);
+                player.sendMessage(
+                        Text.translatable("eroded.crafting.not_enough_energy")
+                                .formatted(Formatting.RED),
+                        true
+                );
+
                 SafeNetworkUtil.safeSend(player, new CraftingFailPacket());
                 return false;
             }
         }
 
-        // --- 4. POTVRZENÍ - ZDE SE TEPRVE PROVÁDÍ ZMĚNY ---
-        // Pokud jsme se dostali sem, hráč má Level i Energii.
-
-        // Odečtení energie
         if (cfg.energy.enabled && energyCost > 0) {
             data.consumeEnergy(energyCost);
         }
 
-        // Připsání CG zkušeností
         if (cfg.cg.enabled) {
             applyExperience(cfg, data, result);
         }
 
-        // Uložení a synchronizace (Všechny změny naráz)
         SkillManager.save(player);
         SkillManager.sync(player);
 
         syncSkillsToClient(player, data);
 
-        // Aplikace kvality na item
         if (cfg.quality.enabled && QualityApplicable.isApplicable(result)) {
             float avgInput = InputQualityResolver.resolveAverage(context.getInputs());
             Quality quality = QualityResolver.resolveQuality(data, avgInput);

@@ -29,8 +29,12 @@ public final class DarknessLightEater {
 
     private static void onTick(MinecraftServer server) {
         var root = DarknessConfigs.get();
-        if (!root.enabled) return;
         var cfg = root.server;
+
+        if (!root.enabled || !cfg.lightEaterEnabled) {
+            return;
+        }
+
 
         tickCounter++;
         if (tickCounter % cfg.lightEaterCheckInterval != 0) return;

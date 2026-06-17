@@ -3,30 +3,35 @@ package cz.mcsworld.eroded;
 import cz.mcsworld.eroded.client.ClientSystems;
 import cz.mcsworld.eroded.client.ErodedCompassClientTicker;
 import cz.mcsworld.eroded.client.ErodedKeybinds;
+import cz.mcsworld.eroded.client.TerritoryPlacementHintClient;
 import cz.mcsworld.eroded.client.audio.CalmDownEffect;
-import cz.mcsworld.eroded.client.data.ClientEnergyData;
-import cz.mcsworld.eroded.client.data.ClientSkillData;
+import cz.mcsworld.eroded.client.data.*;
 import cz.mcsworld.eroded.client.debug.TerritoryDebugOverlay;
 import cz.mcsworld.eroded.client.gui.EnergyScreenOverlay;
 import cz.mcsworld.eroded.client.hud.EnergyHud;
 import cz.mcsworld.eroded.client.hud.EnergyHudLogic;
 import cz.mcsworld.eroded.client.input.DodgeInputHandler;
+import cz.mcsworld.eroded.client.screen.TerritoryModuleScreen;
 import cz.mcsworld.eroded.client.ui.EnergyWarningClientHandler;
 import cz.mcsworld.eroded.config.darkness.DarknessConfigs;
+import cz.mcsworld.eroded.core.ErodedScreenHandlers;
 import cz.mcsworld.eroded.gui.ErodedCompassTooltip;
 import cz.mcsworld.eroded.gui.ErodedTooltip;
 import cz.mcsworld.eroded.network.*;
 import cz.mcsworld.eroded.visuals.darkness.DarknessDebugOverlay;
-import cz.mcsworld.eroded.client.data.DarknessClientData;
 import me.shedaniel.autoconfig.AutoConfig;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
-import cz.mcsworld.eroded.client.data.ErodedCompassClientData;
 import cz.mcsworld.eroded.gui.ErodedSpecialItemTooltip;
+import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.minecraft.client.gui.screen.ingame.HandledScreens;
+import net.minecraft.client.render.entity.ZombieEntityRenderer;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
+import cz.mcsworld.eroded.core.ErodedEntities;
+import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
+import net.minecraft.client.render.entity.SkeletonEntityRenderer;
 
 
 public class ErodedModClient implements ClientModInitializer {
@@ -39,6 +44,27 @@ public class ErodedModClient implements ClientModInitializer {
         HudRenderCallback.EVENT.register(new EnergyHud());
         HudRenderCallback.EVENT.register(new DarknessDebugOverlay());
         EnergyScreenOverlay.register();
+        HandledScreens.register(
+                ErodedScreenHandlers.TERRITORY_MODULE,
+                TerritoryModuleScreen::new
+        );
+
+        EntityRendererRegistry.register(
+                ErodedEntities.ERODED_SPECIAL_SKELETON,
+                SkeletonEntityRenderer::new
+        );
+        EntityRendererRegistry.register(
+                ErodedEntities.ERODED_SPECIAL_ZOMBIE,
+                ZombieEntityRenderer::new
+        );
+
+        ClientPlayNetworking.registerGlobalReceiver(
+                CompassDarknessBreakPacket.ID,
+                (payload, context) -> context.client().execute(() -> DarknessClientData.activateCompassDarknessBreak(
+                        payload.durationTicks(),
+                        payload.maxDarkness()
+                ))
+        );
 
         ErodedTooltip.register();
         ErodedCompassTooltip.register();
@@ -49,87 +75,63 @@ public class ErodedModClient implements ClientModInitializer {
         DodgeInputHandler.register();
 
         ErodedSpecialItemTooltip.register();
+        TerritoryPlacementHintClient.register();
 
         ClientPlayNetworking.registerGlobalReceiver(
                 CraftingFailPacket.ID,
-                (payload, context) -> {
-                    context.client().execute(() -> {
-                        EnergyScreenOverlay.onCraftingFail();
-                    });
-                }
+                (payload, context) -> context.client().execute(EnergyScreenOverlay::onCraftingFail)
         );
 
         ClientPlayNetworking.registerGlobalReceiver(
                 EnergySyncPacket.ID,
-                (payload, context) -> {
-                    ClientEnergyData.update(
-                            payload.energy(),
-                            payload.maxEnergy(),
-                            payload.immunitySeconds()
-                    );
-                }
+                (payload, context) -> ClientEnergyData.update(
+                        payload.energy(),
+                        payload.maxEnergy(),
+                        payload.immunitySeconds()
+                )
         );
 
 
         ClientPlayNetworking.registerGlobalReceiver(
                 ErodedCompassSyncPacket.ID,
-                (payload, context) -> {
-                    ErodedCompassClientData.updateTarget(
-                            payload.active(),
-                            payload.active()
-                                    ? BlockPos.fromLong(payload.deathPosLong())
-                                    : null,
-                            payload.remainingTicks()
-                    );
-                }
+                (payload, context) -> ErodedCompassClientData.updateTarget(
+                        payload.active(),
+                        payload.active()
+                                ? BlockPos.fromLong(payload.deathPosLong())
+                                : null,
+                        payload.remainingTicks()
+                )
         );
 
         ClientPlayNetworking.registerGlobalReceiver(
                 SkillSyncPacket.ID,
-                (payload, context) -> {
-
-                    context.client().execute(() -> {
-                        ClientSkillData.update(
-                                payload.woodworking(),
-                                payload.smelting()
-                        );
-                    });
-                }
+                (payload, context) -> context.client().execute(() -> ClientSkillData.update(
+                        payload.woodworking(),
+                        payload.smelting()
+                ))
         );
 
         ClientPlayNetworking.registerGlobalReceiver(
                 AnvilFeedbackPacket.ID,
-                (payload, context) -> {
-
-                    context.client().execute(() -> {
-                        EnergyScreenOverlay.showAnvilMessage(
-                                Text.translatable(
-                                        payload.key(),
-                                        Text.translatable("eroded.crafting.quality." + payload.quality().toLowerCase())
-                                ),
-                                payload.quality()
-                        );
-                    });
-
-                }
+                (payload, context) -> context.client().execute(() -> EnergyScreenOverlay.showAnvilMessage(
+                        Text.translatable(
+                                payload.key(),
+                                Text.translatable("eroded.crafting.quality." + payload.quality().toLowerCase())
+                        ),
+                        payload.quality()
+                ))
         );
 
 
 
         ClientPlayNetworking.registerGlobalReceiver(
                 DarknessStatePacket.ID,
-                (payload, context) -> {
-                    DarknessClientData.update(payload.inDarkness());
-                }
+                (payload, context) -> DarknessClientData.update(payload.inDarkness())
         );
 
-        ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            ClientSystems.clientTick();
-        });
+        ClientTickEvents.END_CLIENT_TICK.register(client -> ClientSystems.clientTick());
 
-        ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            ErodedCompassClientTicker.tick();
-        });
+        ClientTickEvents.END_CLIENT_TICK.register(client -> ErodedCompassClientTicker.tick());
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (DarknessClientData.consumeDarknessExit()) {
@@ -139,59 +141,54 @@ public class ErodedModClient implements ClientModInitializer {
 
         ClientPlayNetworking.registerGlobalReceiver(
                 CraftingRequirementPacket.ID,
-                (payload, context) -> {
-                    context.client().execute(() -> {
-                        EnergyScreenOverlay.showCustomMessage(
-                                Text.translatable(payload.key()),
-                                EnergyHudLogic.RED
-                        );
-                    });
-                }
+                (payload, context) -> context.client().execute(() -> EnergyScreenOverlay.showCustomMessage(
+                        Text.translatable(payload.key()),
+                        EnergyHudLogic.RED
+                ))
         );
 
         ClientPlayNetworking.registerGlobalReceiver(
                 SoundTuningSyncPacket.ID,
-                (payload, context) -> {
-                    context.client().execute(() -> {
+                (payload, context) -> context.client().execute(() -> {
 
-                        var audio = DarknessConfigs.get().client.audio;
+                    var audio = DarknessConfigs.get().client.audio;
 
-                        if (payload.volumeMul() != null)
-                            audio.volumeMultiplier = payload.volumeMul();
+                    boolean changed = false;
 
-                        if (payload.delayMul() != null)
-                            audio.delayMultiplier = payload.delayMul();
+                    if (payload.volumeMul() != null
+                            && audio.volumeMultiplier != payload.volumeMul()) {
+                        audio.volumeMultiplier = payload.volumeMul();
+                        changed = true;
+                    }
 
-                        boolean changed = false;
+                    if (payload.delayMul() != null
+                            && audio.delayMultiplier != payload.delayMul()) {
+                        audio.delayMultiplier = payload.delayMul();
+                        changed = true;
+                    }
 
-                        if (payload.volumeMul() != null &&
-                                audio.volumeMultiplier != payload.volumeMul()) {
-                            audio.volumeMultiplier = payload.volumeMul();
-                            changed = true;
+                    if (changed) {
+                        long now = System.currentTimeMillis();
+
+                        if (now - lastConfigSave > SAVE_COOLDOWN_MS) {
+                            AutoConfig.getConfigHolder(DarknessConfigs.class).save();
+                            lastConfigSave = now;
                         }
-
-                        if (payload.delayMul() != null &&
-                                audio.delayMultiplier != payload.delayMul()) {
-                            audio.delayMultiplier = payload.delayMul();
-                            changed = true;
-                        }
-
-                        if (changed) {
-                            long now = System.currentTimeMillis();
-                            if (now - lastConfigSave > SAVE_COOLDOWN_MS) {
-                                AutoConfig.getConfigHolder(DarknessConfigs.class).save();
-                                lastConfigSave = now;
-                            }
-                        }
-                    });
-                }
+                    }
+                })
         );
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.player != null && client.world != null) {
-                cz.mcsworld.eroded.client.data.DarknessClientData.updateLighLevel(client);
+                cz.mcsworld.eroded.client.data.DarknessClientData.updateLightLevel(client);
             }
         });
+
+        ClientPlayNetworking.registerGlobalReceiver(
+                TerritoryModuleSyncPayload.ID,
+                (payload, context) -> context.client().execute(() -> ClientTerritoryModuleData.update(payload))
+        );
+
     }
 
 }

@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "RIR",
+    "ALA",
+    "RER"
+  ],
+  "key": {
+    "R": "minecraft:redstone",
+    "L": "minecraft:lever",
+    "A": "minecraft:amethyst_shard",
+    "I": "minecraft:iron_ingot",
+    "E": "minecraft:emerald"
+  },
+  "result": {
+    "id": "eroded:territory_module",
+    "count": 1
+  }
+}

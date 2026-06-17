@@ -7,7 +7,8 @@ import net.minecraft.util.math.BlockPos;
 
 public final class ExplosionProtectionManager {
 
-    private ExplosionProtectionManager() {}
+    private ExplosionProtectionManager() {
+    }
 
     private static TerritoryConfig.Server cfg() {
         return TerritoryConfig.get().server;
@@ -18,11 +19,10 @@ public final class ExplosionProtectionManager {
     }
 
     public static boolean isExplosionProtectionEnabled() {
-        return cfg().preventExplosions;
+        return isSpawnProtectionEnabled() && cfg().preventExplosions;
     }
 
     public static boolean isProtected(ServerWorld world, BlockPos pos) {
-
         if (!isSpawnProtectionEnabled()) {
             return false;
         }
@@ -38,12 +38,11 @@ public final class ExplosionProtectionManager {
     }
 
     public static boolean canBreak(ServerPlayerEntity player, BlockPos pos) {
-
         if (hasBypass(player)) {
             return true;
         }
 
-        if (!cfg().preventBlockBreak) {
+        if (!isSpawnProtectionEnabled() || !cfg().preventBlockBreak) {
             return true;
         }
 
@@ -51,12 +50,35 @@ public final class ExplosionProtectionManager {
     }
 
     public static boolean canPlace(ServerPlayerEntity player, BlockPos pos) {
-
         if (hasBypass(player)) {
             return true;
         }
 
-        if (!cfg().preventBlockPlace) {
+        if (!isSpawnProtectionEnabled() || !cfg().preventBlockPlace) {
+            return true;
+        }
+
+        return !isProtected(player.getWorld(), pos);
+    }
+
+    public static boolean canUseSpecialBlock(ServerPlayerEntity player, BlockPos pos) {
+        if (hasBypass(player)) {
+            return true;
+        }
+
+        if (!preventSpecialBlockUse()) {
+            return true;
+        }
+
+        return !isProtected(player.getWorld(), pos);
+    }
+
+    public static boolean canUseContainer(ServerPlayerEntity player, BlockPos pos) {
+        if (hasBypass(player)) {
+            return true;
+        }
+
+        if (!isSpawnProtectionEnabled() || !cfg().preventContainerUse) {
             return true;
         }
 
@@ -64,19 +86,58 @@ public final class ExplosionProtectionManager {
     }
 
     public static boolean preventPistonPush() {
-        return cfg().preventPistonPush;
+        return isSpawnProtectionEnabled() && cfg().preventPistonPush;
+    }
+
+    public static boolean preventRedstoneControls() {
+        return isSpawnProtectionEnabled() && cfg().preventRedstoneControls;
+    }
+
+    public static boolean preventPressurePlates() {
+        return isSpawnProtectionEnabled() && cfg().preventPressurePlates;
+    }
+
+    public static boolean preventProtectedEntityInteraction() {
+        return isSpawnProtectionEnabled() && cfg().preventProtectedEntityInteraction;
+    }
+
+    public static boolean preventFluidFlow() {
+        return isSpawnProtectionEnabled() && cfg().preventFluidFlow;
+    }
+
+    public static boolean preventInventoryAutomationTransfer() {
+        return isSpawnProtectionEnabled() && cfg().preventInventoryAutomationTransfer;
+    }
+
+    public static boolean preventDispenserDropperBoundaryActions() {
+        return isSpawnProtectionEnabled() && cfg().preventDispenserDropperBoundaryActions;
+    }
+
+    public static boolean preventProjectileBoundaryActions() {
+        return isSpawnProtectionEnabled() && cfg().spawnPreventProjectileBoundaryActions;
+    }
+
+    public static boolean preventMobGriefing() {
+        return isSpawnProtectionEnabled() && cfg().spawnPreventMobGriefing;
+    }
+
+    public static boolean preventVehicles() {
+        return isSpawnProtectionEnabled() && cfg().spawnPreventVehicles;
+    }
+
+    public static boolean preventSpecialBlockUse() {
+        return isSpawnProtectionEnabled() && cfg().spawnPreventSpecialBlockUse;
+    }
+
+    public static boolean hasBypassAccess(ServerPlayerEntity player) {
+        return hasBypass(player);
     }
 
     private static boolean hasBypass(ServerPlayerEntity player) {
-
         if (cfg().bypassCreative && player.isCreative()) {
             return true;
         }
 
-        if (cfg().bypassOP && player.hasPermissionLevel(2)) {
-            return true;
-        }
-
-        return false;
+        return cfg().bypassOP && player.hasPermissionLevel(2);
     }
 }

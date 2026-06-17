@@ -4,6 +4,7 @@ import cz.mcsworld.eroded.ErodedMod;
 import cz.mcsworld.eroded.death.ErodedCompassItem;
 import cz.mcsworld.eroded.item.AdrenalineShotItem;
 import cz.mcsworld.eroded.item.EnergyDrinkItem;
+import cz.mcsworld.eroded.item.TerritoryModuleItem;
 import net.minecraft.item.Item;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
@@ -34,6 +35,11 @@ public final class ErodedItems {
             new AdrenalineShotItem(new Item.Settings().maxCount(1).registryKey(ADRENALINE_SHOT_KEY))
     );
 
+    public static final RegistryKey<Item> TERRITORY_MODULE_KEY =
+            RegistryKey.of(Registries.ITEM.getKey(), Identifier.of(ErodedMod.MOD_ID, "territory_module"));
+
+    public static Item TERRITORY_MODULE;
+
     public static void register() {
         DEATH_COMPASS = Registry.register(
                 Registries.ITEM,
@@ -51,7 +57,15 @@ public final class ErodedItems {
                 new EnergyDrinkItem(new Item.Settings().maxCount(16).registryKey(ENERGY_DRINK_KEY))
         );
 
-
+        TERRITORY_MODULE = Registry.register(
+                Registries.ITEM,
+                TERRITORY_MODULE_KEY.getValue(),
+                new TerritoryModuleItem(
+                        new Item.Settings()
+                                .maxCount(1)
+                                .registryKey(TERRITORY_MODULE_KEY)
+                )
+        );
     }
 
 

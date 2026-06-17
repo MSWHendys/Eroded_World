@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " C ",
+    " E ",
+    " C "
+  ],
+  "key": {
+    "C": "minecraft:iron_ingot",
+    "E": "minecraft:torch"
+  },
+  "result": {
+    "id": "eroded:eroded_torch",
+    "count": 1
+  }
+}

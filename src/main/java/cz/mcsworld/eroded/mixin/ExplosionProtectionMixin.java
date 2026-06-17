@@ -1,5 +1,6 @@
 package cz.mcsworld.eroded.mixin;
 
+import cz.mcsworld.eroded.protection.TerritoryProtectionManager;
 import cz.mcsworld.eroded.world.spawn.ExplosionProtectionManager;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
@@ -18,32 +19,29 @@ import java.util.List;
 @Mixin(ExplosionImpl.class)
 public abstract class ExplosionProtectionMixin {
 
-    @Shadow @Final
+    @Shadow
+    @Final
     private ServerWorld world;
 
     @Inject(method = "destroyBlocks", at = @At("HEAD"))
     private void eroded$protectBlocks(List<BlockPos> blocks, CallbackInfo ci) {
-
-        blocks.removeIf(pos -> {
-
-            if (ExplosionProtectionManager.isExplosionProtectionEnabled() &&
-                    ExplosionProtectionManager.isProtected(world, pos)) {
-                return true;
-            }
-
-            return ExplosionProtectionManager.isProtected(world, pos);
-        });
+        blocks.removeIf(pos ->
+                TerritoryProtectionManager.isExplosionProtected(world, pos)
+                        || (
+                        ExplosionProtectionManager.isExplosionProtectionEnabled()
+                                && ExplosionProtectionManager.isProtected(world, pos)
+                )
+        );
     }
 
     @Inject(method = "createFire", at = @At("HEAD"))
     private void eroded$protectFire(List<BlockPos> blocks, CallbackInfo ci) {
-
-        if (!ExplosionProtectionManager.isExplosionProtectionEnabled()) {
-            return;
-        }
-
-        blocks.removeIf(pos -> ExplosionProtectionManager.isProtected(world, pos));
+        blocks.removeIf(pos ->
+                TerritoryProtectionManager.isExplosionProtected(world, pos)
+                        || (
+                        ExplosionProtectionManager.isExplosionProtectionEnabled()
+                                && ExplosionProtectionManager.isProtected(world, pos)
+                )
+        );
     }
-
-
 }

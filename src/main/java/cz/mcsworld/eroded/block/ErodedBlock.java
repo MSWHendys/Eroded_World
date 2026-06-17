@@ -10,9 +10,11 @@ import net.minecraft.state.property.IntProperty;
 
 public class ErodedBlock extends Block {
 
-    public static final MapCodec<ErodedBlock> CODEC = createCodec(ErodedBlock::new);
+    public static final MapCodec<ErodedBlock> CODEC =
+            createCodec(ErodedBlock::new);
 
-    public static final IntProperty VARIANT = IntProperty.of("variant", 0, 23);
+    public static final IntProperty VARIANT =
+            IntProperty.of("variant", 0, 23);
 
     public ErodedBlock(AbstractBlock.Settings settings) {
         super(settings);
@@ -30,12 +32,14 @@ public class ErodedBlock extends Block {
     }
 
     @Override
-    public BlockState getPlacementState(ItemPlacementContext ctx) {
+    public BlockState getPlacementState(ItemPlacementContext context) {
         return this.getDefaultState().with(VARIANT, 0);
     }
 
     @Override
-    protected void appendProperties(StateManager.Builder<Block, BlockState> builder) {
+    protected void appendProperties(
+            StateManager.Builder<Block, BlockState> builder
+    ) {
         builder.add(VARIANT);
     }
 }
