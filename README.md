@@ -1,117 +1,349 @@
 ![Minecraft](https://img.shields.io/badge/Minecraft-1.21.8-green)
 ![Loader](https://img.shields.io/badge/Loader-Fabric-blue)
 ![Java](https://img.shields.io/badge/Java-21-orange)
-![Dependency](https://img.shields.io/badge/Requires-Fabric%20API%20%26%20Cloth%20Config%20API-yellow)
-![Status](https://img.shields.io/badge/Status-ALPHA-red)
+![Requires](https://img.shields.io/badge/Requires-Fabric%20API%20%2B%20Cloth%20Config%20API-yellow)
+![Status](https://img.shields.io/badge/Status-BETA%20%2F%20EXPERIMENTAL-red)
 
-<p align="center">
-  <img src="https://mcstoryworld.cz/minecraft/mods/eroded_world_banner.png" alt="Eroded World Banner" width="1000">
-</p>
+![Eroded World Banner](https://mcstoryworld.cz/minecraft/mods/eroded_world_banner.png)
 
-<h1 align="center">⛏ Eroded World</h1>
-<p align="center">
-Hardcore Survival Overhaul for Minecraft – Fabric 1.21.8
-</p>
+# Eroded World
 
-<p align="center">
-  <strong>⚠️ WARNING: This mod is currently in ALPHA stage. Features may change and bugs may occur.</strong>
-</p>
+**Hardcore survival overhaul for Minecraft Fabric 1.21.6 - 1.21.8**
 
-<p align="center">
-  <strong>Darkness is not cosmetic.</strong><br>
-  <strong>Mining has consequences.</strong><br>
-  <strong>Energy defines your limits.</strong>
-</p>
+> Darkness is not cosmetic.  
+> Mining has consequences.  
+> Energy defines your limits.
+
+Eroded World turns Minecraft survival into a slower, harsher and more reactive experience. The world remembers what players do: mining scars the land, darkness becomes dangerous, overused territory grows hostile, and death leaves a trace that must be recovered.
+
+This project is still experimental. Systems, balance values and configuration options may change between builds.
 
 ---
 
-## 🌑 About
+## Table of Contents
 
-**Eroded World** is a survival overhaul mod for Minecraft (Fabric 1.21.8) that redefines the core philosophy of survival gameplay.
-
-The world remembers what you do. This mod is built for immersive, slower-paced, atmosphere-driven survival where every action has a lasting impact.
-
----
-
-## ⚒ Core Systems
-
-### ⛏ Dynamic Territory & Ecosystem
-- **Territory Tracking:** Each 3×3 chunk area tracks mining, pollution, and forestation.
-- **Environmental Decay:** High pollution and mining cause grass to turn into dirt, then coarse dirt, and eventually podzol. Leaves can wither in highly eroded zones.
-- **Natural Regrowth:** If an area is left undisturbed and pollution decreases, the ecosystem will slowly heal and grass will return.
+- [About](#about)
+- [Core Systems](#core-systems)
+- [Items and Blocks](#items-and-blocks)
+- [Commands](#commands)
+- [Configuration](#configuration)
+- [Technical Information](#technical-information)
+- [Wiki](#wiki)
+- [License](#license)
 
 ---
 
-### 💥 Environmental Collapse System
-- **Cave-ins:** Mining below Y=50 can trigger structural collapses once the miningScore is too high.
-- **Warning Signs:** Players hear the rock creaking and see dust particles before a collapse.
-- **Reinforcement:** Structural planning matters. Use logs or "Stabilizers" to secure tunnels and prevent cave-ins.
+## About
+
+Eroded World is built around consequence-driven survival:
+
+- every physical action can matter,
+- mining and pollution affect local territory,
+- darkness is a real threat,
+- crafting quality depends on preparation and progression,
+- death creates recoverable remains instead of simply deleting progress,
+- server-side systems remain authoritative for survival balance.
+
+The mod is designed for atmospheric multiplayer survival servers, especially where slow progression, risk, resource planning and long-term world impact are part of the gameplay.
 
 ---
 
-### ⚡ Energy & Stamina System
-- **Actions:** Sprinting, dodging, mining, and crafting all consume energy.
-- **Exhaustion:** Low energy levels apply **Mining Fatigue** and restrict sprinting.
-- **Dynamic HUD:** A custom HUD displays your energy state (Normal, Tired, Exhausted, Empty).
+## Core Systems
+
+### Energy & Stamina
+
+Energy is the player's main physical resource.
+
+Energy can be consumed by:
+
+- sprinting,
+- dodging,
+- mining,
+- crafting.
+
+Energy states include:
+
+- **Normal** – full performance,
+- **Tired** – reduced safety margin,
+- **Exhausted** – sprinting becomes restricted and Mining Fatigue can be applied,
+- **Empty** – the player collapses and must recover.
+
+Energy can regenerate passively, through sleep, food and special recovery items depending on server configuration. The client HUD displays energy state, warnings and important feedback.
+
+### 🧠 Skills / CG Progression
+
+The mod tracks crafting growth through CG values. Current skill categories include:
+
+- **Woodworking**
+- **Smelting**
+
+CG progression is intentionally slow and is used by crafting and quality systems to reward preparation instead of fast grinding.
+
+### Crafting & Item Quality
+
+Crafting is no longer just a recipe check.
+
+The crafting system can:
+
+- consume energy,
+- grant CG experience,
+- require vanilla XP level for special items,
+- apply item quality,
+- show feedback through client-side overlays.
+
+Quality tiers:
+
+- **POOR**
+- **STANDARD**
+- **EXCELLENT**
+
+Quality affects item behavior through durability and repair-related modifiers. Input quality and player CG influence the resulting quality. Repairing through an anvil can degrade quality over time, making high-quality gear valuable but not permanent.
+
+### Territory, Mining & Collapse
+
+The world reacts to player activity.
+
+Territory is evaluated in larger local areas based on chunk groups. These areas track:
+
+- mining activity,
+- pollution,
+- forestation,
+- threat.
+
+Heavy mining increases instability. Below configured Y-levels, repeated mining can trigger cave-ins. Collapses can produce warning sounds, dust particles, falling gravel and hostile encounters.
+
+Tunnels can be protected by nearby stabilizer blocks. The Warding Lamp can also hold back a cave-in while active.
+
+### Dynamic Ecosystem
+
+High-threat areas can visually decay over time:
+
+- grass can turn into dirt,
+- dirt can become coarse dirt,
+- coarse dirt can become podzol,
+- vegetation can be damaged in eroded areas.
+
+If an area is left alone and threat drops, the ecosystem can slowly recover. The system is designed to make overused locations feel worn down while calmer places slowly heal.
+
+### True Darkness
+
+Darkness is handled as a survival mechanic, not only as a visual effect.
+
+The system can include:
+
+- server-side darkness detection,
+- client-side dark overlay,
+- eye adaptation,
+- heartbeat audio,
+- calm-down audio when leaving danger darkness,
+- debug information for testing light levels.
+
+Exploring caves or nights without a light source is meant to be risky.
+
+### Mutated Mobs & Light Eater
+
+High-threat territory can spawn special hostile mobs.
+
+Mutated mobs can receive:
+
+- increased health,
+- custom titles such as **Forsaken**, **Eroded** or **Apocalypse**,
+- special command tags,
+- protection behavior against sunlight,
+- light-related AI behavior.
+
+The Light Eater system allows mutated mobs to interfere with nearby light sources, making darkness a direct part of combat pressure.
+
+### Warding Lamp
+
+The Warding Lamp is a special survival tool for darkness and cave exploration.
+
+When held in dark underground conditions, it can create temporary light around the player. It has configurable duration, light level and darkness requirements. While active, it can also protect against some cave-in events.
+
+### Death & Soul Recovery
+
+Death is punishing, but recoverable.
+
+When a player dies:
+
+- their inventory is stored in a **Death Chest**,
+- the death chest is protected for a configurable time,
+- a hologram can appear above the remains,
+- a **Return Compass** helps guide the player back,
+- the compass can reveal remaining protection time and coordinates.
+
+The system is designed to keep death meaningful without turning every death into permanent loss.
+
+### Eroded Loot System
+
+Naturally found containers can become part of the Eroded Loot system.
+
+The loot system can:
+
+- modify chest and barrel contents,
+- lock protected containers until searched,
+- create curated survival loot,
+- include food, light sources, tools, armor, valuables and special items,
+- support admin-created loot chests through commands.
+
+### Spawn Sovereignty
+
+Spawn can be protected as a safe preparation zone.
+
+Depending on configuration, spawn protection can prevent:
+
+- hostile mob pressure,
+- explosions,
+- block breaking,
+- block placement,
+- piston griefing.
+
+Creative mode and OP bypass behavior can be configured.
 
 ---
 
-### 💀 Death Persistence & Soul Recovery
-- **Death Chest (Remains):** Upon death, a special "Death Ender Chest" spawns, containing your items.
-- **Magical Protection:** Your remains are protected by a timed magical seal, preventing other players from looting them for a configurable duration.
-- **Dynamic Holograms:** A floating 3D hologram of your head and a countdown timer appear above your remains.
-- **Return Compass:** You respawn with a "Return Compass" that points to your last death location.
+## Items and Blocks
+
+Current custom content includes:
+
+- **Energy Drink** – restores energy when the player is not already full,
+- **Energy Stabilizer / Adrenaline Shot** – temporarily locks energy consumption through an immunity window,
+- **Return Compass** – guides players back to their latest stored death memory,
+- **Death Chest** – stores player remains after death,
+- **Warding Lamp** – temporary underground light and collapse protection tool,
+- **Eroded Block** – decorative/custom block with multiple visual variants.
 
 ---
 
-### 🛠 Crafting & Item Quality
-- **Quality Tiers:** Items can be **POOR**, **STANDARD**, or **EXCELLENT**.
-- **Lore Integration:** Tooltips display durability and repair multipliers based on quality.
-- **Anvil Degradation:** Repairing items gradually lowers their quality tier. Preparation increases the chance of excellence.
+## Commands
+
+Main command:
+
+```mcfunction
+/eroded
+```
+
+Available subcommands:
+
+```mcfunction
+/eroded reload
+```
+
+Reloads all Eroded World configuration files. Requires OP level 2.
+
+```mcfunction
+/eroded chest
+```
+
+Gives an admin Eroded Loot Chest item. Requires OP level 2.
+
+```mcfunction
+/eroded energy <player> <amount>
+```
+
+Sets a player's energy value. Requires OP level 2.
+
+```mcfunction
+/eroded icon <position>
+```
+
+Changes the Energy HUD position.
+
+Supported positions:
+
+- `left_down`
+- `right_down`
+- `center_down`
+- `left_up`
+- `right_up`
+- `center_up`
+
+```mcfunction
+/eroded sound volume <1-10>
+/eroded sound delay <1-10>
+/eroded sound info
+/eroded sound reset
+```
+
+Allows players to tune the darkness heartbeat sound.
+
+Default debug keybind:
+
+```text
+F6
+```
+
+Used for Eroded debug overlays depending on the active client systems.
 
 ---
 
-### 👾 Mutated Entities & The Light Eater
-- **Mutated Mobs:** In high-threat areas, monsters spawn with increased health, resistance, and unique titles (Forsaken, Eroded, Apocalypse).
-- **Light Fear AI:** Hostile mobs actively avoid bright light sources in dark environments.
-- **Light Eater:** Mutated monsters will actively try to extinguish your torches, lanterns, and campfires to plunge you back into darkness.
+## Configuration
+
+Eroded World uses Cloth Config / AutoConfig.
+
+Configuration categories include:
+
+- `ErodedWorld/energy`
+- `ErodedWorld/crafting`
+- `ErodedWorld/darkness`
+- `ErodedWorld/territory`
+- `ErodedWorld/death`
+- `ErodedWorld/combat`
+- `ErodedWorld/loot`
+
+After the first run, configuration files are generated in the Minecraft config directory. Server owners can edit JSON files manually or use compatible configuration UI tools.
+
+Use this command after manual changes:
+
+```mcfunction
+/eroded reload
+```
+
 
 ---
 
-### 🛡 Spawn Sovereignty
-- **Safe Zone:** A configurable radius around the world spawn provides invulnerability to players.
-- **Anti-Grief:** Explosions, block breaking, and piston movement are disabled within the spawn territory for non-admin players.
-- **Repulsion:** Hostile monsters are physically pushed out of the protected spawn area.
+## Technical Information
+
+- **Mod ID:** `eroded`
+- **Minecraft target:** `1.21.8`
+- **Minecraft compatibility range:** `1.21.6 - 1.21.8`
+- **Java:** `21`
+- **Loader:** Fabric
+- **Architecture:** client + server split
+- **Networking:** custom payloads for energy, skills, darkness, compass and feedback synchronization
+- **Persistence:** PersistentState-based world and player data
+- **Configuration:** Cloth Config / AutoConfig
+- **Localization:** English and Czech language files are included
+- **Addictions:** - Fabric API, Cloth Config API
 
 ---
 
-## 📜 Commands
+## Wiki
 
-- `/eroded reload` – Reloads all configuration files (OP level 2 required).
-- `/eroded chest` – Gives the player a special Eroded Loot Chest item (OP level 2 required).
-- `/eroded icon <position>` – Changes the position of the Energy HUD (e.g., `left_down`, `center_up`).
-- `/eroded sound volume <1-10>` – Adjusts the heartbeat sound volume.
-- `/eroded sound delay <1-10>` – Adjusts the interval between heartbeats.
-- `/eroded sound info` – Displays your current sound tuning settings.
-- `/eroded sound reset` – Resets sound settings to default.
+The project wiki contains gameplay and administration documentation:
 
----
+```text
+https://github.com/MSWHendys/Eroded_World/wiki
+```
 
-## 🧩 Dependencies
-Required libraries:
-- **Fabric API**
-- **Cloth Config API**
+Recommended pages:
 
----
-
-## 🛠 Technical Information
-- **Minecraft:** 1.21.8 / **Java:** 21
-- **Architecture:** Server + Client split.
-- **Data:** Uses **PersistentState API** for stable chunk and player data tracking.
-- **Localization:** Full support for 🇨🇿 Czech and 🇺🇸 English.
+- Getting Started
+- Core Systems
+- Commands
+- Config Guide
+- Energy & Stamina
+- Darkness & Atmosphere
+- Territory & Ecosystem
+- Death & Soul Recovery
+- Loot System
 
 ---
 
-<p align="center">
-  ⛏ <strong>Survive carefully. This is still an ALPHA.</strong>
-</p>
+## License
+
+See [`LICENSE.txt`](LICENSE.txt).
+
+The repository currently uses an internal/custom license notice. License details may change in the future.
+
+
