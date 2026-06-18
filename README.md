@@ -14,9 +14,9 @@
 > Mining has consequences.  
 > Energy defines your limits.
 
-Eroded World turns Minecraft survival into a slower, harsher and more reactive experience. The world remembers what players do: mining scars the land, darkness becomes dangerous, overused territory grows hostile, and death leaves a trace that must be recovered.
+Eroded World reacts to your actions. The more you mine, the more dangerous the environment around you becomes.
 
-This project is still experimental. Systems, balance values and configuration options may change between builds.
+This project is a beta version and some parts may change between builds.
 
 ---
 
