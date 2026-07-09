@@ -17,7 +17,7 @@ repositories {
 dependencies {
 
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
-    mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+    mappings loom.officialMojangMappings()
 
     // Fabric
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
@@ -33,15 +33,15 @@ processResources {
     def minecraftVersion = project.minecraft_version
     def loaderVersion = project.loader_version
     def fabricVersion = project.fabric_version
-
-    // 🔥 NOVÉ – rozsah verzí
-    def minecraftRange = "~1.21"
+    def minecraftRange = project.minecraft_range
+    def fabricApiRange = project.fabric_api_range
 
     inputs.property "version", projectVersion
     inputs.property "minecraft_version", minecraftVersion
     inputs.property "loader_version", loaderVersion
     inputs.property "fabric_version", fabricVersion
     inputs.property "minecraft_range", minecraftRange
+    inputs.property "fabric_api_range", fabricApiRange
 
     filteringCharset = "UTF-8"
 
@@ -51,7 +51,8 @@ processResources {
                 "minecraft_version": minecraftVersion,
                 "loader_version": loaderVersion,
                 "fabric_version": fabricVersion,
-                "minecraft_range": minecraftRange
+                "minecraft_range": minecraftRange,
+                "fabric_api_range": fabricApiRange
         )
     }
 }
