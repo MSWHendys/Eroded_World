@@ -8,7 +8,7 @@
 
 # Eroded World
 
-**Hardcore survival overhaul for Minecraft Fabric 1.21.6 - 1.21.8**
+**Hardcore survival overhaul for Minecraft Fabric 1.21.9**
 
 > Darkness is not cosmetic.  
 > Mining has consequences.  
