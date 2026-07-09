@@ -1,4 +1,4 @@
-![Minecraft](https://img.shields.io/badge/Minecraft-1.21.8-green)
+![Minecraft](https://img.shields.io/badge/Minecraft-1.21.6%20--%20-green)
 ![Loader](https://img.shields.io/badge/Loader-Fabric-blue)
 ![Java](https://img.shields.io/badge/Java-21-orange)
 ![Requires](https://img.shields.io/badge/Requires-Fabric%20API%20%2B%20Cloth%20Config%20API-yellow)
