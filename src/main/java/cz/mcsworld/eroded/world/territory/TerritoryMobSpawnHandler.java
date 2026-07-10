@@ -5,25 +5,24 @@ import cz.mcsworld.eroded.core.ErodedEntities;
 import cz.mcsworld.eroded.entity.ErodedMobSunBehaviour;
 import cz.mcsworld.eroded.world.darkness.MutatedMobResolver;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.EquipmentSlot;
-import net.minecraft.entity.SpawnReason;
-import net.minecraft.entity.attribute.EntityAttributeInstance;
-import net.minecraft.entity.attribute.EntityAttributes;
-import net.minecraft.entity.mob.AbstractSkeletonEntity;
-import net.minecraft.entity.mob.HostileEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.ChunkPos;
-import net.minecraft.util.math.random.Random;
-import net.minecraft.world.Heightmap;
-
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.monster.AbstractSkeleton;
+import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.phys.AABB;
 import java.util.List;
 
 public final class TerritoryMobSpawnHandler {
@@ -40,15 +39,15 @@ public final class TerritoryMobSpawnHandler {
         ServerTickEvents.END_WORLD_TICK.register(TerritoryMobSpawnHandler::onWorldTick);
     }
 
-    private static void onWorldTick(ServerWorld world) {
+    private static void onWorldTick(ServerLevel world) {
         var cfg = TerritoryConfig.get().server;
 
         if (!cfg.enabled || !cfg.mobSpawnControlEnabled) {
             return;
         }
 
-        if (world.getTime() % cfg.spawnCheckInterval == 0) {
-            for (ServerPlayerEntity player : world.getPlayers()) {
+        if (world.getGameTime() % cfg.spawnCheckInterval == 0) {
+            for (ServerPlayer player : world.players()) {
                 trySpawnErodedMob(player, world, cfg);
             }
         }
@@ -57,14 +56,14 @@ public final class TerritoryMobSpawnHandler {
     }
 
     private static void trySpawnErodedMob(
-            ServerPlayerEntity player,
-            ServerWorld world,
+            ServerPlayer player,
+            ServerLevel world,
             TerritoryConfig.Server cfg
     ) {
-        BlockPos pPos = player.getBlockPos();
+        BlockPos pPos = player.blockPosition();
 
         if (cfg.spawnProtectionEnabled) {
-            if (pPos.isWithinDistance(world.getSpawnPos(), cfg.spawnProtectionRadius)) {
+            if (pPos.closerThan(world.getRespawnData().pos(), cfg.spawnProtectionRadius)) {
                 return;
             }
         }
@@ -79,11 +78,11 @@ public final class TerritoryMobSpawnHandler {
             return;
         }
 
-        BlockPos startPos = cp.getStartPos();
+        BlockPos startPos = cp.getWorldPosition();
 
-        int currentMobs = world.getEntitiesByClass(
-                HostileEntity.class,
-                new Box(
+        int currentMobs = world.getEntitiesOfClass(
+                Monster.class,
+                new AABB(
                         startPos.getX(),
                         -64,
                         startPos.getZ(),
@@ -91,15 +90,15 @@ public final class TerritoryMobSpawnHandler {
                         320,
                         startPos.getZ() + 15
                 ),
-                e -> e.getCommandTags().contains(TAG_ERODED)
+                e -> e.getTags().contains(TAG_ERODED)
         ).size();
 
         if (currentMobs >= cfg.mobMaxPerChunk) {
             return;
         }
 
-        Random random = world.getRandom();
-        float threat = TerritoryThreatResolver.computeThreat(cell, world.getTime());
+        RandomSource random = world.getRandom();
+        float threat = TerritoryThreatResolver.computeThreat(cell, world.getGameTime());
 
         float spawnChance = Math.max(cfg.spawnKeepMinChance, threat * 0.4f);
 
@@ -120,17 +119,17 @@ public final class TerritoryMobSpawnHandler {
                 continue;
             }
 
-            EntityType<? extends HostileEntity> type = random.nextBoolean()
+            EntityType<? extends Monster> type = random.nextBoolean()
                     ? ErodedEntities.ERODED_SPECIAL_ZOMBIE
                     : ErodedEntities.ERODED_SPECIAL_SKELETON;
 
-            HostileEntity mob = type.create(world, SpawnReason.EVENT);
+            Monster mob = type.create(world, EntitySpawnReason.EVENT);
 
             if (mob == null) {
                 continue;
             }
 
-            mob.refreshPositionAndAngles(
+            mob.snapTo(
                     spawnPos.getX() + 0.5,
                     spawnPos.getY(),
                     spawnPos.getZ() + 0.5,
@@ -138,41 +137,41 @@ public final class TerritoryMobSpawnHandler {
                     0.0F
             );
 
-            mob.initialize(
+            mob.finalizeSpawn(
                     world,
-                    world.getLocalDifficulty(spawnPos),
-                    SpawnReason.EVENT,
+                    world.getCurrentDifficultyAt(spawnPos),
+                    EntitySpawnReason.EVENT,
                     null
             );
 
-            mob.setPersistent();
-            mob.addCommandTag(TAG_ERODED);
+            mob.setPersistenceRequired();
+            mob.addTag(TAG_ERODED);
 
             if (cfg.mobBuffEnabled && threat > cfg.mobBuffThreshold) {
-                mob.addCommandTag(MutatedMobResolver.MUTATED_TAG);
+                mob.addTag(MutatedMobResolver.MUTATED_TAG);
             }
 
             applyErodedStats(mob, mined, threat, cfg);
             applySpawnBehaviour(mob, random);
 
-            if (mob instanceof AbstractSkeletonEntity skeleton) {
-                if (skeleton.getMainHandStack().isEmpty()) {
-                    skeleton.equipStack(
+            if (mob instanceof AbstractSkeleton skeleton) {
+                if (skeleton.getMainHandItem().isEmpty()) {
+                    skeleton.setItemSlot(
                             EquipmentSlot.MAINHAND,
                             new ItemStack(Items.BOW)
                     );
                 }
 
-                skeleton.updateAttackType();
+                skeleton.reassessWeaponGoal();
             }
 
-            world.spawnEntityAndPassengers(mob);
+            world.addFreshEntityWithPassengers(mob);
         }
     }
 
     private static void applySpawnBehaviour(
-            HostileEntity mob,
-            Random random
+            Monster mob,
+            RandomSource random
     ) {
         if (mob.getType() == ErodedEntities.ERODED_SPECIAL_SKELETON
                 || mob.getType() == ErodedEntities.ERODED_SPECIAL_ZOMBIE) {
@@ -180,23 +179,23 @@ public final class TerritoryMobSpawnHandler {
         }
     }
 
-    private static void handleMobBehaviour(ServerWorld world, TerritoryConfig.Server cfg) {
-        for (ServerPlayerEntity player : world.getPlayers()) {
-            Box box = new Box(player.getBlockPos()).expand(cfg.mobDespawnRadius);
+    private static void handleMobBehaviour(ServerLevel world, TerritoryConfig.Server cfg) {
+        for (ServerPlayer player : world.players()) {
+            AABB box = new AABB(player.blockPosition()).inflate(cfg.mobDespawnRadius);
 
-            List<HostileEntity> nearby = world.getEntitiesByClass(
-                    HostileEntity.class,
+            List<Monster> nearby = world.getEntitiesOfClass(
+                    Monster.class,
                     box,
-                    e -> e.getCommandTags().contains(TAG_ERODED)
+                    e -> e.getTags().contains(TAG_ERODED)
             );
 
-            for (HostileEntity mob : nearby) {
+            for (Monster mob : nearby) {
                 processProtection(mob, world);
             }
         }
     }
 
-    private static void processProtection(HostileEntity mob, ServerWorld world) {
+    private static void processProtection(Monster mob, ServerLevel world) {
         if (!mob.isAlive()) {
             return;
         }
@@ -206,39 +205,39 @@ public final class TerritoryMobSpawnHandler {
             return;
         }
 
-        if (mob.getCommandTags().contains(TAG_PERMANENT)) {
+        if (mob.getTags().contains(TAG_PERMANENT)) {
             if (mob.isOnFire()) {
-                mob.extinguish();
+                mob.clearFire();
             }
 
             return;
         }
 
-        if (mob.getCommandTags().contains(TAG_TEMPORARY)) {
+        if (mob.getTags().contains(TAG_TEMPORARY)) {
             long burnTime = getBurnTime(mob);
-            long now = world.getTime();
+            long now = world.getGameTime();
 
             if (burnTime < 0L || now < burnTime) {
                 if (mob.isOnFire()) {
-                    mob.extinguish();
+                    mob.clearFire();
                 }
 
                 return;
             }
 
-            mob.removeCommandTag(TAG_TEMPORARY);
+            mob.removeTag(TAG_TEMPORARY);
             removeBurnTimeTag(mob);
         }
 
         if (mob.getType() == ErodedEntities.ERODED_SPECIAL_SKELETON) {
             if (isInDirectDaylight(mob, world)) {
-                mob.setOnFireFor(8.0F);
+                mob.igniteForSeconds(8.0F);
             }
         }
     }
 
-    private static long getBurnTime(HostileEntity mob) {
-        for (String tag : mob.getCommandTags()) {
+    private static long getBurnTime(Monster mob) {
+        for (String tag : mob.getTags()) {
             if (!tag.startsWith(TAG_BURN_PREFIX)) {
                 continue;
             }
@@ -253,10 +252,10 @@ public final class TerritoryMobSpawnHandler {
         return -1L;
     }
 
-    private static void removeBurnTimeTag(HostileEntity mob) {
+    private static void removeBurnTimeTag(Monster mob) {
         String burnTag = null;
 
-        for (String tag : mob.getCommandTags()) {
+        for (String tag : mob.getTags()) {
             if (tag.startsWith(TAG_BURN_PREFIX)) {
                 burnTag = tag;
                 break;
@@ -264,18 +263,18 @@ public final class TerritoryMobSpawnHandler {
         }
 
         if (burnTag != null) {
-            mob.removeCommandTag(burnTag);
+            mob.removeTag(burnTag);
         }
     }
 
-    private static boolean isInDirectDaylight(HostileEntity mob, ServerWorld world) {
-        return world.isDay()
-                && world.isSkyVisible(mob.getBlockPos())
-                && !mob.isTouchingWaterOrRain();
+    private static boolean isInDirectDaylight(Monster mob, ServerLevel world) {
+        return world.isBrightOutside()
+                && world.canSeeSky(mob.blockPosition())
+                && !mob.isInWaterOrRain();
     }
 
     private static void applyErodedStats(
-            HostileEntity mob,
+            Monster mob,
             int mined,
             float threat,
             TerritoryConfig.Server cfg
@@ -303,7 +302,7 @@ public final class TerritoryMobSpawnHandler {
                 baseHp + (threat * 20.0)
         );
 
-        EntityAttributeInstance hpAttr = mob.getAttributeInstance(EntityAttributes.MAX_HEALTH);
+        AttributeInstance hpAttr = mob.getAttribute(Attributes.MAX_HEALTH);
 
         if (hpAttr != null) {
             hpAttr.setBaseValue(finalMaxHp);
@@ -318,16 +317,16 @@ public final class TerritoryMobSpawnHandler {
             default -> "eroded.mob.title.forsaken";
         };
 
-        Text mobName = mob.getType() == ErodedEntities.ERODED_SPECIAL_SKELETON
-                ? Text.translatable("entity.minecraft.skeleton")
-                : mob.getType().getName();
+        Component mobName = mob.getType() == ErodedEntities.ERODED_SPECIAL_SKELETON
+                ? Component.translatable("entity.minecraft.skeleton")
+                : mob.getType().getDescription();
 
         mob.setCustomName(
-                Text.empty()
-                        .append(Text.translatable(titleKey))
+                Component.empty()
+                        .append(Component.translatable(titleKey))
                         .append(" ")
                         .append(mobName)
-                        .formatted(info.color)
+                        .withStyle(info.color)
         );
 
         mob.setCustomNameVisible(cfg.MobNameVisible);
@@ -335,26 +334,26 @@ public final class TerritoryMobSpawnHandler {
     }
 
     private static BlockPos findSpawnPos(
-            ServerWorld world,
+            ServerLevel world,
             BlockPos center,
-            Random random,
+            RandomSource random,
             TerritoryConfig.Server cfg
     ) {
         int r = (int) cfg.spawnMaxDistance;
         double minSq = cfg.spawnMinDistance * cfg.spawnMinDistance;
 
         for (int i = 0; i < cfg.spawnAttempts; i++) {
-            int x = center.getX() + random.nextBetween(-r, r);
-            int z = center.getZ() + random.nextBetween(-r, r);
-            int y = world.getTopY(
-                    Heightmap.Type.MOTION_BLOCKING_NO_LEAVES,
+            int x = center.getX() + random.nextIntBetweenInclusive(-r, r);
+            int z = center.getZ() + random.nextIntBetweenInclusive(-r, r);
+            int y = world.getHeight(
+                    Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
                     x,
                     z
             );
 
             if (cfg.surfaceOnlySpawns) {
-                int surfaceY = world.getTopY(
-                        Heightmap.Type.WORLD_SURFACE,
+                int surfaceY = world.getHeight(
+                        Heightmap.Types.WORLD_SURFACE,
                         x,
                         z
                 );
@@ -366,13 +365,13 @@ public final class TerritoryMobSpawnHandler {
 
             BlockPos pos = new BlockPos(x, y, z);
 
-            if (center.getSquaredDistance(pos.toCenterPos()) < minSq) {
+            if (center.distToCenterSqr(pos.getCenter()) < minSq) {
                 continue;
             }
 
-            if (world.getBlockState(pos.down()).isSolidBlock(world, pos.down())
-                    && world.isAir(pos)
-                    && world.isAir(pos.up())) {
+            if (world.getBlockState(pos.below()).isRedstoneConductor(world, pos.below())
+                    && world.isEmptyBlock(pos)
+                    && world.isEmptyBlock(pos.above())) {
                 return pos;
             }
         }
@@ -380,18 +379,18 @@ public final class TerritoryMobSpawnHandler {
         return null;
     }
 
-    private record TitleInfo(String name, Formatting color) {
+    private record TitleInfo(String name, ChatFormatting color) {
     }
 
     private static TitleInfo getTitleByMined(int mined, TerritoryConfig.Server cfg) {
         if (mined <= cfg.titleMidThreshold) {
-            return new TitleInfo(cfg.titleLow, Formatting.GRAY);
+            return new TitleInfo(cfg.titleLow, ChatFormatting.GRAY);
         }
 
         if (mined <= cfg.titleHighThreshold) {
-            return new TitleInfo(cfg.titleMid, Formatting.YELLOW);
+            return new TitleInfo(cfg.titleMid, ChatFormatting.YELLOW);
         }
 
-        return new TitleInfo(cfg.titleHigh, Formatting.RED);
+        return new TitleInfo(cfg.titleHigh, ChatFormatting.RED);
     }
 }

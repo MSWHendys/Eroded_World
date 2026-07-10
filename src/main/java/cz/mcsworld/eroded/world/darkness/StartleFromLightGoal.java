@@ -1,18 +1,17 @@
 package cz.mcsworld.eroded.world.darkness;
 
 import cz.mcsworld.eroded.config.darkness.DarknessConfigs;
-import net.minecraft.entity.ai.goal.Goal;
-import net.minecraft.entity.mob.HostileEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.LightType;
-
 import java.util.EnumSet;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.ai.goal.Goal;
+import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.level.LightLayer;
+import net.minecraft.world.phys.Vec3;
 
 public final class StartleFromLightGoal extends Goal {
 
-    private final HostileEntity mob;
+    private final Monster mob;
 
     private BlockPos lightPos;
     private int ticksLeft;
@@ -20,26 +19,26 @@ public final class StartleFromLightGoal extends Goal {
     private final int escapeDistance;
     private final double speed;
 
-    public StartleFromLightGoal(HostileEntity mob, int escapeDistance, double speed) {
+    public StartleFromLightGoal(Monster mob, int escapeDistance, double speed) {
         this.mob = mob;
         this.escapeDistance = escapeDistance;
         this.speed = speed;
-        this.setControls(EnumSet.of(Control.MOVE, Control.LOOK));
+        this.setFlags(EnumSet.of(Flag.MOVE, Flag.LOOK));
     }
 
     @Override
-    public boolean canStart() {
+    public boolean canUse() {
         if (!mob.isAlive()) return false;
-        if (!(mob.getWorld() instanceof ServerWorld world)) return false;
+        if (!(mob.level() instanceof ServerLevel world)) return false;
 
         if (!DarknessEnvironment.isNight(world)) return false;
 
-        BlockPos pos = mob.getBlockPos();
+        BlockPos pos = mob.blockPosition();
 
         if (DarknessEnvironment.isDarkForMobs(world, pos)) return false;
         if (mob.getTarget() == null) return false;
 
-        int blockLight = world.getLightLevel(LightType.BLOCK, pos);
+        int blockLight = world.getBrightness(LightLayer.BLOCK, pos);
         if (blockLight < DarknessConfigs.get().server.fearLightThreshold) return false;
 
         BlockPos light = DarknessLightResolver.findNearbyBlockLight(world, pos);
@@ -56,7 +55,7 @@ public final class StartleFromLightGoal extends Goal {
     }
 
     @Override
-    public boolean shouldContinue() {
+    public boolean canContinueToUse() {
         return mob.isAlive() && ticksLeft-- > 0;
     }
 
@@ -68,22 +67,22 @@ public final class StartleFromLightGoal extends Goal {
 
     @Override
     public void tick() {
-        if (!(mob.getWorld() instanceof ServerWorld world)) return;
+        if (!(mob.level() instanceof ServerLevel world)) return;
         if (lightPos == null) return;
 
         mob.setTarget(null);
 
-        BlockPos pos = mob.getBlockPos();
-        Vec3d escape = DarknessLightResolver.escapeFrom(pos, lightPos);
-        if (escape.lengthSquared() < 0.0001) return;
+        BlockPos pos = mob.blockPosition();
+        Vec3 escape = DarknessLightResolver.escapeFrom(pos, lightPos);
+        if (escape.lengthSqr() < 0.0001) return;
 
-        BlockPos target = pos.add(
+        BlockPos target = pos.offset(
                 (int) Math.round(escape.x * escapeDistance),
                 0,
                 (int) Math.round(escape.z * escapeDistance)
         );
 
-        mob.getNavigation().startMovingTo(
+        mob.getNavigation().moveTo(
                 target.getX() + 0.5,
                 target.getY(),
                 target.getZ() + 0.5,

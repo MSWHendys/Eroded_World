@@ -3,13 +3,10 @@ package cz.mcsworld.eroded.world.spawn;
 import cz.mcsworld.eroded.config.territory.TerritoryConfig;
 
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
-
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.mob.Monster;
-
-import net.minecraft.server.world.ServerWorld;
-
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.monster.Enemy;
 
 public final class SpawnProtectionSpawnBlocker {
 
@@ -17,7 +14,7 @@ public final class SpawnProtectionSpawnBlocker {
 
     public static void register() {
 
-        ServerEntityEvents.ENTITY_LOAD.register((Entity entity, ServerWorld world) -> {
+        ServerEntityEvents.ENTITY_LOAD.register((Entity entity, ServerLevel world) -> {
 
             var cfg = TerritoryConfig.get().server;
 
@@ -25,16 +22,16 @@ public final class SpawnProtectionSpawnBlocker {
                 return;
             }
 
-            if (!(entity instanceof Monster)) {
+            if (!(entity instanceof Enemy)) {
                 return;
             }
 
-            BlockPos spawn = world.getSpawnPos();
+            BlockPos spawn = world.getRespawnData().pos();
 
             int radius = cfg.spawnProtectionRadius;
             int radiusSq = radius * radius;
 
-            BlockPos pos = entity.getBlockPos();
+            BlockPos pos = entity.blockPosition();
 
             int dx = pos.getX() - spawn.getX();
             int dz = pos.getZ() - spawn.getZ();

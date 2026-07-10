@@ -2,9 +2,8 @@ package cz.mcsworld.eroded.skills;
 
 import cz.mcsworld.eroded.network.EnergySyncPacket;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -13,12 +12,12 @@ public class SkillManager {
 
     private static final Map<UUID, SkillData> CACHE = new HashMap<>();
 
-    private static ServerWorld storageWorld(ServerPlayerEntity player) {
-        return player.getServer().getOverworld();
+    private static ServerLevel storageWorld(ServerPlayer player) {
+        return player.level().getServer().overworld();
     }
 
-    public static SkillData get(ServerPlayerEntity player) {
-        UUID uuid = player.getUuid();
+    public static SkillData get(ServerPlayer player) {
+        UUID uuid = player.getUUID();
 
         SkillData cached = CACHE.get(uuid);
         if (cached != null) {
@@ -32,7 +31,7 @@ public class SkillManager {
         return data;
     }
 
-    public static void sync(ServerPlayerEntity player) {
+    public static void sync(ServerPlayer player) {
         SkillData data = get(player);
         int remainingImmunity = (int) (data.getImmunityRemainingMs() / 1000);
 
@@ -45,8 +44,8 @@ public class SkillManager {
         ServerPlayNetworking.send(player, packet);
     }
 
-    public static void save(ServerPlayerEntity player) {
-        UUID uuid = player.getUuid();
+    public static void save(ServerPlayer player) {
+        UUID uuid = player.getUUID();
         SkillData data = CACHE.get(uuid);
 
         if (data == null) {

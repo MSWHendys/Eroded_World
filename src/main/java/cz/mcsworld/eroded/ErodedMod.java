@@ -36,18 +36,15 @@ import cz.mcsworld.eroded.world.spawn.SpawnProtectionSpawnBlocker;
 import cz.mcsworld.eroded.world.spawn.SpawnProtectionTicker;
 import cz.mcsworld.eroded.world.territory.*;
 import cz.mcsworld.eroded.world.territory.ecosystem.TerritoryEcosystemTicker;
-import cz.mcsworld.eroded.world.territory.TerritoryMiningListener;
 import me.shedaniel.autoconfig.AutoConfig;
 import me.shedaniel.autoconfig.serializer.GsonConfigSerializer;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
-import net.minecraft.entity.mob.ZombieEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
-import net.minecraft.entity.mob.AbstractSkeletonEntity;
-import cz.mcsworld.eroded.core.ErodedEntityItems;
-
+import net.minecraft.world.entity.monster.AbstractSkeleton;
+import net.minecraft.world.entity.monster.Zombie;
 import java.util.UUID;
 
 public class ErodedMod implements ModInitializer {
@@ -71,12 +68,12 @@ public class ErodedMod implements ModInitializer {
 
         FabricDefaultAttributeRegistry.register(
                 ErodedEntities.ERODED_SPECIAL_SKELETON,
-                AbstractSkeletonEntity.createAbstractSkeletonAttributes()
+                AbstractSkeleton.createAttributes()
         );
 
         FabricDefaultAttributeRegistry.register(
                 ErodedEntities.ERODED_SPECIAL_ZOMBIE,
-                ZombieEntity.createZombieAttributes()
+                Zombie.createAttributes()
         );
 
         ErodedEntityItems.register();
@@ -144,9 +141,9 @@ public class ErodedMod implements ModInitializer {
         LOGGER.info("[Eroded World] Mod initialized successfully.");
 
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
-            UUID uuid = handler.getPlayer().getUuid();
+            UUID uuid = handler.getPlayer().getUUID();
 
-            var world = handler.getPlayer().getWorld();
+            var world = handler.getPlayer().level();
 
             SkillManager.save(handler.getPlayer());
             SkillManager.remove(uuid);

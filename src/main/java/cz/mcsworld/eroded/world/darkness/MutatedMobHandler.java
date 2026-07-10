@@ -1,11 +1,11 @@
 package cz.mcsworld.eroded.world.darkness;
 
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.effect.StatusEffectInstance;
-import net.minecraft.entity.effect.StatusEffects;
-import net.minecraft.entity.mob.HostileEntity;
-import net.minecraft.server.world.ServerWorld;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.monster.Monster;
 
 public final class MutatedMobHandler {
 
@@ -14,10 +14,10 @@ public final class MutatedMobHandler {
     public static void register() {
 
         ServerEntityEvents.ENTITY_LOAD.register(
-                (Entity entity, ServerWorld world) -> {
+                (Entity entity, ServerLevel world) -> {
 
-                    if (!(entity instanceof HostileEntity mob)) return;
-                    if (mob.getCommandTags().contains(MutatedMobResolver.MUTATED_TAG)) return;
+                    if (!(entity instanceof Monster mob)) return;
+                    if (mob.getTags().contains(MutatedMobResolver.MUTATED_TAG)) return;
 
                     if (!MutatedMobResolver.shouldBeMutated(world, mob)) return;
 
@@ -26,13 +26,13 @@ public final class MutatedMobHandler {
         );
     }
 
-    private static void applyMutation(HostileEntity mob) {
+    private static void applyMutation(Monster mob) {
 
-        mob.addCommandTag(MutatedMobResolver.MUTATED_TAG);
+        mob.addTag(MutatedMobResolver.MUTATED_TAG);
 
-        mob.addStatusEffect(
-                new StatusEffectInstance(
-                        StatusEffects.RESISTANCE,
+        mob.addEffect(
+                new MobEffectInstance(
+                        MobEffects.RESISTANCE,
                         Integer.MAX_VALUE,
                         1,
                         true,

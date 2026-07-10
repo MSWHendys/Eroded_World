@@ -1,21 +1,21 @@
 package cz.mcsworld.eroded.server.spawn;
 
 import cz.mcsworld.eroded.config.territory.TerritoryConfig;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.mob.Angerable;
-import net.minecraft.entity.mob.MobEntity;
-import net.minecraft.entity.mob.Monster;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.NeutralMob;
+import net.minecraft.world.entity.monster.Enemy;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 
 public final class SpawnProtectionSystem {
 
     private SpawnProtectionSystem() {}
 
-    public static void tick(ServerWorld world) {
+    public static void tick(ServerLevel world) {
         var root = TerritoryConfig.get();
         var cfg = root.server;
         if (!cfg.enabled || !cfg.spawnProtectionEnabled) return;
@@ -24,39 +24,39 @@ public final class SpawnProtectionSystem {
         int radiusSq = radius * radius;
         int checkRange = radius + 24;
 
-        BlockPos spawn = world.getSpawnPos();
+        BlockPos spawn = world.getRespawnData().pos();
 
 
-        for (ServerPlayerEntity player : world.getPlayers()) {
+        for (ServerPlayer player : world.players()) {
 
             if (!player.isCreative() && !player.isSpectator()) {
-                boolean playerInSpawn = isInSpawn(player.getBlockPos(), spawn, radiusSq);
+                boolean playerInSpawn = isInSpawn(player.blockPosition(), spawn, radiusSq);
                 player.setInvulnerable(playerInSpawn);
             }
         }
 
-        Box spawnBox = new Box(spawn).expand(checkRange);
+        AABB spawnBox = new AABB(spawn).inflate(checkRange);
 
-        for (MobEntity mob : world.getEntitiesByClass(
-                MobEntity.class,
+        for (Mob mob : world.getEntitiesOfClass(
+                Mob.class,
                 spawnBox,
-                e -> e.isAlive() && e instanceof Monster)) {
+                e -> e.isAlive() && e instanceof Enemy)) {
 
-            if (isInSpawn(mob.getBlockPos(), spawn,  radiusSq)) {
+            if (isInSpawn(mob.blockPosition(), spawn,  radiusSq)) {
 
                 pushMobOut(mob, spawn, radius);
             } else {
 
                 LivingEntity target = mob.getTarget();
 
-                if (target instanceof ServerPlayerEntity targetPlayer) {
-                    if (isInSpawn(targetPlayer.getBlockPos(), spawn, radiusSq)) {
+                if (target instanceof ServerPlayer targetPlayer) {
+                    if (isInSpawn(targetPlayer.blockPosition(), spawn, radiusSq)) {
 
                         mob.setTarget(null);
-                        mob.setAttacking(false);
+                        mob.setAggressive(false);
 
-                        if (mob instanceof Angerable angerable) {
-                            angerable.stopAnger();
+                        if (mob instanceof NeutralMob angerable) {
+                            angerable.stopBeingAngry();
                         }
                     }
                 }
@@ -65,27 +65,27 @@ public final class SpawnProtectionSystem {
     }
 
     private static boolean isInSpawn(BlockPos pos, BlockPos spawn, int radiusSq) {
-        return pos.getSquaredDistance(spawn) <= radiusSq;
+        return pos.distSqr(spawn) <= radiusSq;
     }
 
-    private static void pushMobOut(MobEntity mob, BlockPos spawn, int radius) {
+    private static void pushMobOut(Mob mob, BlockPos spawn, int radius) {
 
-        Vec3d mobPos = mob.getPos();
-        Vec3d center = Vec3d.ofCenter(spawn);
-        Vec3d direction = mobPos.subtract(center);
+        Vec3 mobPos = mob.position();
+        Vec3 center = Vec3.atCenterOf(spawn);
+        Vec3 direction = mobPos.subtract(center);
 
-        if (direction.lengthSquared() == 0) {
-            direction = new Vec3d(1, 0, 0);
+        if (direction.lengthSqr() == 0) {
+            direction = new Vec3(1, 0, 0);
         }
 
-        Vec3d normalized = direction.normalize();
+        Vec3 normalized = direction.normalize();
 
-        Vec3d escapePos = center.add(normalized.multiply(radius + 6));
+        Vec3 escapePos = center.add(normalized.scale(radius + 6));
 
         mob.setTarget(null);
-        mob.setAttacking(false);
+        mob.setAggressive(false);
 
-        mob.getNavigation().startMovingTo(
+        mob.getNavigation().moveTo(
                 escapePos.x,
                 escapePos.y,
                 escapePos.z,
@@ -93,15 +93,15 @@ public final class SpawnProtectionSystem {
         );
     }
 
-    public static boolean isPlayerInSpawn(ServerPlayerEntity player) {
+    public static boolean isPlayerInSpawn(ServerPlayer player) {
         var cfg = TerritoryConfig.get().server;
         if (!cfg.enabled || !cfg.spawnProtectionEnabled) return false;
-        ServerWorld world = (ServerWorld) player.getWorld();
+        ServerLevel world = (ServerLevel) player.level();
         int radius = cfg.spawnProtectionRadius;
         int radiusSq = radius * radius;
         return isInSpawn(
-                player.getBlockPos(),
-                world.getSpawnPos(),
+                player.blockPosition(),
+                world.getRespawnData().pos(),
                 radiusSq);
     }
 }

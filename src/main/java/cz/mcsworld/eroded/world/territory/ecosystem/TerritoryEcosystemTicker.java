@@ -6,17 +6,16 @@ import cz.mcsworld.eroded.world.territory.TerritoryCellKey;
 import cz.mcsworld.eroded.world.territory.TerritoryThreatResolver;
 import cz.mcsworld.eroded.world.territory.TerritoryWorldState;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.registry.tag.BlockTags;
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkPos;
-import net.minecraft.util.math.random.Random;
-import net.minecraft.world.Heightmap;
-
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.levelgen.Heightmap;
 import java.util.List;
 
 public final class TerritoryEcosystemTicker {
@@ -41,19 +40,19 @@ public final class TerritoryEcosystemTicker {
         if (++tickCounter < interval) return;
         tickCounter = 0;
 
-        for (ServerWorld world : server.getWorlds()) {
+        for (ServerLevel world : server.getAllLevels()) {
             tickWorld(world);
         }
     }
 
-    private static void tickWorld(ServerWorld world) {
+    private static void tickWorld(ServerLevel world) {
         var cfg = TerritoryConfig.get().server;
 
-        List<ServerPlayerEntity> players = world.getPlayers();
+        List<ServerPlayer> players = world.players();
         if (players.isEmpty()) return;
 
-        long tick = world.getServer().getTicks();
-        Random random = world.getRandom();
+        long tick = world.getServer().getTickCount();
+        RandomSource random = world.getRandom();
         TerritoryWorldState state = TerritoryWorldState.get(world);
 
         int radius = Math.max(8, cfg.ecosystemVisibleRadiusBlocks);
@@ -80,8 +79,8 @@ public final class TerritoryEcosystemTicker {
 
         for (int i = 0; i < count; i++) {
             int idx = rrIndex++ % players.size();
-            ServerPlayerEntity player = players.get(idx);
-            ChunkPos cp = new ChunkPos(player.getBlockPos());
+            ServerPlayer player = players.get(idx);
+            ChunkPos cp = new ChunkPos(player.blockPosition());
             TerritoryCellKey key = TerritoryCellKey.fromChunk(cp.x, cp.z);
             TerritoryCell cell = state.getOrCreateCell(key);
 
@@ -107,7 +106,7 @@ public final class TerritoryEcosystemTicker {
 
             if (!doDegrade && !doRegen) continue;
 
-            BlockPos center = player.getBlockPos();
+            BlockPos center = player.blockPosition();
 
             if (doDegrade) {
                 for (int a = 0; a < surfaceAttempts; a++) {
@@ -128,7 +127,7 @@ public final class TerritoryEcosystemTicker {
         }
     }
 
-    private static void maybeDegradeSurfaceNearPlayer(ServerWorld world, BlockPos center, int radius, Random random) {
+    private static void maybeDegradeSurfaceNearPlayer(ServerLevel world, BlockPos center, int radius, RandomSource random) {
 
         var cfg = TerritoryConfig.get().server;
         if (random.nextFloat() > cfg.grassDegradeChance) return;
@@ -139,33 +138,33 @@ public final class TerritoryEcosystemTicker {
         BlockState old = world.getBlockState(groundPos);
         BlockState newState = null;
 
-        if (old.isOf(Blocks.GRASS_BLOCK)) {
-            newState = Blocks.DIRT.getDefaultState();
-        } else if (old.isOf(Blocks.DIRT)) {
-            newState = Blocks.COARSE_DIRT.getDefaultState();
-        } else if (old.isOf(Blocks.COARSE_DIRT) && random.nextFloat() < 0.20f) {
-            newState = Blocks.PODZOL.getDefaultState();
-        } else if (old.isOf(Blocks.MOSS_BLOCK) && random.nextFloat() < 0.60f) {
-            newState = Blocks.DIRT.getDefaultState();
-        } else if (old.isOf(Blocks.PODZOL) && random.nextFloat() < 0.10f) {
-            newState = Blocks.DIRT.getDefaultState();
+        if (old.is(Blocks.GRASS_BLOCK)) {
+            newState = Blocks.DIRT.defaultBlockState();
+        } else if (old.is(Blocks.DIRT)) {
+            newState = Blocks.COARSE_DIRT.defaultBlockState();
+        } else if (old.is(Blocks.COARSE_DIRT) && random.nextFloat() < 0.20f) {
+            newState = Blocks.PODZOL.defaultBlockState();
+        } else if (old.is(Blocks.MOSS_BLOCK) && random.nextFloat() < 0.60f) {
+            newState = Blocks.DIRT.defaultBlockState();
+        } else if (old.is(Blocks.PODZOL) && random.nextFloat() < 0.10f) {
+            newState = Blocks.DIRT.defaultBlockState();
         }
 
         if (newState != null && newState != old) {
-            world.setBlockState(groundPos, newState, 2);
+            world.setBlock(groundPos, newState, 2);
         }
 
         if (random.nextFloat() < 0.70f) {
-            BlockPos above = groundPos.up();
+            BlockPos above = groundPos.above();
             BlockState a = world.getBlockState(above);
 
             if (a.isAir()) return;
 
-            world.breakBlock(above, false);
+            world.destroyBlock(above, false);
         }
     }
 
-    private static void maybeRegrowNearPlayer(ServerWorld world, BlockPos center, int radius, Random random) {
+    private static void maybeRegrowNearPlayer(ServerLevel world, BlockPos center, int radius, RandomSource random) {
 
         var cfg = TerritoryConfig.get().server;
         if (random.nextFloat() > cfg.grassRegrowChance) return;
@@ -173,22 +172,22 @@ public final class TerritoryEcosystemTicker {
         BlockPos pos = randomSurfaceNearPlayer(world, center, radius, random);
         if (pos == null) return;
 
-        if (world.getLightLevel(pos.up()) < 9) return;
+        if (world.getMaxLocalRawBrightness(pos.above()) < 9) return;
 
         BlockState old = world.getBlockState(pos);
 
-        if (old.isOf(Blocks.DIRT) || old.isOf(Blocks.COARSE_DIRT)) {
-            world.setBlockState(pos, Blocks.GRASS_BLOCK.getDefaultState(), 2);
+        if (old.is(Blocks.DIRT) || old.is(Blocks.COARSE_DIRT)) {
+            world.setBlock(pos, Blocks.GRASS_BLOCK.defaultBlockState(), 2);
         }
     }
 
     private static void maybeWitherLeavesNearPlayer(
-            ServerWorld world,
+            ServerLevel world,
             BlockPos center,
             int radius,
             int leafMinY,
             int leafMaxY,
-            Random random,
+            RandomSource random,
             TerritoryConfig.Server cfg
     ) {
         float leafAttemptChance = cfg.permanentScarChance * cfg.ecosystemLeafLossMultiplier;
@@ -199,9 +198,9 @@ public final class TerritoryEcosystemTicker {
             return;
         }
 
-        int minY = Math.max(world.getBottomY(), Math.min(leafMinY, leafMaxY));
+        int minY = Math.max(world.getMinY(), Math.min(leafMinY, leafMaxY));
 
-        int worldTopY = world.getBottomY() + world.getHeight() - 1;
+        int worldTopY = world.getMinY() + world.getHeight() - 1;
         int maxY = Math.min(worldTopY, Math.max(leafMinY, leafMaxY));
 
         if (maxY <= minY) {
@@ -216,19 +215,19 @@ public final class TerritoryEcosystemTicker {
             BlockPos checkPos = new BlockPos(x, y, z);
             BlockState state = world.getBlockState(checkPos);
 
-            if (state.isIn(BlockTags.LEAVES)) {
-                world.breakBlock(checkPos, false);
+            if (state.is(BlockTags.LEAVES)) {
+                world.destroyBlock(checkPos, false);
                 return;
             }
         }
     }
 
-    private static BlockPos randomSurfaceNearPlayer(ServerWorld world, BlockPos center, int radius, Random random) {
+    private static BlockPos randomSurfaceNearPlayer(ServerLevel world, BlockPos center, int radius, RandomSource random) {
         int x = center.getX() + random.nextInt(radius * 2 + 1) - radius;
         int z = center.getZ() + random.nextInt(radius * 2 + 1) - radius;
 
-        int y = world.getTopY(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
-        if (y < world.getBottomY()) return null;
+        int y = world.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
+        if (y < world.getMinY()) return null;
 
         return new BlockPos(x, y, z);
     }

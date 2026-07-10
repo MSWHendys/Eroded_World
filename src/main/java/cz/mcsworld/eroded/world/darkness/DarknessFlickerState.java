@@ -1,9 +1,9 @@
 package cz.mcsworld.eroded.world.darkness;
 
 import cz.mcsworld.eroded.config.darkness.DarknessConfigs;
-import net.minecraft.util.math.BlockPos;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import net.minecraft.core.BlockPos;
 
 public final class DarknessFlickerState {
 
@@ -31,7 +31,7 @@ public final class DarknessFlickerState {
             return true;
         }
 
-        STAGES.put(pos.toImmutable(), next);
+        STAGES.put(pos.immutable(), next);
         return false;
     }
 
