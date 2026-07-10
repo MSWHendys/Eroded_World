@@ -2,10 +2,10 @@ package cz.mcsworld.eroded.client.data;
 
 import cz.mcsworld.eroded.config.darkness.DarknessConfigs;
 import cz.mcsworld.eroded.death.block.ErodedBlocks;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.world.LightType;
+import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
+import net.minecraft.util.Mth;
+import net.minecraft.world.level.LightLayer;
 
 public final class DarknessClientData {
 
@@ -61,7 +61,7 @@ public final class DarknessClientData {
             target = 0.0F;
         }
 
-        float targetSmoothing = MathHelper.clamp(
+        float targetSmoothing = Mth.clamp(
                 root.client.eyeSmoothing,
                 0.001F,
                 1.0F
@@ -70,7 +70,7 @@ public final class DarknessClientData {
         smoothedEyeTarget +=
                 (target - smoothedEyeTarget) * targetSmoothing;
 
-        float speed = MathHelper.clamp(
+        float speed = Mth.clamp(
                 root.client.fadeSpeed,
                 0.001F,
                 1.0F
@@ -85,10 +85,10 @@ public final class DarknessClientData {
         return applyAllDarknessBreaks(alpha);
     }
 
-    public static void updateLightLevel(MinecraftClient client) {
+    public static void updateLightLevel(Minecraft client) {
         tickCompassDarknessBreak();
 
-        if (client.world == null || client.player == null) {
+        if (client.level == null || client.player == null) {
             return;
         }
 
@@ -99,18 +99,18 @@ public final class DarknessClientData {
             return;
         }
 
-        var world = client.world;
+        var world = client.level;
         var player = client.player;
         var cfg = root.client;
 
-        BlockPos eyePos = player.getBlockPos().up(1);
+        BlockPos eyePos = player.blockPosition().above(1);
 
-        float areaLight = world.getLightLevel(
-                LightType.BLOCK,
+        float areaLight = world.getBrightness(
+                LightLayer.BLOCK,
                 eyePos
         );
 
-        var look = player.getRotationVec(1.0F);
+        var look = player.getViewVector(1.0F);
 
         float totalLookLight = 0.0F;
         int samples = Math.max(1, cfg.samples);
@@ -121,17 +121,17 @@ public final class DarknessClientData {
                     cfg.sampleStart + i * cfg.sampleStep
             );
 
-            BlockPos samplePos = eyePos.add(
-                    MathHelper.floor(look.x * distance),
-                    MathHelper.floor(look.y * distance),
-                    MathHelper.floor(look.z * distance)
+            BlockPos samplePos = eyePos.offset(
+                    Mth.floor(look.x * distance),
+                    Mth.floor(look.y * distance),
+                    Mth.floor(look.z * distance)
             );
 
             if (!world.getBlockState(samplePos)
-                    .isFullCube(world, samplePos)) {
+                    .isCollisionShapeFullBlock(world, samplePos)) {
 
-                totalLookLight += world.getLightLevel(
-                        LightType.BLOCK,
+                totalLookLight += world.getBrightness(
+                        LightLayer.BLOCK,
                         samplePos
                 );
 
@@ -157,7 +157,7 @@ public final class DarknessClientData {
 
 
         if (finalAverageLight >= 12.0F) {
-            float clearSpeed = MathHelper.clamp(
+            float clearSpeed = Mth.clamp(
                     cfg.darknessFadeSpeed,
                     0.001F,
                     1.0F
@@ -169,7 +169,7 @@ public final class DarknessClientData {
             return;
         }
 
-        float blockDarkness = 1.0F - MathHelper.clamp(
+        float blockDarkness = 1.0F - Mth.clamp(
                 (finalAverageLight - 2.0F) / 7.0F,
                 0.0F,
                 1.0F
@@ -180,7 +180,7 @@ public final class DarknessClientData {
                 cfg.blockCurve
         );
 
-        float localSmoothing = MathHelper.clamp(
+        float localSmoothing = Mth.clamp(
                 cfg.localSmoothing,
                 0.001F,
                 1.0F
@@ -192,20 +192,20 @@ public final class DarknessClientData {
     }
 
     public static float getSkyLimiter() {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
 
-        if (client.world == null || client.player == null) {
+        if (client.level == null || client.player == null) {
             return 1.0F;
         }
 
         var cfg = DarknessConfigs.get().client;
 
-        int skyLight = client.world.getLightLevel(
-                LightType.SKY,
-                client.player.getBlockPos()
+        int skyLight = client.level.getBrightness(
+                LightLayer.SKY,
+                client.player.blockPosition()
         );
 
-        float limiter = 1.0F - MathHelper.clamp(
+        float limiter = 1.0F - Mth.clamp(
                 (skyLight - 8.0F) / 7.0F,
                 0.0F,
                 1.0F
@@ -215,20 +215,20 @@ public final class DarknessClientData {
     }
 
     public static float getBlockLightLimiter() {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
 
-        if (client.world == null || client.player == null) {
+        if (client.level == null || client.player == null) {
             return 1.0F;
         }
 
         var cfg = DarknessConfigs.get().client;
 
-        int blockLight = client.world.getLightLevel(
-                LightType.BLOCK,
-                client.player.getBlockPos()
+        int blockLight = client.level.getBrightness(
+                LightLayer.BLOCK,
+                client.player.blockPosition()
         );
 
-        float limiter = 1.0F - MathHelper.clamp(
+        float limiter = 1.0F - Mth.clamp(
                 (blockLight - 2.0F) / 10.0F,
                 0.0F,
                 1.0F
@@ -238,7 +238,7 @@ public final class DarknessClientData {
     }
 
     public static boolean isHoldingWardingLantern() {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
 
         if (client.player == null) {
             return false;
@@ -246,9 +246,9 @@ public final class DarknessClientData {
 
         var player = client.player;
 
-        return player.getMainHandStack().isOf(
+        return player.getMainHandItem().is(
                 ErodedBlocks.WARDING_LANTERN.asItem()
-        ) || player.getOffHandStack().isOf(
+        ) || player.getOffhandItem().is(
                 ErodedBlocks.WARDING_LANTERN.asItem()
         );
     }
@@ -328,7 +328,7 @@ public final class DarknessClientData {
     ) {
         int safeTicks = Math.max(0, ticks);
 
-        float safeMaxDarkness = MathHelper.clamp(
+        float safeMaxDarkness = Mth.clamp(
                 maxDarkness,
                 0.0F,
                 1.0F

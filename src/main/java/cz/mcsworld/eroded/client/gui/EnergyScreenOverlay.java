@@ -5,10 +5,10 @@ import cz.mcsworld.eroded.client.hud.EnergyHudLogic;
 import cz.mcsworld.eroded.config.energy.EnergyConfig;
 import cz.mcsworld.eroded.skills.SkillData;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.text.Text;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 import cz.mcsworld.eroded.client.screen.TerritoryModuleScreen;
 
 public final class EnergyScreenOverlay {
@@ -24,10 +24,10 @@ public final class EnergyScreenOverlay {
     private static SkillData.EnergyState activeWarningState = null;
 
     private static int anvilMessageTicks = 0;
-    private static Text anvilMessage = null;
+    private static Component anvilMessage = null;
 
     private static int customMessageTicks = 0;
-    private static Text customMessage = null;
+    private static Component customMessage = null;
     private static int customMessageColor = 0xFFFFFFFF;
 
     private EnergyScreenOverlay() {}
@@ -47,19 +47,19 @@ public final class EnergyScreenOverlay {
         craftingFailTicks = EnergyConfig.get().client.hud.warningMessageTime;
     }
 
-    public static void showAnvilMessage(Text text, String quality) {
+    public static void showAnvilMessage(Component text, String quality) {
         anvilMessage = text;
         anvilQuality = quality;
         anvilMessageTicks = EnergyConfig.get().client.hud.warningMessageTime * 5;
     }
 
-    private static void render(Screen screen, DrawContext context, int mouseX, int mouseY, float delta) {
+    private static void render(Screen screen, GuiGraphics context, int mouseX, int mouseY, float delta) {
 
         if (screen instanceof TerritoryModuleScreen) {
             return;
         }
 
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client == null || client.player == null || !ClientEnergyData.isInitialized()) return;
 
         var root = EnergyConfig.get();
@@ -78,8 +78,8 @@ public final class EnergyScreenOverlay {
         lastEnergyValue = energy;
 
         int total = cfg.numberEnergyFlashes;
-        int ticks = client.inGameHud.getTicks();
-        int screenW = context.getScaledWindowWidth();
+        int ticks = client.gui.getGuiTicks();
+        int screenW = context.guiWidth();
         int barWidth = total * 8;
         int iconsX = (screenW - barWidth) / 2;
         int barCenterX = iconsX + barWidth / 2;
@@ -92,11 +92,11 @@ public final class EnergyScreenOverlay {
                     EnergyHudLogic.resolve(i, total, energy, maxEnergy, isRegenerating, ticks);
 
             if (!visual.visible()) {
-                context.drawText(client.textRenderer, ICON, drawX, iconsY, EnergyHudLogic.EMPTY, true);
+                context.drawString(client.font, ICON, drawX, iconsY, EnergyHudLogic.EMPTY, true);
                 continue;
             }
 
-            var matrices = context.getMatrices();
+            var matrices = context.pose();
             matrices.pushMatrix();
             float cx = drawX + 4;
             float cy = iconsY + 4;
@@ -104,8 +104,8 @@ public final class EnergyScreenOverlay {
             matrices.scale(visual.scale(), visual.scale());
             matrices.translate(-cx, -cy);
 
-            context.drawText(
-                    client.textRenderer,
+            context.drawString(
+                    client.font,
                     ICON,
                     drawX,
                     iconsY,
@@ -116,7 +116,7 @@ public final class EnergyScreenOverlay {
             matrices.popMatrix();
         }
 
-        Text textToDraw = null;
+        Component textToDraw = null;
         int textColor = 0xFFFFFFFF;
 
         if (anvilMessageTicks > 0 && anvilMessage != null) {
@@ -147,7 +147,7 @@ public final class EnergyScreenOverlay {
         }
 
         else if (craftingFailTicks > 0) {
-            textToDraw = Text.translatable("eroded.crafting.not_enough_energy");
+            textToDraw = Component.translatable("eroded.crafting.not_enough_energy");
             textColor = EnergyHudLogic.RED;
             craftingFailTicks--;
         }
@@ -155,7 +155,7 @@ public final class EnergyScreenOverlay {
         else if (warningTicks > 0 && activeWarningState != null) {
             String key = EnergyHudLogic.getWarningTranslationKey(activeWarningState);
             if (key != null) {
-                textToDraw = Text.translatable(key);
+                textToDraw = Component.translatable(key);
                 textColor = EnergyHudLogic.RED;
                 warningTicks--;
             } else {
@@ -165,15 +165,15 @@ public final class EnergyScreenOverlay {
 
 
         else {
-            textToDraw = Text.translatable("eroded.gui.energy.prefix")
-                    .append(Text.literal(energy + " / " + maxEnergy));
+            textToDraw = Component.translatable("eroded.gui.energy.prefix")
+                    .append(Component.literal(energy + " / " + maxEnergy));
         }
 
 
         if (textToDraw != null) {
-            int w = client.textRenderer.getWidth(textToDraw);
-            context.drawText(
-                    client.textRenderer,
+            int w = client.font.width(textToDraw);
+            context.drawString(
+                    client.font,
                     textToDraw,
                     barCenterX - w / 2,
                     iconsY + 10,
@@ -182,7 +182,7 @@ public final class EnergyScreenOverlay {
             );
         }
     }
-    public static void showCustomMessage(Text text, int color) {
+    public static void showCustomMessage(Component text, int color) {
         customMessage = text;
         customMessageColor = color;
         customMessageTicks = EnergyConfig.get().client.hud.warningMessageTime * 2;

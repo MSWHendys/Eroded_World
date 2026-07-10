@@ -1,7 +1,7 @@
 package cz.mcsworld.eroded.client.data;
 
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.core.BlockPos;
+import net.minecraft.util.Mth;
 
 public final class ErodedCompassClientData {
 
@@ -37,7 +37,7 @@ public final class ErodedCompassClientData {
     }
 
     public static void setAngle(float value) {
-        angle = MathHelper.floorMod(value, 1.0F);
+        angle = Mth.positiveModulo(value, 1.0F);
     }
 
     public static long getRemainingTicks() {

@@ -2,11 +2,10 @@ package cz.mcsworld.eroded.client.data;
 
 import cz.mcsworld.eroded.network.TerritoryModuleSyncPayload;
 import cz.mcsworld.eroded.protection.TerritoryPermission;
-import net.minecraft.util.math.BlockPos;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import net.minecraft.core.BlockPos;
 
 public final class ClientTerritoryModuleData {
 

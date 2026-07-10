@@ -2,12 +2,12 @@ package cz.mcsworld.eroded.client.audio;
 
 import cz.mcsworld.eroded.client.data.DarknessClientData;
 import cz.mcsworld.eroded.config.darkness.DarknessConfigs;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.sound.PositionedSoundInstance;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.world.LightType;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.core.BlockPos;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.util.Mth;
+import net.minecraft.world.level.LightLayer;
 
 public final class HeartbeatClient {
 
@@ -23,11 +23,11 @@ public final class HeartbeatClient {
         var cfg = root.client;
         if (!cfg.heartbeatEnabled) return;
 
-        float volumeMul = MathHelper.clamp(cfg.audio.volumeMultiplier, 0.1f, 1.0f);
-        float delayMul  = MathHelper.clamp(cfg.audio.delayMultiplier, 0.5f, 2.0f);
+        float volumeMul = Mth.clamp(cfg.audio.volumeMultiplier, 0.1f, 1.0f);
+        float delayMul  = Mth.clamp(cfg.audio.delayMultiplier, 0.5f, 2.0f);
 
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client.player == null || client.world == null) return;
+        Minecraft client = Minecraft.getInstance();
+        if (client.player == null || client.level == null) return;
 
         boolean dark = DarknessClientData.isDarknessActive();
 
@@ -40,18 +40,18 @@ public final class HeartbeatClient {
 
 
 
-        BlockPos eyePos = BlockPos.ofFloored(
+        BlockPos eyePos = BlockPos.containing(
                 client.player.getX(),
                 client.player.getEyeY(),
                 client.player.getZ()
         );
 
-        int sky = client.world.getLightLevel(LightType.SKY, eyePos);
+        int sky = client.level.getBrightness(LightLayer.SKY, eyePos);
         if (sky >= cfg.skySafeThreshold) return;
 
         client.getSoundManager().play(
-                PositionedSoundInstance.master(
-                        SoundEvents.ENTITY_WARDEN_HEARTBEAT,
+                SimpleSoundInstance.forUI(
+                        SoundEvents.WARDEN_HEARTBEAT,
                         cfg.heartbeatVolume * volumeMul,
                         cfg.heartbeatPitch
                 )

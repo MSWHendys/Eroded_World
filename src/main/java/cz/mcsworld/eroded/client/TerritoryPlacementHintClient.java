@@ -5,16 +5,16 @@ import cz.mcsworld.eroded.death.block.ErodedBlocks;
 import cz.mcsworld.eroded.network.TerritoryPlacementHintPayload;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.minecraft.item.ItemStack;
-import net.minecraft.registry.Registries;
-import net.minecraft.util.Identifier;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemStack;
 
 public final class TerritoryPlacementHintClient {
 
     private static final long HOLD_DELAY_MS = 5000;
     private static final long REPEAT_INTERVAL_MS = 1000;
 
-    private static Identifier currentHeldItemId = null;
+    private static ResourceLocation currentHeldItemId = null;
     private static long holdStartedAt = 0L;
     private static long lastRequestAt = 0L;
 
@@ -25,13 +25,13 @@ public final class TerritoryPlacementHintClient {
 
     public static void register() {
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            if (client.player == null || client.world == null) {
+            if (client.player == null || client.level == null) {
                 resetHold();
                 return;
             }
 
-            ItemStack mainHand = client.player.getMainHandStack();
-            ItemStack offHand = client.player.getOffHandStack();
+            ItemStack mainHand = client.player.getMainHandItem();
+            ItemStack offHand = client.player.getOffhandItem();
 
             ItemStack territoryStack = ItemStack.EMPTY;
 
@@ -46,7 +46,7 @@ public final class TerritoryPlacementHintClient {
                 return;
             }
 
-            Identifier itemId = Registries.ITEM.getId(territoryStack.getItem());
+            ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(territoryStack.getItem());
             long now = System.currentTimeMillis();
 
             if (!itemId.equals(currentHeldItemId)) {
@@ -82,7 +82,7 @@ public final class TerritoryPlacementHintClient {
     }
 
     private static boolean isTerritoryHintItem(ItemStack stack) {
-        return stack.isOf(ErodedItems.TERRITORY_MODULE)
-                || stack.isOf(ErodedBlocks.TERRITORY_ANCHOR.asItem());
+        return stack.is(ErodedItems.TERRITORY_MODULE)
+                || stack.is(ErodedBlocks.TERRITORY_ANCHOR.asItem());
     }
 }

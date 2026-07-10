@@ -5,8 +5,8 @@ import cz.mcsworld.eroded.client.hud.EnergyHud;
 import cz.mcsworld.eroded.config.energy.EnergyConfig;
 import cz.mcsworld.eroded.network.EnergyWarningPacket;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.sound.SoundEvents;
+import net.minecraft.client.Minecraft;
+import net.minecraft.sounds.SoundEvents;
 
 public final class EnergyWarningClientHandler {
 
@@ -19,7 +19,7 @@ public final class EnergyWarningClientHandler {
                 EnergyWarningPacket.ID,
                 (payload, context) -> context.client().execute(() -> {
 
-                    MinecraftClient client = MinecraftClient.getInstance();
+                    Minecraft client = Minecraft.getInstance();
                     if (client.player == null) return;
 
                     var root = EnergyConfig.get();
@@ -33,7 +33,7 @@ public final class EnergyWarningClientHandler {
                     lastShown = now;
 
                     client.player.playSound(
-                            SoundEvents.BLOCK_NOTE_BLOCK_BASS.value(),
+                            SoundEvents.NOTE_BLOCK_BASS.value(),
                             0.6f,
                             0.6f
                     );

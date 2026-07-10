@@ -1,12 +1,12 @@
 package cz.mcsworld.eroded.client.input;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import cz.mcsworld.eroded.network.DodgeRequestPacket;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.util.InputUtil;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.phys.Vec3;
 import org.lwjgl.glfw.GLFW;
 
 public final class DodgeInputHandler {
@@ -35,11 +35,11 @@ public final class DodgeInputHandler {
         ClientTickEvents.END_CLIENT_TICK.register(DodgeInputHandler::onClientTick);
     }
 
-    private static void onClientTick(MinecraftClient client) {
+    private static void onClientTick(Minecraft client) {
 
-        if (client.player == null || client.world == null) return;
+        if (client.player == null || client.level == null) return;
 
-        if (waitingForRespawnReset && client.player.age == 0) {
+        if (waitingForRespawnReset && client.player.tickCount == 0) {
             reset();
             waitingForRespawnReset = false;
             return;
@@ -49,25 +49,25 @@ public final class DodgeInputHandler {
             client.player.setSprinting(false);
         }
 
-        if (client.currentScreen != null) return;
+        if (client.screen != null) return;
 
         long now = System.currentTimeMillis();
 
-        wDown = handleKey(client, GLFW.GLFW_KEY_W, wDown, new Vec3d(0, 0, 1), now);
-        sDown = handleKey(client, GLFW.GLFW_KEY_S, sDown, new Vec3d(0, 0, -1), now);
-        aDown = handleKey(client, GLFW.GLFW_KEY_A, aDown, new Vec3d(1, 0, 0), now);
-        dDown = handleKey(client, GLFW.GLFW_KEY_D, dDown, new Vec3d(-1, 0, 0), now);
+        wDown = handleKey(client, GLFW.GLFW_KEY_W, wDown, new Vec3(0, 0, 1), now);
+        sDown = handleKey(client, GLFW.GLFW_KEY_S, sDown, new Vec3(0, 0, -1), now);
+        aDown = handleKey(client, GLFW.GLFW_KEY_A, aDown, new Vec3(1, 0, 0), now);
+        dDown = handleKey(client, GLFW.GLFW_KEY_D, dDown, new Vec3(-1, 0, 0), now);
     }
 
     private static boolean handleKey(
-            MinecraftClient client,
+            Minecraft client,
             int glfwKey,
             boolean wasDown,
-            Vec3d dir,
+            Vec3 dir,
             long now
     ) {
-        boolean isDown = InputUtil.isKeyPressed(
-                client.getWindow().getHandle(),
+        boolean isDown = InputConstants.isKeyDown(
+                client.getWindow(),
                 glfwKey
         );
 
@@ -78,7 +78,7 @@ public final class DodgeInputHandler {
         return isDown;
     }
 
-    private static void onKeyTap(MinecraftClient client, Vec3d dir, long now) {
+    private static void onKeyTap(Minecraft client, Vec3 dir, long now) {
 
         int key = dirToKey(dir);
 
@@ -101,7 +101,7 @@ public final class DodgeInputHandler {
         reset();
     }
 
-    private static int dirToKey(Vec3d dir) {
+    private static int dirToKey(Vec3 dir) {
         if (dir.z > 0) return GLFW.GLFW_KEY_W;
         if (dir.z < 0) return GLFW.GLFW_KEY_S;
         if (dir.x > 0) return GLFW.GLFW_KEY_A;

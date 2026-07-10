@@ -4,11 +4,11 @@ import cz.mcsworld.eroded.client.data.ClientEnergyData;
 import cz.mcsworld.eroded.config.energy.EnergyConfig;
 import cz.mcsworld.eroded.skills.SkillData;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.ChatScreen;
-import net.minecraft.client.render.RenderTickCounter;
-import net.minecraft.text.Text;
+import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.ChatScreen;
+import net.minecraft.network.chat.Component;
 
 public class EnergyHud implements HudRenderCallback {
 
@@ -35,8 +35,8 @@ public class EnergyHud implements HudRenderCallback {
     }
 
     @Override
-    public void onHudRender(DrawContext context, RenderTickCounter tickCounter) {
-        MinecraftClient client = MinecraftClient.getInstance();
+    public void onHudRender(GuiGraphics context, DeltaTracker tickCounter) {
+        Minecraft client = Minecraft.getInstance();
 
         if (client.player == null || !ClientEnergyData.isInitialized()) return;
 
@@ -64,10 +64,10 @@ public class EnergyHud implements HudRenderCallback {
         if (!cfg.showHudWhenFull && energy >= maxEnergy && !isImmune) return;
 
         int total = cfg.numberEnergyFlashes;
-        int ticks = client.inGameHud.getTicks();
+        int ticks = client.gui.getGuiTicks();
 
-        int screenW = context.getScaledWindowWidth();
-        int screenH = context.getScaledWindowHeight();
+        int screenW = context.guiWidth();
+        int screenH = context.guiHeight();
         int spacing = 8;
         int hudWidth = total * spacing;
 
@@ -109,7 +109,7 @@ public class EnergyHud implements HudRenderCallback {
             }
         }
 
-        boolean hideIconsBecauseChat = client.currentScreen instanceof ChatScreen;
+        boolean hideIconsBecauseChat = client.screen instanceof ChatScreen;
         if (!hideIconsBecauseChat) {
             for (int i = 0; i < total; i++) {
                 int drawX = x + i * 8;
@@ -117,13 +117,13 @@ public class EnergyHud implements HudRenderCallback {
                         EnergyHudLogic.resolve(i, total, energy, maxEnergy, isRegenerating, ticks);
 
                 if (!visual.visible()) {
-                    context.drawText(client.textRenderer, ICON, drawX, y, EnergyHudLogic.EMPTY, true);
+                    context.drawString(client.font, ICON, drawX, y, EnergyHudLogic.EMPTY, true);
                     continue;
                 }
 
                 int iconColor = isImmune ? 0xFFFFD700 : visual.color();
 
-                var matrices = context.getMatrices();
+                var matrices = context.pose();
                 matrices.pushMatrix();
                 float cx = drawX + 4;
                 float cy = y + 4;
@@ -131,8 +131,8 @@ public class EnergyHud implements HudRenderCallback {
                 matrices.scale(visual.scale(), visual.scale());
                 matrices.translate(-cx, -cy);
 
-                context.drawText(
-                        client.textRenderer,
+                context.drawString(
+                        client.font,
                         ICON,
                         drawX,
                         y,
@@ -162,14 +162,14 @@ public class EnergyHud implements HudRenderCallback {
                     : EnergyHudLogic.getWarningTranslationKey(activeWarningState);
 
             if (key != null) {
-                Text text = Text.translatable(key);
-                int textWidth = client.textRenderer.getWidth(text);
+                Component text = Component.translatable(key);
+                int textWidth = client.font.width(text);
                 int textX = (screenW - textWidth) / 2;
                 int textY = y - posTextHUD_Y;
                 int padding = 4;
 
-                context.fill(textX - padding, textY - padding, textX + textWidth + padding, textY + client.textRenderer.fontHeight + padding, 0xCC000000);
-                context.drawText(client.textRenderer, text, textX, textY, EnergyHudLogic.RED, true);
+                context.fill(textX - padding, textY - padding, textX + textWidth + padding, textY + client.font.lineHeight + padding, 0xCC000000);
+                context.drawString(client.font, text, textX, textY, EnergyHudLogic.RED, true);
 
                 warningTicks--;
                 if (warningTicks <= 0) activeWarningState = null;
