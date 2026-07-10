@@ -4,95 +4,95 @@ import com.mojang.serialization.MapCodec;
 import cz.mcsworld.eroded.core.ErodedItems;
 import cz.mcsworld.eroded.protection.TerritoryClaim;
 import cz.mcsworld.eroded.protection.TerritoryProtectionManager;
-import net.minecraft.block.AbstractBlock;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.state.StateManager;
-import net.minecraft.state.property.BooleanProperty;
-import net.minecraft.text.Text;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.random.Random;
-import net.minecraft.util.shape.VoxelShape;
-import net.minecraft.util.shape.VoxelShapes;
-import net.minecraft.world.World;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
 public class TerritoryAnchorBlock extends Block {
 
-    public static final MapCodec<TerritoryAnchorBlock> CODEC = createCodec(TerritoryAnchorBlock::new);
+    public static final MapCodec<TerritoryAnchorBlock> CODEC = simpleCodec(TerritoryAnchorBlock::new);
 
-    public static final BooleanProperty HAS_MODULE = BooleanProperty.of("has_module");
-    public static final BooleanProperty ACTIVE = BooleanProperty.of("active");
+    public static final BooleanProperty HAS_MODULE = BooleanProperty.create("has_module");
+    public static final BooleanProperty ACTIVE = BooleanProperty.create("active");
 
-    public TerritoryAnchorBlock(AbstractBlock.Settings settings) {
+    public TerritoryAnchorBlock(BlockBehaviour.Properties settings) {
         super(settings);
 
-        this.setDefaultState(
-                this.getStateManager()
-                        .getDefaultState()
-                        .with(HAS_MODULE, false)
-                        .with(ACTIVE, false)
+        this.registerDefaultState(
+                this.getStateDefinition()
+                        .any()
+                        .setValue(HAS_MODULE, false)
+                        .setValue(ACTIVE, false)
         );
     }
 
     @Override
-    protected MapCodec<? extends Block> getCodec() {
+    protected MapCodec<? extends Block> codec() {
         return CODEC;
     }
 
     @Override
-    protected void appendProperties(StateManager.Builder<Block, BlockState> builder) {
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(HAS_MODULE, ACTIVE);
     }
 
     @Override
-    protected ActionResult onUse(
+    protected InteractionResult useWithoutItem(
             BlockState state,
-            World world,
+            Level world,
             BlockPos pos,
-            PlayerEntity player,
+            Player player,
             BlockHitResult hit
     ) {
-        ItemStack stack = player.getMainHandStack();
+        ItemStack stack = player.getMainHandItem();
 
-        if (world.isClient()) {
-            if (stack.isOf(ErodedItems.TERRITORY_MODULE) || state.get(HAS_MODULE)) {
-                return ActionResult.SUCCESS;
+        if (world.isClientSide()) {
+            if (stack.is(ErodedItems.TERRITORY_MODULE) || state.getValue(HAS_MODULE)) {
+                return InteractionResult.SUCCESS;
             }
 
-            return ActionResult.PASS;
+            return InteractionResult.PASS;
         }
 
-        if (!(world instanceof ServerWorld serverWorld)) {
-            return ActionResult.PASS;
+        if (!(world instanceof ServerLevel serverWorld)) {
+            return InteractionResult.PASS;
         }
 
-        if (!(player instanceof ServerPlayerEntity serverPlayer)) {
-            return ActionResult.PASS;
+        if (!(player instanceof ServerPlayer serverPlayer)) {
+            return InteractionResult.PASS;
         }
 
-        if (state.get(ACTIVE)) {
+        if (state.getValue(ACTIVE)) {
             TerritoryClaim claim = TerritoryProtectionManager.getAnchorClaim(serverWorld, pos);
 
             if (claim == null) {
-                serverPlayer.sendMessage(
-                        Text.translatable("eroded.territory.trust.no_claim"),
+                serverPlayer.displayClientMessage(
+                        Component.translatable("eroded.territory.trust.no_claim"),
                         true
                 );
-                return ActionResult.SUCCESS;
+                return InteractionResult.SUCCESS;
             }
 
             if (!TerritoryProtectionManager.canManageClaim(serverPlayer, claim)) {
-                serverPlayer.sendMessage(
-                        Text.translatable("eroded.territory.trust.no_permission"),
+                serverPlayer.displayClientMessage(
+                        Component.translatable("eroded.territory.trust.no_permission"),
                         true
                 );
-                return ActionResult.SUCCESS;
+                return InteractionResult.SUCCESS;
             }
 
             TerritoryProtectionManager.openTerritoryModule(
@@ -101,37 +101,37 @@ public class TerritoryAnchorBlock extends Block {
                     serverPlayer
             );
 
-            return ActionResult.SUCCESS;
+            return InteractionResult.SUCCESS;
         }
 
-        if (state.get(HAS_MODULE)) {
-            serverPlayer.sendMessage(
-                    Text.translatable("eroded.territory.anchor.stabilizing"),
+        if (state.getValue(HAS_MODULE)) {
+            serverPlayer.displayClientMessage(
+                    Component.translatable("eroded.territory.anchor.stabilizing"),
                     true
             );
-            return ActionResult.SUCCESS;
+            return InteractionResult.SUCCESS;
         }
 
-        if (!stack.isOf(ErodedItems.TERRITORY_MODULE)) {
-            serverPlayer.sendMessage(
-                    Text.translatable("eroded.territory.anchor.needs_module"),
+        if (!stack.is(ErodedItems.TERRITORY_MODULE)) {
+            serverPlayer.displayClientMessage(
+                    Component.translatable("eroded.territory.anchor.needs_module"),
                     true
             );
-            return ActionResult.SUCCESS;
+            return InteractionResult.SUCCESS;
         }
 
         if (!TerritoryProtectionManager.validateNewClaim(serverWorld, pos, serverPlayer)) {
-            return ActionResult.SUCCESS;
+            return InteractionResult.SUCCESS;
         }
 
         if (!serverPlayer.isCreative()) {
-            stack.decrement(1);
+            stack.shrink(1);
         }
 
-        serverWorld.setBlockState(
+        serverWorld.setBlock(
                 pos,
-                state.with(HAS_MODULE, true).with(ACTIVE, false),
-                Block.NOTIFY_ALL
+                state.setValue(HAS_MODULE, true).setValue(ACTIVE, false),
+                Block.UPDATE_ALL
         );
 
         TerritoryProtectionManager.playModuleInsertedSound(serverWorld, pos);
@@ -142,38 +142,38 @@ public class TerritoryAnchorBlock extends Block {
                 serverPlayer
         );
 
-        serverWorld.scheduleBlockTick(
+        serverWorld.scheduleTick(
                 pos,
                 this,
                 TerritoryProtectionManager.getActivationDelayTicks()
         );
 
-        serverPlayer.sendMessage(
-                Text.translatable("eroded.territory.anchor.module_inserted"),
+        serverPlayer.displayClientMessage(
+                Component.translatable("eroded.territory.anchor.module_inserted"),
                 true
         );
 
-        return ActionResult.SUCCESS;
+        return InteractionResult.SUCCESS;
     }
 
     @Override
-    protected void scheduledTick(BlockState state, ServerWorld world, BlockPos pos, Random random) {
-        if (!state.isOf(this)) {
+    protected void tick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
+        if (!state.is(this)) {
             return;
         }
 
-        if (!state.get(HAS_MODULE)) {
+        if (!state.getValue(HAS_MODULE)) {
             return;
         }
 
-        if (state.get(ACTIVE)) {
+        if (state.getValue(ACTIVE)) {
             return;
         }
 
-        world.setBlockState(
+        world.setBlock(
                 pos,
-                state.with(ACTIVE, true),
-                Block.NOTIFY_ALL
+                state.setValue(ACTIVE, true),
+                Block.UPDATE_ALL
         );
 
         TerritoryProtectionManager.activateClaim(world, pos);
@@ -182,13 +182,13 @@ public class TerritoryAnchorBlock extends Block {
         TerritoryClaim claim = TerritoryProtectionManager.getAnchorClaim(world, pos);
 
         if (claim != null) {
-            ServerPlayerEntity owner = world.getServer()
-                    .getPlayerManager()
+            ServerPlayer owner = world.getServer()
+                    .getPlayerList()
                     .getPlayer(claim.ownerUuid());
 
             if (owner != null) {
-                owner.sendMessage(
-                        Text.translatable("eroded.territory.anchor.activated"),
+                owner.displayClientMessage(
+                        Component.translatable("eroded.territory.anchor.activated"),
                         true
                 );
             }
@@ -196,10 +196,10 @@ public class TerritoryAnchorBlock extends Block {
     }
 
     @Override
-    public BlockState onBreak(World world, BlockPos pos, BlockState state, PlayerEntity player) {
-        if (!world.isClient()
-                && world instanceof ServerWorld serverWorld
-                && player instanceof ServerPlayerEntity serverPlayer) {
+    public BlockState playerWillDestroy(Level world, BlockPos pos, BlockState state, Player player) {
+        if (!world.isClientSide()
+                && world instanceof ServerLevel serverWorld
+                && player instanceof ServerPlayer serverPlayer) {
 
             TerritoryProtectionManager.handleAnchorBroken(
                     serverWorld,
@@ -209,22 +209,22 @@ public class TerritoryAnchorBlock extends Block {
             );
         }
 
-        return super.onBreak(world, pos, state, player);
+        return super.playerWillDestroy(world, pos, state, player);
     }
 
     @Override
-    protected void onStateReplaced(BlockState state, ServerWorld world, BlockPos pos, boolean moved) {
+    protected void affectNeighborsAfterRemoval(BlockState state, ServerLevel world, BlockPos pos, boolean moved) {
         BlockState newState = world.getBlockState(pos);
 
-        if (!newState.isOf(this)) {
+        if (!newState.is(this)) {
             TerritoryProtectionManager.removeClaim(world, pos);
         }
 
-        super.onStateReplaced(state, world, pos, moved);
+        super.affectNeighborsAfterRemoval(state, world, pos, moved);
     }
 
     @Override
-    protected VoxelShape getCullingShape(BlockState state) {
-        return VoxelShapes.empty();
+    protected VoxelShape getOcclusionShape(BlockState state) {
+        return Shapes.empty();
     }
 }
