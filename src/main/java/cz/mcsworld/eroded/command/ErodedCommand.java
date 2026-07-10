@@ -16,28 +16,27 @@ import cz.mcsworld.eroded.skills.SkillData;
 import cz.mcsworld.eroded.skills.SkillManager;
 import me.shedaniel.autoconfig.AutoConfig;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.command.argument.BlockPosArgumentType;
-import net.minecraft.command.argument.EntityArgumentType;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.NbtComponent;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.server.command.CommandManager;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.Text;
-import net.minecraft.util.math.BlockPos;
-
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+import net.minecraft.commands.arguments.EntityArgument;
+import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 import java.util.ArrayList;
 import java.util.List;
 
-import static net.minecraft.server.command.CommandManager.argument;
-import static net.minecraft.server.command.CommandManager.literal;
+import static net.minecraft.commands.Commands.argument;
+import static net.minecraft.commands.Commands.literal;
 
 public final class ErodedCommand {
 
@@ -57,19 +56,19 @@ public final class ErodedCommand {
     }
 
     private static void registerInternal(
-            CommandDispatcher<ServerCommandSource> dispatcher
+            CommandDispatcher<CommandSourceStack> dispatcher
     ) {
         dispatcher.register(
-                CommandManager.literal("eroded")
+                Commands.literal("eroded")
 
-                        .then(CommandManager.literal("reload")
-                                .requires(src -> src.hasPermissionLevel(2))
+                        .then(Commands.literal("reload")
+                                .requires(src -> src.hasPermission(2))
                                 .executes(ctx -> {
                                     try {
                                         ErodedConfigs.reload();
 
-                                        ctx.getSource().sendFeedback(
-                                                () -> Text.translatable(
+                                        ctx.getSource().sendSuccess(
+                                                () -> Component.translatable(
                                                         "eroded.command.reload.success"
                                                 ),
                                                 false
@@ -78,8 +77,8 @@ public final class ErodedCommand {
                                         return 1;
 
                                     } catch (Exception e) {
-                                        ctx.getSource().sendError(
-                                                Text.translatable(
+                                        ctx.getSource().sendFailure(
+                                                Component.translatable(
                                                         "eroded.command.reload.error"
                                                 )
                                         );
@@ -90,30 +89,30 @@ public final class ErodedCommand {
                                 })
                         )
 
-                        .then(CommandManager.literal("chest")
-                                .requires(src -> src.hasPermissionLevel(2))
+                        .then(Commands.literal("chest")
+                                .requires(src -> src.hasPermission(2))
                                 .executes(ctx -> {
-                                    ServerPlayerEntity player =
+                                    ServerPlayer player =
                                             ctx.getSource().getPlayer();
 
                                     ItemStack stack = new ItemStack(Items.CHEST);
 
-                                    NbtCompound tag = new NbtCompound();
+                                    CompoundTag tag = new CompoundTag();
                                     tag.putBoolean(
                                             "eroded_loot_chest",
                                             true
                                     );
 
                                     stack.set(
-                                            DataComponentTypes.CUSTOM_DATA,
-                                            NbtComponent.of(tag)
+                                            DataComponents.CUSTOM_DATA,
+                                            CustomData.of(tag)
                                     );
 
                                     assert player != null;
-                                    player.giveItemStack(stack);
+                                    player.addItem(stack);
 
-                                    ctx.getSource().sendFeedback(
-                                            () -> Text.translatable(
+                                    ctx.getSource().sendSuccess(
+                                            () -> Component.translatable(
                                                     "eroded.command.chest.success"
                                             ),
                                             false
@@ -123,19 +122,19 @@ public final class ErodedCommand {
                                 })
                         )
 
-                        .then(CommandManager.literal("energy")
-                                .requires(src -> src.hasPermissionLevel(2))
-                                .then(CommandManager.argument(
+                        .then(Commands.literal("energy")
+                                .requires(src -> src.hasPermission(2))
+                                .then(Commands.argument(
                                                         "player",
-                                                        EntityArgumentType.player()
+                                                        EntityArgument.player()
                                                 )
-                                                .then(CommandManager.argument(
+                                                .then(Commands.argument(
                                                                         "amount",
                                                                         IntegerArgumentType.integer(0)
                                                                 )
                                                                 .executes(ctx -> {
-                                                                    ServerPlayerEntity target =
-                                                                            EntityArgumentType.getPlayer(
+                                                                    ServerPlayer target =
+                                                                            EntityArgument.getPlayer(
                                                                                     ctx,
                                                                                     "player"
                                                                             );
@@ -153,8 +152,8 @@ public final class ErodedCommand {
                                                                     SkillManager.save(target);
                                                                     EnergySyncHandler.forceSync(target);
 
-                                                                    ctx.getSource().sendFeedback(
-                                                                            () -> Text.translatable(
+                                                                    ctx.getSource().sendSuccess(
+                                                                            () -> Component.translatable(
                                                                                     "eroded.command.energy.set",
                                                                                     target.getName(),
                                                                                     amount
@@ -168,10 +167,10 @@ public final class ErodedCommand {
                                 )
                         )
 
-                        .then(CommandManager.literal("sound")
+                        .then(Commands.literal("sound")
 
-                                .then(CommandManager.literal("volume")
-                                        .then(CommandManager.argument(
+                                .then(Commands.literal("volume")
+                                        .then(Commands.argument(
                                                                 "value",
                                                                 IntegerArgumentType.integer(
                                                                         1,
@@ -185,7 +184,7 @@ public final class ErodedCommand {
                                                                             "value"
                                                                     );
 
-                                                            ServerPlayerEntity player =
+                                                            ServerPlayer player =
                                                                     ctx.getSource().getPlayer();
 
                                                             long now =
@@ -195,14 +194,14 @@ public final class ErodedCommand {
 
                                                             Long last =
                                                                     SOUND_COOLDOWN.get(
-                                                                            player.getUuid()
+                                                                            player.getUUID()
                                                                     );
 
                                                             if (last != null
                                                                     && now - last < SOUND_COOLDOWN_MS) {
 
-                                                                ctx.getSource().sendError(
-                                                                        Text.translatable(
+                                                                ctx.getSource().sendFailure(
+                                                                        Component.translatable(
                                                                                 "eroded.command.sound.cooldown"
                                                                         )
                                                                 );
@@ -211,7 +210,7 @@ public final class ErodedCommand {
                                                             }
 
                                                             SOUND_COOLDOWN.put(
-                                                                    player.getUuid(),
+                                                                    player.getUUID(),
                                                                     now
                                                             );
 
@@ -226,8 +225,8 @@ public final class ErodedCommand {
                                                                     null
                                                             );
 
-                                                            ctx.getSource().sendFeedback(
-                                                                    () -> Text.translatable(
+                                                            ctx.getSource().sendSuccess(
+                                                                    () -> Component.translatable(
                                                                             "eroded.command.sound.volume.set",
                                                                             value
                                                                     ),
@@ -239,8 +238,8 @@ public final class ErodedCommand {
                                         )
                                 )
 
-                                .then(CommandManager.literal("delay")
-                                        .then(CommandManager.argument(
+                                .then(Commands.literal("delay")
+                                        .then(Commands.argument(
                                                                 "value",
                                                                 IntegerArgumentType.integer(
                                                                         1,
@@ -254,7 +253,7 @@ public final class ErodedCommand {
                                                                             "value"
                                                                     );
 
-                                                            ServerPlayerEntity player =
+                                                            ServerPlayer player =
                                                                     ctx.getSource().getPlayer();
 
                                                             long now =
@@ -264,14 +263,14 @@ public final class ErodedCommand {
 
                                                             Long last =
                                                                     SOUND_COOLDOWN.get(
-                                                                            player.getUuid()
+                                                                            player.getUUID()
                                                                     );
 
                                                             if (last != null
                                                                     && now - last < SOUND_COOLDOWN_MS) {
 
-                                                                ctx.getSource().sendError(
-                                                                        Text.translatable(
+                                                                ctx.getSource().sendFailure(
+                                                                        Component.translatable(
                                                                                 "eroded.command.sound.cooldown"
                                                                         )
                                                                 );
@@ -280,7 +279,7 @@ public final class ErodedCommand {
                                                             }
 
                                                             SOUND_COOLDOWN.put(
-                                                                    player.getUuid(),
+                                                                    player.getUUID(),
                                                                     now
                                                             );
 
@@ -295,8 +294,8 @@ public final class ErodedCommand {
                                                                     normalized
                                                             );
 
-                                                            ctx.getSource().sendFeedback(
-                                                                    () -> Text.translatable(
+                                                            ctx.getSource().sendSuccess(
+                                                                    () -> Component.translatable(
                                                                             "eroded.command.sound.delay.set",
                                                                             value
                                                                     ),
@@ -308,9 +307,9 @@ public final class ErodedCommand {
                                         )
                                 )
 
-                                .then(CommandManager.literal("info")
+                                .then(Commands.literal("info")
                                         .executes(ctx -> {
-                                            ServerPlayerEntity player =
+                                            ServerPlayer player =
                                                     ctx.getSource().getPlayer();
 
                                             long now =
@@ -320,14 +319,14 @@ public final class ErodedCommand {
 
                                             Long last =
                                                     SOUND_COOLDOWN.get(
-                                                            player.getUuid()
+                                                            player.getUUID()
                                                     );
 
                                             if (last != null
                                                     && now - last < SOUND_COOLDOWN_MS) {
 
-                                                ctx.getSource().sendError(
-                                                        Text.translatable(
+                                                ctx.getSource().sendFailure(
+                                                        Component.translatable(
                                                                 "eroded.command.sound.cooldown"
                                                         )
                                                 );
@@ -336,7 +335,7 @@ public final class ErodedCommand {
                                             }
 
                                             SOUND_COOLDOWN.put(
-                                                    player.getUuid(),
+                                                    player.getUUID(),
                                                     now
                                             );
 
@@ -368,15 +367,15 @@ public final class ErodedCommand {
                                                                     * 9f
                                                     ) + 1;
 
-                                            ctx.getSource().sendFeedback(
-                                                    () -> Text.translatable(
+                                            ctx.getSource().sendSuccess(
+                                                    () -> Component.translatable(
                                                                     "eroded.command.sound.info.title"
                                                             )
-                                                            .append(Text.translatable(
+                                                            .append(Component.translatable(
                                                                     "eroded.command.sound.info.volume",
                                                                     volumeUser
                                                             ))
-                                                            .append(Text.translatable(
+                                                            .append(Component.translatable(
                                                                     "eroded.command.sound.info.delay",
                                                                     delayUser
                                                             )),
@@ -387,9 +386,9 @@ public final class ErodedCommand {
                                         })
                                 )
 
-                                .then(CommandManager.literal("reset")
+                                .then(Commands.literal("reset")
                                         .executes(ctx -> {
-                                            ServerPlayerEntity player =
+                                            ServerPlayer player =
                                                     ctx.getSource().getPlayer();
 
                                             long now =
@@ -399,14 +398,14 @@ public final class ErodedCommand {
 
                                             Long last =
                                                     SOUND_COOLDOWN.get(
-                                                            player.getUuid()
+                                                            player.getUUID()
                                                     );
 
                                             if (last != null
                                                     && now - last < SOUND_COOLDOWN_MS) {
 
-                                                ctx.getSource().sendError(
-                                                        Text.translatable(
+                                                ctx.getSource().sendFailure(
+                                                        Component.translatable(
                                                                 "eroded.command.sound.cooldown"
                                                         )
                                                 );
@@ -415,7 +414,7 @@ public final class ErodedCommand {
                                             }
 
                                             SOUND_COOLDOWN.put(
-                                                    player.getUuid(),
+                                                    player.getUUID(),
                                                     now
                                             );
 
@@ -425,8 +424,8 @@ public final class ErodedCommand {
                                                     1.0f
                                             );
 
-                                            ctx.getSource().sendFeedback(
-                                                    () -> Text.translatable(
+                                            ctx.getSource().sendSuccess(
+                                                    () -> Component.translatable(
                                                             "eroded.command.sound.reset"
                                                     ),
                                                     false
@@ -481,8 +480,8 @@ public final class ErodedCommand {
                                                                 )
                                                                 .save();
 
-                                                        ctx.getSource().sendFeedback(
-                                                                () -> Text.translatable(
+                                                        ctx.getSource().sendSuccess(
+                                                                () -> Component.translatable(
                                                                         "eroded.energy.hud.position.changed",
                                                                         newPos.getTranslation()
                                                                 ),
@@ -490,8 +489,8 @@ public final class ErodedCommand {
                                                         );
 
                                                     } catch (IllegalArgumentException e) {
-                                                        ctx.getSource().sendError(
-                                                                Text.translatable(
+                                                        ctx.getSource().sendFailure(
+                                                                Component.translatable(
                                                                         "eroded.energy.hud.position.invalid"
                                                                 )
                                                         );
@@ -502,18 +501,18 @@ public final class ErodedCommand {
                                 )
                         )
 
-                        .then(CommandManager.literal("territory")
-                                .requires(src -> src.hasPermissionLevel(2))
+                        .then(Commands.literal("territory")
+                                .requires(src -> src.hasPermission(2))
 
-                                .then(CommandManager.literal("info")
+                                .then(Commands.literal("info")
                                         .executes(ctx -> {
-                                            ServerCommandSource source =
+                                            CommandSourceStack source =
                                                     ctx.getSource();
 
-                                            ServerWorld world =
-                                                    source.getWorld();
+                                            ServerLevel world =
+                                                    source.getLevel();
 
-                                            ServerPlayerEntity player =
+                                            ServerPlayer player =
                                                     source.getPlayer();
 
                                             assert player != null;
@@ -521,12 +520,12 @@ public final class ErodedCommand {
                                             TerritoryClaim claim =
                                                     findClaimForCommand(
                                                             world,
-                                                            player.getBlockPos()
+                                                            player.blockPosition()
                                                     );
 
                                             if (claim == null) {
-                                                source.sendFeedback(
-                                                        () -> Text.translatable(
+                                                source.sendSuccess(
+                                                        () -> Component.translatable(
                                                                 "eroded.command.territory.info.none_here"
                                                         ),
                                                         false
@@ -540,13 +539,13 @@ public final class ErodedCommand {
                                         })
                                 )
 
-                                .then(CommandManager.literal("list")
+                                .then(Commands.literal("list")
                                         .executes(ctx -> {
-                                            ServerCommandSource source =
+                                            CommandSourceStack source =
                                                     ctx.getSource();
 
-                                            ServerWorld world =
-                                                    source.getWorld();
+                                            ServerLevel world =
+                                                    source.getLevel();
 
                                             List<TerritoryClaim> claims =
                                                     new ArrayList<>(
@@ -556,8 +555,8 @@ public final class ErodedCommand {
                                                     );
 
                                             if (claims.isEmpty()) {
-                                                source.sendFeedback(
-                                                        () -> Text.translatable(
+                                                source.sendSuccess(
+                                                        () -> Component.translatable(
                                                                 "eroded.command.territory.list.empty"
                                                         ),
                                                         false
@@ -566,8 +565,8 @@ public final class ErodedCommand {
                                                 return 0;
                                             }
 
-                                            source.sendFeedback(
-                                                    () -> Text.translatable(
+                                            source.sendSuccess(
+                                                    () -> Component.translatable(
                                                             "eroded.command.territory.list.header",
                                                             claims.size()
                                                     ),
@@ -586,8 +585,8 @@ public final class ErodedCommand {
 
                                                 int index = i + 1;
 
-                                                source.sendFeedback(
-                                                        () -> Text.translatable(
+                                                source.sendSuccess(
+                                                        () -> Component.translatable(
                                                                 "eroded.command.territory.list.entry",
                                                                 index,
                                                                 claim.ownerName(),
@@ -603,15 +602,15 @@ public final class ErodedCommand {
                                         })
                                 )
 
-                                .then(CommandManager.literal("remove")
+                                .then(Commands.literal("remove")
                                         .executes(ctx -> {
-                                            ServerCommandSource source =
+                                            CommandSourceStack source =
                                                     ctx.getSource();
 
-                                            ServerWorld world =
-                                                    source.getWorld();
+                                            ServerLevel world =
+                                                    source.getLevel();
 
-                                            ServerPlayerEntity player =
+                                            ServerPlayer player =
                                                     source.getPlayer();
 
                                             assert player != null;
@@ -619,12 +618,12 @@ public final class ErodedCommand {
                                             TerritoryClaim claim =
                                                     findClaimForCommand(
                                                             world,
-                                                            player.getBlockPos()
+                                                            player.blockPosition()
                                                     );
 
                                             if (claim == null) {
-                                                source.sendFeedback(
-                                                        () -> Text.translatable(
+                                                source.sendSuccess(
+                                                        () -> Component.translatable(
                                                                 "eroded.command.territory.remove.none_here"
                                                         ),
                                                         false
@@ -635,8 +634,8 @@ public final class ErodedCommand {
 
                                             removeClaimByAdmin(world, claim);
 
-                                            source.sendFeedback(
-                                                    () -> Text.translatable(
+                                            source.sendSuccess(
+                                                    () -> Component.translatable(
                                                             "eroded.command.territory.remove.success",
                                                             formatPos(
                                                                     claim.anchorPos()
@@ -648,19 +647,19 @@ public final class ErodedCommand {
                                             return 1;
                                         })
 
-                                        .then(CommandManager.argument(
+                                        .then(Commands.argument(
                                                                 "pos",
-                                                                BlockPosArgumentType.blockPos()
+                                                                BlockPosArgument.blockPos()
                                                         )
                                                         .executes(ctx -> {
-                                                            ServerCommandSource source =
+                                                            CommandSourceStack source =
                                                                     ctx.getSource();
 
-                                                            ServerWorld world =
-                                                                    source.getWorld();
+                                                            ServerLevel world =
+                                                                    source.getLevel();
 
                                                             BlockPos pos =
-                                                                    BlockPosArgumentType
+                                                                    BlockPosArgument
                                                                             .getBlockPos(
                                                                                     ctx,
                                                                                     "pos"
@@ -673,8 +672,8 @@ public final class ErodedCommand {
                                                                     );
 
                                                             if (claim == null) {
-                                                                source.sendFeedback(
-                                                                        () -> Text.translatable(
+                                                                source.sendSuccess(
+                                                                        () -> Component.translatable(
                                                                                 "eroded.command.territory.remove.none_at_pos"
                                                                         ),
                                                                         false
@@ -688,8 +687,8 @@ public final class ErodedCommand {
                                                                     claim
                                                             );
 
-                                                            source.sendFeedback(
-                                                                    () -> Text.translatable(
+                                                            source.sendSuccess(
+                                                                    () -> Component.translatable(
                                                                             "eroded.command.territory.remove.success",
                                                                             formatPos(
                                                                                     claim.anchorPos()
@@ -703,13 +702,13 @@ public final class ErodedCommand {
                                         )
                                 )
 
-                                .then(CommandManager.literal("clear")
+                                .then(Commands.literal("clear")
                                         .executes(ctx -> {
-                                            ServerCommandSource source =
+                                            CommandSourceStack source =
                                                     ctx.getSource();
 
-                                            ServerWorld world =
-                                                    source.getWorld();
+                                            ServerLevel world =
+                                                    source.getLevel();
 
                                             List<TerritoryClaim> claims =
                                                     new ArrayList<>(
@@ -719,8 +718,8 @@ public final class ErodedCommand {
                                                     );
 
                                             if (claims.isEmpty()) {
-                                                source.sendFeedback(
-                                                        () -> Text.translatable(
+                                                source.sendSuccess(
+                                                        () -> Component.translatable(
                                                                 "eroded.command.territory.clear.empty"
                                                         ),
                                                         false
@@ -736,8 +735,8 @@ public final class ErodedCommand {
                                                 );
                                             }
 
-                                            source.sendFeedback(
-                                                    () -> Text.translatable(
+                                            source.sendSuccess(
+                                                    () -> Component.translatable(
                                                             "eroded.command.territory.clear.success",
                                                             claims.size()
                                                     ),
@@ -752,7 +751,7 @@ public final class ErodedCommand {
     }
 
     private static TerritoryClaim findClaimForCommand(
-            ServerWorld world,
+            ServerLevel world,
             BlockPos pos
     ) {
         TerritoryClaim anchorClaim =
@@ -787,22 +786,22 @@ public final class ErodedCommand {
     }
 
     private static void sendClaimInfo(
-            ServerCommandSource source,
+            CommandSourceStack source,
             TerritoryClaim claim
     ) {
         BlockPos pos = claim.anchorPos();
 
         int areaSize = (claim.radius() * 2) + 1;
 
-        source.sendFeedback(
-                () -> Text.translatable(
+        source.sendSuccess(
+                () -> Component.translatable(
                         "eroded.command.territory.info.title"
                 ),
                 false
         );
 
-        source.sendFeedback(
-                () -> Text.translatable(
+        source.sendSuccess(
+                () -> Component.translatable(
                         "eroded.command.territory.info.owner",
                         claim.ownerName(),
                         claim.ownerUuid().toString()
@@ -810,16 +809,16 @@ public final class ErodedCommand {
                 false
         );
 
-        source.sendFeedback(
-                () -> Text.translatable(
+        source.sendSuccess(
+                () -> Component.translatable(
                         "eroded.command.territory.info.anchor",
                         formatPos(pos)
                 ),
                 false
         );
 
-        source.sendFeedback(
-                () -> Text.translatable(
+        source.sendSuccess(
+                () -> Component.translatable(
                         "eroded.command.territory.info.radius",
                         claim.radius(),
                         areaSize,
@@ -828,8 +827,8 @@ public final class ErodedCommand {
                 false
         );
 
-        source.sendFeedback(
-                () -> Text.translatable(
+        source.sendSuccess(
+                () -> Component.translatable(
                         "eroded.command.territory.info.active",
                         claim.active()
                 ),
@@ -838,7 +837,7 @@ public final class ErodedCommand {
     }
 
     private static void removeClaimByAdmin(
-            ServerWorld world,
+            ServerLevel world,
             TerritoryClaim claim
     ) {
         BlockPos anchorPos = claim.anchorPos();
@@ -855,19 +854,19 @@ public final class ErodedCommand {
     }
 
     private static void removeAnchorBlockByAdmin(
-            ServerWorld world,
+            ServerLevel world,
             BlockPos pos
     ) {
         BlockState state = world.getBlockState(pos);
 
-        if (!state.isOf(ErodedBlocks.TERRITORY_ANCHOR)) {
+        if (!state.is(ErodedBlocks.TERRITORY_ANCHOR)) {
             return;
         }
 
-        world.setBlockState(
+        world.setBlock(
                 pos,
-                Blocks.AIR.getDefaultState(),
-                Block.NOTIFY_ALL
+                Blocks.AIR.defaultBlockState(),
+                Block.UPDATE_ALL
         );
     }
 

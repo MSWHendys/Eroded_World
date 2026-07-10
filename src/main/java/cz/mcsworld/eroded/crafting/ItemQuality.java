@@ -1,7 +1,7 @@
 package cz.mcsworld.eroded.crafting;
 
 import cz.mcsworld.eroded.core.ErodedComponents;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.item.ItemStack;
 
 public class ItemQuality {
 

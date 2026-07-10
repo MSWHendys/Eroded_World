@@ -1,6 +1,6 @@
 package cz.mcsworld.eroded.config.energy;
 
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
 public enum EnergyHudPosition {
     CENTER_DOWN,
@@ -11,8 +11,8 @@ public enum EnergyHudPosition {
     RIGHT_UP;
 
 
-    public Text getTranslation() {
-        return Text.translatable(
+    public Component getTranslation() {
+        return Component.translatable(
                 "eroded.energy.hud.position." + name().toLowerCase()
         );
     }
