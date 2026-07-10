@@ -3,17 +3,17 @@ package cz.mcsworld.eroded.death;
 import cz.mcsworld.eroded.network.ErodedCompassSyncPacket;
 import cz.mcsworld.eroded.network.SafeNetworkUtil;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerPlayer;
 
 public final class ErodedCompassSyncHandler {
 
     private ErodedCompassSyncHandler() {}
 
-    public static void sync(ServerPlayerEntity player) {
+    public static void sync(ServerPlayer player) {
 
         ErodedDeathMemory mem =
-                ErodedDeathStorage.get(player.getUuid());
+                ErodedDeathStorage.get(player.getUUID());
 
         if (mem == null) {
             SafeNetworkUtil.safeSend(
@@ -23,7 +23,7 @@ public final class ErodedCompassSyncHandler {
             return;
         }
 
-        long now = player.getServer().getTicks();
+        long now = player.level().getServer().getTickCount();
 
         if (mem.isExpired(now) || mem.isResolved()) {
             SafeNetworkUtil.safeSend(

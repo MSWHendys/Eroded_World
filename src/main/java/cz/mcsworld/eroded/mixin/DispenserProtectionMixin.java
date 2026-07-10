@@ -1,10 +1,10 @@
 package cz.mcsworld.eroded.mixin;
 
 import cz.mcsworld.eroded.protection.DispenserDropperProtectionManager;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.DispenserBlock;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.block.DispenserBlock;
+import net.minecraft.world.level.block.state.BlockState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -14,12 +14,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class DispenserProtectionMixin {
 
     @Inject(
-            method = "dispense",
+            method = "dispenseFrom",
             at = @At("HEAD"),
             cancellable = true
     )
     private void eroded$preventDispenserAcrossProtectionBoundary(
-            ServerWorld world,
+            ServerLevel world,
             BlockState state,
             BlockPos pos,
             CallbackInfo ci

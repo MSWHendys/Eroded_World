@@ -1,11 +1,10 @@
 package cz.mcsworld.eroded.energy;
 
 import cz.mcsworld.eroded.config.crafting.CraftingConfig;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.registry.tag.ItemTags;
-
 import java.util.List;
+import net.minecraft.tags.ItemTags;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 public class EnergyCostResolver {
 
@@ -34,27 +33,27 @@ public class EnergyCostResolver {
         var root = CraftingConfig.get();
         var cfg = root.energy;
 
-        if (stack.isOf(Items.NETHERITE_INGOT) || stack.isOf(Items.NETHERITE_SCRAP) || stack.isOf(Items.NETHERITE_BLOCK)
+        if (stack.is(Items.NETHERITE_INGOT) || stack.is(Items.NETHERITE_SCRAP) || stack.is(Items.NETHERITE_BLOCK)
                 || stack.getItem().toString().contains("netherite_")) {
             return cfg.netheriteCraftCost;
         }
 
-        if (stack.isOf(Items.DIAMOND) || stack.isOf(Items.DIAMOND_BLOCK)
+        if (stack.is(Items.DIAMOND) || stack.is(Items.DIAMOND_BLOCK)
                 || stack.getItem().toString().contains("diamond_")) {
             return cfg.diamondCraftCost;
         }
 
-        if (stack.isOf(Items.IRON_INGOT) || stack.isOf(Items.IRON_NUGGET) || stack.isOf(Items.IRON_BLOCK)
+        if (stack.is(Items.IRON_INGOT) || stack.is(Items.IRON_NUGGET) || stack.is(Items.IRON_BLOCK)
                 || stack.getItem().toString().contains("iron_")) {
             return cfg.ironCraftCost;
         }
 
-        if (stack.isIn(ItemTags.STONE_TOOL_MATERIALS) || stack.isOf(Items.COBBLESTONE) || stack.isOf(Items.STONE)
+        if (stack.is(ItemTags.STONE_TOOL_MATERIALS) || stack.is(Items.COBBLESTONE) || stack.is(Items.STONE)
                 || stack.getItem().toString().contains("stone_")) {
             return cfg.stoneCraftCost;
         }
 
-        if (stack.isIn(ItemTags.PLANKS) || stack.isIn(ItemTags.LOGS)
+        if (stack.is(ItemTags.PLANKS) || stack.is(ItemTags.LOGS)
                 || stack.getItem().toString().contains("wooden_")) {
             return cfg.woodCraftCost;
         }

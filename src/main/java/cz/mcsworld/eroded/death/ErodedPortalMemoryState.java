@@ -2,18 +2,17 @@ package cz.mcsworld.eroded.death;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.minecraft.datafixer.DataFixTypes;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.Uuids;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.PersistentState;
-import net.minecraft.world.PersistentStateType;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.UUIDUtil;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.datafix.DataFixTypes;
+import net.minecraft.world.level.saveddata.SavedData;
+import net.minecraft.world.level.saveddata.SavedDataType;
 
-public final class ErodedPortalMemoryState extends PersistentState {
+public final class ErodedPortalMemoryState extends SavedData {
 
     public record PortalRecord(long overworldPortalPos, long netherPortalPos) {
         public static final Codec<PortalRecord> CODEC =
@@ -25,7 +24,7 @@ public final class ErodedPortalMemoryState extends PersistentState {
 
     public static final Codec<ErodedPortalMemoryState> CODEC =
             RecordCodecBuilder.create(inst -> inst.group(
-                    Codec.unboundedMap(Uuids.CODEC, PortalRecord.CODEC)
+                    Codec.unboundedMap(UUIDUtil.AUTHLIB_CODEC, PortalRecord.CODEC)
                             .optionalFieldOf("data", Map.of())
                             .forGetter(s -> s.data)
             ).apply(inst, map -> {
@@ -34,8 +33,8 @@ public final class ErodedPortalMemoryState extends PersistentState {
                 return s;
             }));
 
-    public static final PersistentStateType<ErodedPortalMemoryState> TYPE =
-            new PersistentStateType<>(
+    public static final SavedDataType<ErodedPortalMemoryState> TYPE =
+            new SavedDataType<>(
                     "eroded_portal_memory",
                     ctx -> new ErodedPortalMemoryState(),
                     ctx -> CODEC,
@@ -46,31 +45,31 @@ public final class ErodedPortalMemoryState extends PersistentState {
 
     private ErodedPortalMemoryState() {}
 
-    public static ErodedPortalMemoryState get(ServerWorld world) {
-        return world.getPersistentStateManager().getOrCreate(TYPE);
+    public static ErodedPortalMemoryState get(ServerLevel world) {
+        return world.getDataStorage().computeIfAbsent(TYPE);
     }
 
     public void setOverworldPortal(UUID playerId, BlockPos pos) {
         PortalRecord cur = data.getOrDefault(playerId, new PortalRecord(0L, 0L));
         data.put(playerId, new PortalRecord(pos.asLong(), cur.netherPortalPos()));
-        markDirty();
+        setDirty();
     }
 
     public void setNetherPortal(UUID playerId, BlockPos pos) {
         PortalRecord cur = data.getOrDefault(playerId, new PortalRecord(0L, 0L));
         data.put(playerId, new PortalRecord(cur.overworldPortalPos(), pos.asLong()));
-        markDirty();
+        setDirty();
     }
 
     public BlockPos getOverworldPortal(UUID playerId) {
         PortalRecord r = data.get(playerId);
         if (r == null || r.overworldPortalPos() == 0L) return null;
-        return BlockPos.fromLong(r.overworldPortalPos());
+        return BlockPos.of(r.overworldPortalPos());
     }
 
     public BlockPos getNetherPortal(UUID playerId) {
         PortalRecord r = data.get(playerId);
         if (r == null || r.netherPortalPos() == 0L) return null;
-        return BlockPos.fromLong(r.netherPortalPos());
+        return BlockPos.of(r.netherPortalPos());
     }
 }

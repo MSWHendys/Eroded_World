@@ -1,13 +1,11 @@
 package cz.mcsworld.eroded.death;
 
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerChunkEvents;
-import net.minecraft.entity.Entity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.ChunkPos;
-import net.minecraft.world.chunk.WorldChunk;
-
-
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.phys.AABB;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -24,7 +22,7 @@ public final class DeathHologramOrphanCleaner {
         );
     }
 
-    private static void onChunkLoad(ServerWorld world, WorldChunk chunk) {
+    private static void onChunkLoad(ServerLevel world, LevelChunk chunk) {
 
         Set<UUID> validIds = DeathChestState.get(world)
                 .all()
@@ -34,19 +32,19 @@ public final class DeathHologramOrphanCleaner {
 
         ChunkPos cPos = chunk.getPos();
 
-        int bottomY = world.getBottomY();
-        int topY = world.getTopYInclusive();
+        int bottomY = world.getMinY();
+        int topY = world.getMaxY();
 
-        Box chunkBox = new Box(
-                cPos.getStartX(), bottomY, cPos.getStartZ(),
-                cPos.getEndX() + 1, topY + 1, cPos.getEndZ() + 1
+        AABB chunkBox = new AABB(
+                cPos.getMinBlockX(), bottomY, cPos.getMinBlockZ(),
+                cPos.getMaxBlockX() + 1, topY + 1, cPos.getMaxBlockZ() + 1
         );
 
-        for (Entity e : world.getOtherEntities(null, chunkBox)) {
+        for (Entity e : world.getEntities(null, chunkBox)) {
 
-            if (e.getCommandTags().isEmpty()) continue;
+            if (e.getTags().isEmpty()) continue;
 
-            for (String tag : e.getCommandTags()) {
+            for (String tag : e.getTags()) {
                 if (tag.startsWith(TAG_HOLOGRAM_ID)) {
                     try {
                         UUID id = UUID.fromString(tag.substring(TAG_HOLOGRAM_ID.length()));

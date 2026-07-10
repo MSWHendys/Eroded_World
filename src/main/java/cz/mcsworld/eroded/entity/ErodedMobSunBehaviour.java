@@ -1,9 +1,9 @@
 package cz.mcsworld.eroded.entity;
 
 import cz.mcsworld.eroded.config.territory.TerritoryConfig;
-import net.minecraft.entity.mob.MobEntity;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.random.Random;
+import net.minecraft.util.Mth;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.Mob;
 
 public final class ErodedMobSunBehaviour {
 
@@ -15,28 +15,28 @@ public final class ErodedMobSunBehaviour {
     private ErodedMobSunBehaviour() {
     }
 
-    public static void applyRandomSunBehaviour(MobEntity mob, Random random) {
+    public static void applyRandomSunBehaviour(Mob mob, RandomSource random) {
         var cfg = TerritoryConfig.get().server;
 
-        mob.addCommandTag(TAG_ERODED);
+        mob.addTag(TAG_ERODED);
 
-        if (mob.getCommandTags().contains(TAG_PERMANENT)
-                || mob.getCommandTags().contains(TAG_TEMPORARY)) {
+        if (mob.getTags().contains(TAG_PERMANENT)
+                || mob.getTags().contains(TAG_TEMPORARY)) {
             return;
         }
 
-        float sunProofChance = MathHelper.clamp(
+        float sunProofChance = Mth.clamp(
                 cfg.erodedMobSunProofChance,
                 0.0F,
                 1.0F
         );
 
         if (random.nextFloat() <= sunProofChance) {
-            mob.addCommandTag(TAG_PERMANENT);
+            mob.addTag(TAG_PERMANENT);
             return;
         }
 
-        mob.addCommandTag(TAG_TEMPORARY);
+        mob.addTag(TAG_TEMPORARY);
 
         int minTicks = Math.max(0, cfg.erodedMobTempProtectionMinTicks);
         int randomTicks = Math.max(0, cfg.erodedMobTempProtectionRandomTicks);
@@ -45,37 +45,37 @@ public final class ErodedMobSunBehaviour {
                 ? random.nextInt(randomTicks)
                 : 0L;
 
-        long burnTime = mob.getWorld().getTime() + minTicks + extraTicks;
+        long burnTime = mob.level().getGameTime() + minTicks + extraTicks;
 
-        mob.addCommandTag(TAG_BURN_PREFIX + burnTime);
+        mob.addTag(TAG_BURN_PREFIX + burnTime);
     }
 
-    public static void tickSunBehaviour(MobEntity mob, boolean manuallyBurnInDaylight) {
+    public static void tickSunBehaviour(Mob mob, boolean manuallyBurnInDaylight) {
         if (!mob.isAlive()) {
             return;
         }
 
-        if (mob.getCommandTags().contains(TAG_PERMANENT)) {
+        if (mob.getTags().contains(TAG_PERMANENT)) {
             if (mob.isOnFire()) {
-                mob.extinguish();
+                mob.clearFire();
             }
 
             return;
         }
 
-        if (mob.getCommandTags().contains(TAG_TEMPORARY)) {
+        if (mob.getTags().contains(TAG_TEMPORARY)) {
             long burnTime = getBurnTime(mob);
-            long now = mob.getWorld().getTime();
+            long now = mob.level().getGameTime();
 
             if (burnTime < 0L || now < burnTime) {
                 if (mob.isOnFire()) {
-                    mob.extinguish();
+                    mob.clearFire();
                 }
 
                 return;
             }
 
-            mob.removeCommandTag(TAG_TEMPORARY);
+            mob.removeTag(TAG_TEMPORARY);
             removeBurnTimeTag(mob);
         }
 
@@ -87,12 +87,12 @@ public final class ErodedMobSunBehaviour {
                     cfg.erodedSkeletonBurnSeconds
             );
 
-            mob.setOnFireFor(burnSeconds);
+            mob.igniteForSeconds(burnSeconds);
         }
     }
 
-    private static long getBurnTime(MobEntity mob) {
-        for (String tag : mob.getCommandTags()) {
+    private static long getBurnTime(Mob mob) {
+        for (String tag : mob.getTags()) {
             if (!tag.startsWith(TAG_BURN_PREFIX)) {
                 continue;
             }
@@ -107,10 +107,10 @@ public final class ErodedMobSunBehaviour {
         return -1L;
     }
 
-    private static void removeBurnTimeTag(MobEntity mob) {
+    private static void removeBurnTimeTag(Mob mob) {
         String burnTag = null;
 
-        for (String tag : mob.getCommandTags()) {
+        for (String tag : mob.getTags()) {
             if (tag.startsWith(TAG_BURN_PREFIX)) {
                 burnTag = tag;
                 break;
@@ -118,13 +118,13 @@ public final class ErodedMobSunBehaviour {
         }
 
         if (burnTag != null) {
-            mob.removeCommandTag(burnTag);
+            mob.removeTag(burnTag);
         }
     }
 
-    private static boolean isInDirectDaylight(MobEntity mob) {
-        return mob.getWorld().isDay()
-                && mob.getWorld().isSkyVisible(mob.getBlockPos())
-                && !mob.isTouchingWaterOrRain();
+    private static boolean isInDirectDaylight(Mob mob) {
+        return mob.level().isBrightOutside()
+                && mob.level().canSeeSky(mob.blockPosition())
+                && !mob.isInWaterOrRain();
     }
 }

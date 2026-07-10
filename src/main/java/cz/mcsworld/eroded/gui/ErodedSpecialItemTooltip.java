@@ -7,9 +7,9 @@ import cz.mcsworld.eroded.death.block.ErodedBlocks;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
-import net.minecraft.item.ItemStack;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.ItemStack;
 
 @Environment(EnvType.CLIENT)
 public final class ErodedSpecialItemTooltip {
@@ -22,40 +22,40 @@ public final class ErodedSpecialItemTooltip {
                 return;
             }
 
-            if (stack.isOf(ErodedItems.ENERGY_DRINK)) {
-                lines.add(Text.literal(""));
+            if (stack.is(ErodedItems.ENERGY_DRINK)) {
+                lines.add(Component.literal(""));
                 lines.add(
-                        Text.translatable("eroded.tooltip.energy_drink_effect")
-                                .formatted(Formatting.GOLD)
+                        Component.translatable("eroded.tooltip.energy_drink_effect")
+                                .withStyle(ChatFormatting.GOLD)
                 );
                 return;
             }
 
-            if (stack.isOf(ErodedItems.ADRENALINE_SHOT)) {
+            if (stack.is(ErodedItems.ADRENALINE_SHOT)) {
                 int seconds = Math.max(
                         1,
                         EnergyConfig.get().server.adrenalineShot.immunitySeconds
                 );
 
-                lines.add(Text.literal(""));
+                lines.add(Component.literal(""));
                 lines.add(
-                        Text.translatable(
+                        Component.translatable(
                                 "eroded.tooltip.adrenaline_duration",
                                 formatSeconds(seconds)
-                        ).formatted(Formatting.GOLD)
+                        ).withStyle(ChatFormatting.GOLD)
                 );
                 return;
             }
 
-            if (stack.isOf(ErodedBlocks.WARDING_LANTERN.asItem())) {
+            if (stack.is(ErodedBlocks.WARDING_LANTERN.asItem())) {
                 int remainingSeconds = getLampDurationSeconds(stack);
 
-                lines.add(Text.literal(""));
+                lines.add(Component.literal(""));
                 lines.add(
-                        Text.translatable(
+                        Component.translatable(
                                 "eroded.tooltip.lamp_duration",
                                 formatSeconds(remainingSeconds)
-                        ).formatted(Formatting.GOLD)
+                        ).withStyle(ChatFormatting.GOLD)
                 );
             }
         });
@@ -68,7 +68,7 @@ public final class ErodedSpecialItemTooltip {
         );
 
         int maxDamage = Math.max(1, stack.getMaxDamage());
-        int damage = Math.max(0, stack.getDamage());
+        int damage = Math.max(0, stack.getDamageValue());
 
         float remainingRatio = 1.0f - (damage / (float) maxDamage);
 

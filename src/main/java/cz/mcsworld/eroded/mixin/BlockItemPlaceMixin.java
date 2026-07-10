@@ -1,12 +1,12 @@
 package cz.mcsworld.eroded.mixin;
 
 import cz.mcsworld.eroded.world.territory.TerritoryTracker;
-import net.minecraft.block.BlockState;
-import net.minecraft.item.BlockItem;
-import net.minecraft.item.ItemPlacementContext;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.block.state.BlockState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -19,14 +19,14 @@ public class BlockItemPlaceMixin {
             method = "place",
             at = @At("RETURN")
     )
-    private void eroded$afterBlockPlaced(ItemPlacementContext context, CallbackInfoReturnable<ActionResult> cir) {
+    private void eroded$afterBlockPlaced(BlockPlaceContext context, CallbackInfoReturnable<InteractionResult> cir) {
 
-        ActionResult result = cir.getReturnValue();
-        if (result == null || !result.isAccepted()) return;
+        InteractionResult result = cir.getReturnValue();
+        if (result == null || !result.consumesAction()) return;
 
-        if (!(context.getWorld() instanceof ServerWorld world)) return;
+        if (!(context.getLevel() instanceof ServerLevel world)) return;
 
-        BlockPos placedPos = context.getBlockPos();
+        BlockPos placedPos = context.getClickedPos();
         BlockState placedState = world.getBlockState(placedPos);
 
         TerritoryTracker.onBlockPlaced(world, placedPos, placedState);

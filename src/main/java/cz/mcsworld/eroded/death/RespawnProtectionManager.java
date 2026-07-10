@@ -3,13 +3,12 @@ package cz.mcsworld.eroded.death;
 import cz.mcsworld.eroded.config.death.DeathConfig;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
-import net.minecraft.entity.mob.HostileEntity;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.Text;
-import net.minecraft.util.ActionResult;
-
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.monster.Monster;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
@@ -30,38 +29,38 @@ public final class RespawnProtectionManager {
         ServerTickEvents.END_SERVER_TICK.register(RespawnProtectionManager::tick);
 
         AttackEntityCallback.EVENT.register((player, world, hand, entity, hitResult) -> {
-            if (world.isClient()) {
-                return ActionResult.PASS;
+            if (world.isClientSide()) {
+                return InteractionResult.PASS;
             }
 
-            if (!(player instanceof ServerPlayerEntity serverPlayer)) {
-                return ActionResult.PASS;
+            if (!(player instanceof ServerPlayer serverPlayer)) {
+                return InteractionResult.PASS;
             }
 
             DeathConfig cfg = DeathConfig.get();
 
             if (!cfg.respawnProtection.enabled || !cfg.respawnProtection.cancelOnAttack) {
-                return ActionResult.PASS;
+                return InteractionResult.PASS;
             }
 
             if (!isProtected(serverPlayer)) {
-                return ActionResult.PASS;
+                return InteractionResult.PASS;
             }
 
             end(serverPlayer);
 
             if (cfg.respawnProtection.showMessage) {
-                serverPlayer.sendMessage(
-                        Text.translatable("eroded.respawn_protection.cancelled_by_attack"),
+                serverPlayer.displayClientMessage(
+                        Component.translatable("eroded.respawn_protection.cancelled_by_attack"),
                         true
                 );
             }
 
-            return ActionResult.FAIL;
+            return InteractionResult.FAIL;
         });
     }
 
-    public static void start(ServerPlayerEntity player) {
+    public static void start(ServerPlayer player) {
         DeathConfig cfg = DeathConfig.get();
 
         if (!cfg.respawnProtection.enabled) {
@@ -71,13 +70,13 @@ public final class RespawnProtectionManager {
         int duration = Math.max(1, cfg.respawnProtection.durationTicks);
 
         ACTIVE.put(
-                player.getUuid(),
+                player.getUUID(),
                 new ProtectionData(serverTick + duration)
         );
 
         if (cfg.respawnProtection.showMessage) {
-            player.sendMessage(
-                    Text.translatable("eroded.respawn_protection.started"),
+            player.displayClientMessage(
+                    Component.translatable("eroded.respawn_protection.started"),
                     true
             );
         }
@@ -87,11 +86,11 @@ public final class RespawnProtectionManager {
         }
     }
 
-    public static boolean isProtected(ServerPlayerEntity player) {
-        return ACTIVE.containsKey(player.getUuid());
+    public static boolean isProtected(ServerPlayer player) {
+        return ACTIVE.containsKey(player.getUUID());
     }
 
-    public static boolean shouldPreventDamage(ServerPlayerEntity player) {
+    public static boolean shouldPreventDamage(ServerPlayer player) {
         DeathConfig cfg = DeathConfig.get();
 
         return cfg.respawnProtection.enabled
@@ -99,8 +98,8 @@ public final class RespawnProtectionManager {
                 && isProtected(player);
     }
 
-    public static void end(ServerPlayerEntity player) {
-        ACTIVE.remove(player.getUuid());
+    public static void end(ServerPlayer player) {
+        ACTIVE.remove(player.getUUID());
     }
 
     private static void tick(MinecraftServer server) {
@@ -113,7 +112,7 @@ public final class RespawnProtectionManager {
         while (iterator.hasNext()) {
             Map.Entry<UUID, ProtectionData> entry = iterator.next();
 
-            ServerPlayerEntity player = server.getPlayerManager().getPlayer(entry.getKey());
+            ServerPlayer player = server.getPlayerList().getPlayer(entry.getKey());
 
             if (player == null) {
                 iterator.remove();
@@ -126,8 +125,8 @@ public final class RespawnProtectionManager {
                 iterator.remove();
 
                 if (cfg.respawnProtection.showMessage) {
-                    player.sendMessage(
-                            Text.translatable("eroded.respawn_protection.expired"),
+                    player.displayClientMessage(
+                            Component.translatable("eroded.respawn_protection.expired"),
                             true
                     );
                 }
@@ -141,16 +140,16 @@ public final class RespawnProtectionManager {
         }
     }
 
-    private static void clearNearbyMobTargets(ServerPlayerEntity player, double radius) {
-        if (!(player.getWorld() instanceof ServerWorld world)) {
+    private static void clearNearbyMobTargets(ServerPlayer player, double radius) {
+        if (!(player.level() instanceof ServerLevel world)) {
             return;
         }
 
         double safeRadius = Math.max(1.0, radius);
 
-        for (HostileEntity mob : world.getEntitiesByClass(
-                HostileEntity.class,
-                player.getBoundingBox().expand(safeRadius),
+        for (Monster mob : world.getEntitiesOfClass(
+                Monster.class,
+                player.getBoundingBox().inflate(safeRadius),
                 mob -> mob.isAlive() && mob.getTarget() == player
         )) {
             mob.setTarget(null);

@@ -8,8 +8,7 @@ import cz.mcsworld.eroded.skills.SkillManager;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-
+import net.minecraft.server.level.ServerPlayer;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -25,18 +24,18 @@ public final class EnergySyncHandler {
 
     public static void register() {
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
-            ServerPlayerEntity player = handler.getPlayer();
+            ServerPlayer player = handler.getPlayer();
             SkillData data = SkillManager.get(player);
 
-            var state = EnergyPersistentState.get(server.getOverworld());
-            int saved = state.getEnergy(player.getUuid(), data.getMaxEnergy());
+            var state = EnergyPersistentState.get(server.overworld());
+            int saved = state.getEnergy(player.getUUID(), data.getMaxEnergy());
 
             data.setEnergy(saved);
             forceSync(player);
         });
 
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) ->
-                LAST_SENT.remove(handler.getPlayer().getUuid())
+                LAST_SENT.remove(handler.getPlayer().getUUID())
         );
 
         ServerTickEvents.END_SERVER_TICK.register(EnergySyncHandler::tick);
@@ -46,7 +45,7 @@ public final class EnergySyncHandler {
         var root = EnergyConfig.get();
         var cfg = root.server.warnings;
 
-        for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
+        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
 
             boolean changed = syncIfChanged(player);
 
@@ -61,36 +60,36 @@ public final class EnergySyncHandler {
         }
     }
 
-    public static boolean syncIfChanged(ServerPlayerEntity player) {
+    public static boolean syncIfChanged(ServerPlayer player) {
         SkillData data = SkillManager.get(player);
 
         int energy = data.getEnergy();
         int currentImmunity = (int) (data.getImmunityRemainingMs() / 1000);
 
         LastEnergySync current = new LastEnergySync(energy, currentImmunity);
-        LastEnergySync last = LAST_SENT.get(player.getUuid());
+        LastEnergySync last = LAST_SENT.get(player.getUUID());
 
         if (current.equals(last)) {
             return false;
         }
 
-        LAST_SENT.put(player.getUuid(), current);
+        LAST_SENT.put(player.getUUID(), current);
 
-        var state = EnergyPersistentState.get(player.getServer().getOverworld());
-        state.setEnergy(player.getUuid(), energy);
+        var state = EnergyPersistentState.get(player.level().getServer().overworld());
+        state.setEnergy(player.getUUID(), energy);
 
         SkillManager.sync(player);
         return true;
     }
 
-    public static void forceSync(ServerPlayerEntity player) {
+    public static void forceSync(ServerPlayer player) {
         SkillData data = SkillManager.get(player);
 
         int energy = data.getEnergy();
         int currentImmunity = (int) (data.getImmunityRemainingMs() / 1000);
 
         LAST_SENT.put(
-                player.getUuid(),
+                player.getUUID(),
                 new LastEnergySync(energy, currentImmunity)
         );
 

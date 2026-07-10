@@ -1,14 +1,14 @@
 package cz.mcsworld.eroded.loot;
 
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
-import net.minecraft.block.ChestBlock;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.block.entity.ChestBlockEntity;
-import net.minecraft.block.entity.BarrelBlockEntity;
-import net.minecraft.inventory.Inventory;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.Container;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.level.block.ChestBlock;
+import net.minecraft.world.level.block.entity.BarrelBlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.ChestBlockEntity;
 
 public class ErodedContainerHandler {
 
@@ -16,32 +16,32 @@ public class ErodedContainerHandler {
 
         UseBlockCallback.EVENT.register((player, world, hand, hit) -> {
 
-            if (world.isClient()) return ActionResult.PASS;
+            if (world.isClientSide()) return InteractionResult.PASS;
 
             BlockPos pos = hit.getBlockPos();
             BlockEntity be = world.getBlockEntity(pos);
 
             if (be instanceof ChestBlockEntity chest) {
 
-                Inventory inv = ChestBlock.getInventory(
-                        (ChestBlock) chest.getCachedState().getBlock(),
-                        chest.getCachedState(),
+                Container inv = ChestBlock.getContainer(
+                        (ChestBlock) chest.getBlockState().getBlock(),
+                        chest.getBlockState(),
                         world,
                         pos,
                         true
                 );
 
-                if (inv == null) return ActionResult.PASS;
+                if (inv == null) return InteractionResult.PASS;
 
-                ErodedLootManager.handleOpen(player, (ServerWorld) world, pos, inv);
+                ErodedLootManager.handleOpen(player, (ServerLevel) world, pos, inv);
             }
 
             if (be instanceof BarrelBlockEntity barrel) {
 
-                ErodedLootManager.handleOpen(player, (ServerWorld) world, pos, barrel);
+                ErodedLootManager.handleOpen(player, (ServerLevel) world, pos, barrel);
             }
 
-            return ActionResult.PASS;
+            return InteractionResult.PASS;
         });
     }
 }

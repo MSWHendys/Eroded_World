@@ -1,117 +1,116 @@
 package cz.mcsworld.eroded.death;
 
 import cz.mcsworld.eroded.core.ErodedItems;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.LodestoneTrackerComponent;
-import net.minecraft.component.type.NbtComponent;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.GlobalPos;
-import net.minecraft.world.World;
-
 import java.util.Optional;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.GlobalPos;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.item.component.LodestoneTracker;
+import net.minecraft.world.level.Level;
 
 public final class ErodedCompassHandler {
 
     private ErodedCompassHandler() {}
 
-    public static void onPlayerDeath(ServerPlayerEntity player, BlockPos deathPos, boolean accepted) {
+    public static void onPlayerDeath(ServerPlayer player, BlockPos deathPos, boolean accepted) {
         if (!accepted) return;
         giveCompass(player);
     }
 
-    public static void tick(ServerPlayerEntity player) {
-        ErodedDeathMemory mem = ErodedDeathStorage.get(player.getUuid());
+    public static void tick(ServerPlayer player) {
+        ErodedDeathMemory mem = ErodedDeathStorage.get(player.getUUID());
 
         if (mem == null) {
             removeCompass(player);
             return;
         }
 
-        if (mem.isExpired(player.getServer().getTicks()) || mem.isResolved()) {
+        if (mem.isExpired(player.level().getServer().getTickCount()) || mem.isResolved()) {
 
             removeCompass(player);
-            ErodedDeathStorage.clear(player.getUuid());
+            ErodedDeathStorage.clear(player.getUUID());
             return;
         }
 
         updateCompassTarget(player, mem);
     }
 
-    private static void giveCompass(ServerPlayerEntity player) {
-        PlayerInventory inv = player.getInventory();
-        for (int i = 0; i < inv.size(); i++) {
-            if (inv.getStack(i).isOf(ErodedItems.DEATH_COMPASS)) return;
+    private static void giveCompass(ServerPlayer player) {
+        Inventory inv = player.getInventory();
+        for (int i = 0; i < inv.getContainerSize(); i++) {
+            if (inv.getItem(i).is(ErodedItems.DEATH_COMPASS)) return;
         }
 
         ItemStack compass = new ItemStack(ErodedItems.DEATH_COMPASS);
-        inv.insertStack(compass);
-        player.playerScreenHandler.sendContentUpdates();
+        inv.add(compass);
+        player.inventoryMenu.broadcastChanges();
     }
 
-    private static void updateCompassTarget(ServerPlayerEntity player, ErodedDeathMemory mem) {
-        PlayerInventory inv = player.getInventory();
-        ServerWorld currentWorld = player.getWorld();
+    private static void updateCompassTarget(ServerPlayer player, ErodedDeathMemory mem) {
+        Inventory inv = player.getInventory();
+        ServerLevel currentWorld = player.level();
 
-        for (int i = 0; i < inv.size(); i++) {
-            ItemStack stack = inv.getStack(i);
-            if (stack.isOf(ErodedItems.DEATH_COMPASS)) {
+        for (int i = 0; i < inv.getContainerSize(); i++) {
+            ItemStack stack = inv.getItem(i);
+            if (stack.is(ErodedItems.DEATH_COMPASS)) {
 
                 BlockPos targetPos;
-                RegistryKey<World> targetDimKey;
+                ResourceKey<Level> targetDimKey;
 
-                if (currentWorld.getRegistryKey().equals(mem.getDeathDimension())) {
+                if (currentWorld.dimension().equals(mem.getDeathDimension())) {
                     targetPos = mem.getDeathPos();
-                    targetDimKey = currentWorld.getRegistryKey();
-                } else if (currentWorld.getRegistryKey().equals(World.OVERWORLD)) {
-                    BlockPos portal = ErodedPortalMemoryState.get(player.getServer().getWorld(World.OVERWORLD))
-                            .getOverworldPortal(player.getUuid());
+                    targetDimKey = currentWorld.dimension();
+                } else if (currentWorld.dimension().equals(Level.OVERWORLD)) {
+                    BlockPos portal = ErodedPortalMemoryState.get(player.level().getServer().getLevel(Level.OVERWORLD))
+                            .getOverworldPortal(player.getUUID());
                     targetPos = (portal != null) ? portal : mem.getDeathPos();
-                    targetDimKey = World.OVERWORLD;
+                    targetDimKey = Level.OVERWORLD;
                 } else {
                     targetPos = mem.getDeathPos();
                     targetDimKey = mem.getDeathDimension();
                 }
 
                 GlobalPos newGlobalPos = new GlobalPos(targetDimKey, targetPos);
-                LodestoneTrackerComponent currentLodestone = stack.get(DataComponentTypes.LODESTONE_TRACKER);
+                LodestoneTracker currentLodestone = stack.get(DataComponents.LODESTONE_TRACKER);
 
                 if (currentLodestone == null || currentLodestone.target().isEmpty() || !currentLodestone.target().get().equals(newGlobalPos)) {
-                    stack.set(DataComponentTypes.LODESTONE_TRACKER, new LodestoneTrackerComponent(Optional.of(newGlobalPos), true));
+                    stack.set(DataComponents.LODESTONE_TRACKER, new LodestoneTracker(Optional.of(newGlobalPos), true));
 
-                    NbtCompound nbt = new NbtCompound();
+                    CompoundTag nbt = new CompoundTag();
                     nbt.putLong("ChestPos", mem.getDeathPos().asLong());
-                    nbt.putString("DeathDim", mem.getDeathDimension().getValue().toString());
+                    nbt.putString("DeathDim", mem.getDeathDimension().location().toString());
 
-                    BlockPos portal = ErodedPortalMemoryState.get(player.getServer().getWorld(World.OVERWORLD))
-                            .getOverworldPortal(player.getUuid());
+                    BlockPos portal = ErodedPortalMemoryState.get(player.level().getServer().getLevel(Level.OVERWORLD))
+                            .getOverworldPortal(player.getUUID());
                     if (portal != null) nbt.putLong("PortalPos", portal.asLong());
 
-                    stack.set(DataComponentTypes.CUSTOM_DATA, NbtComponent.of(nbt));
-                    player.playerScreenHandler.sendContentUpdates();
+                    stack.set(DataComponents.CUSTOM_DATA, CustomData.of(nbt));
+                    player.inventoryMenu.broadcastChanges();
                 }
                 break;
             }
         }
     }
 
-    private static void removeCompass(ServerPlayerEntity player) {
-        PlayerInventory inv = player.getInventory();
-        for (int i = 0; i < inv.size(); i++) {
-            if (inv.getStack(i).isOf(ErodedItems.DEATH_COMPASS)) {
-                inv.removeStack(i);
-                player.playerScreenHandler.sendContentUpdates();
+    private static void removeCompass(ServerPlayer player) {
+        Inventory inv = player.getInventory();
+        for (int i = 0; i < inv.getContainerSize(); i++) {
+            if (inv.getItem(i).is(ErodedItems.DEATH_COMPASS)) {
+                inv.removeItemNoUpdate(i);
+                player.inventoryMenu.broadcastChanges();
             }
         }
     }
-    public static void forceRemove(ServerPlayerEntity player) {
+    public static void forceRemove(ServerPlayer player) {
         removeCompass(player);
-        ErodedDeathStorage.clear(player.getUuid());
+        ErodedDeathStorage.clear(player.getUUID());
     }
 
 }

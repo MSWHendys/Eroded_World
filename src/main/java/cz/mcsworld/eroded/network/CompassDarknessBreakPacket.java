@@ -1,20 +1,20 @@
 package cz.mcsworld.eroded.network;
 
-import net.minecraft.network.RegistryByteBuf;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.packet.CustomPayload;
-import net.minecraft.util.Identifier;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 
 public record CompassDarknessBreakPacket(
         int durationTicks,
         float maxDarkness
-) implements CustomPayload {
+) implements CustomPacketPayload {
 
-    public static final CustomPayload.Id<CompassDarknessBreakPacket> ID =
-            new CustomPayload.Id<>(Identifier.of("eroded", "compass_darkness_break"));
+    public static final CustomPacketPayload.Type<CompassDarknessBreakPacket> ID =
+            new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath("eroded", "compass_darkness_break"));
 
-    public static final PacketCodec<RegistryByteBuf, CompassDarknessBreakPacket> CODEC =
-            PacketCodec.of(
+    public static final StreamCodec<RegistryFriendlyByteBuf, CompassDarknessBreakPacket> CODEC =
+            StreamCodec.ofMember(
                     (packet, buf) -> {
                         buf.writeVarInt(packet.durationTicks());
                         buf.writeFloat(packet.maxDarkness());
@@ -26,7 +26,7 @@ public record CompassDarknessBreakPacket(
             );
 
     @Override
-    public CustomPayload.Id<? extends CustomPayload> getId() {
+    public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
         return ID;
     }
 }

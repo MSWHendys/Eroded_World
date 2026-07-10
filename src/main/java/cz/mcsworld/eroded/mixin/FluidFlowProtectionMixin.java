@@ -1,39 +1,39 @@
 package cz.mcsworld.eroded.mixin;
 
 import cz.mcsworld.eroded.protection.FluidProtectionManager;
-import net.minecraft.block.BlockState;
-import net.minecraft.fluid.FlowableFluid;
-import net.minecraft.fluid.FluidState;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.world.WorldAccess;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.FlowingFluid;
+import net.minecraft.world.level.material.FluidState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(FlowableFluid.class)
+@Mixin(FlowingFluid.class)
 public abstract class FluidFlowProtectionMixin {
 
     @Inject(
-            method = "flow",
+            method = "spreadTo",
             at = @At("HEAD"),
             cancellable = true
     )
     private void eroded$preventFluidCrossProtectionBorder(
-            WorldAccess world,
+            LevelAccessor world,
             BlockPos pos,
             BlockState state,
             Direction direction,
             FluidState fluidState,
             CallbackInfo ci
     ) {
-        if (!(world instanceof ServerWorld serverWorld)) {
+        if (!(world instanceof ServerLevel serverWorld)) {
             return;
         }
 
-        BlockPos fromPos = pos.offset(direction.getOpposite());
+        BlockPos fromPos = pos.relative(direction.getOpposite());
 
         if (!FluidProtectionManager.canFluidFlow(
                 serverWorld,

@@ -1,14 +1,14 @@
  package cz.mcsworld.eroded.death;
 
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
 
 public final class DeathChestProtection {
 
     private DeathChestProtection() {}
 
     public static boolean isProtected(
-            ServerWorld world,
+            ServerLevel world,
             BlockPos pos
     ) {
         return DeathChestState.get(world).isProtected(pos);

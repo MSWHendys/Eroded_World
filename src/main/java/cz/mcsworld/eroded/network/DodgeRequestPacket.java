@@ -1,19 +1,19 @@
 package cz.mcsworld.eroded.network;
 
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
-import net.minecraft.network.RegistryByteBuf;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.packet.CustomPayload;
-import net.minecraft.util.Identifier;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 
 public record DodgeRequestPacket(float dirX, float dirZ)
-        implements CustomPayload {
+        implements CustomPacketPayload {
 
-    public static final Id<DodgeRequestPacket> ID =
-            new Id<>(Identifier.of("eroded", "dodge_request"));
+    public static final Type<DodgeRequestPacket> ID =
+            new Type<>(ResourceLocation.fromNamespaceAndPath("eroded", "dodge_request"));
 
-    public static final PacketCodec<RegistryByteBuf, DodgeRequestPacket> CODEC =
-            PacketCodec.of(
+    public static final StreamCodec<RegistryFriendlyByteBuf, DodgeRequestPacket> CODEC =
+            StreamCodec.ofMember(
                     (packet, buf) -> {
                         buf.writeFloat(packet.dirX());
                         buf.writeFloat(packet.dirZ());
@@ -29,7 +29,7 @@ public record DodgeRequestPacket(float dirX, float dirZ)
     }
 
     @Override
-    public Id<? extends CustomPayload> getId() {
+    public Type<? extends CustomPacketPayload> type() {
         return ID;
     }
 }

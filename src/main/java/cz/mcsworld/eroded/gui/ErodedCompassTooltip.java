@@ -3,9 +3,9 @@ package cz.mcsworld.eroded.gui;
 import cz.mcsworld.eroded.client.data.ErodedCompassClientData;
 import cz.mcsworld.eroded.death.ErodedCompassItem;
 import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 
 public final class ErodedCompassTooltip {
 
@@ -63,22 +63,22 @@ public final class ErodedCompassTooltip {
 
             if (cachedTime == null) return;
 
-            lines.add(Text.literal(""));
-            lines.add(Text.translatable(
+            lines.add(Component.literal(""));
+            lines.add(Component.translatable(
                     "eroded.compass.tooltip.header"
-            ).formatted(Formatting.GRAY));
+            ).withStyle(ChatFormatting.GRAY));
 
-            lines.add(Text.translatable(
+            lines.add(Component.translatable(
                     "eroded.compass.tooltip.time",
                     cachedTime
-            ).formatted(Formatting.GOLD));
+            ).withStyle(ChatFormatting.GOLD));
 
-            lines.add(Text.translatable(
+            lines.add(Component.translatable(
                     "eroded.compass.tooltip.coords",
                     target.getX(),
                     target.getY(),
                     target.getZ()
-            ).formatted(Formatting.DARK_GRAY));
+            ).withStyle(ChatFormatting.DARK_GRAY));
         });
     }
 

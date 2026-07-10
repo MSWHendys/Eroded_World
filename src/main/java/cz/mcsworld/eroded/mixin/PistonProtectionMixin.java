@@ -2,33 +2,33 @@ package cz.mcsworld.eroded.mixin;
 
 import cz.mcsworld.eroded.protection.ProtectionBoundaryManager;
 import cz.mcsworld.eroded.world.spawn.ExplosionProtectionManager;
-import net.minecraft.block.PistonBlock;
-import net.minecraft.block.piston.PistonHandler;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.world.World;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.piston.PistonBaseBlock;
+import net.minecraft.world.level.block.piston.PistonStructureResolver;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(PistonBlock.class)
+@Mixin(PistonBaseBlock.class)
 public abstract class PistonProtectionMixin {
 
     @Inject(
-            method = "move",
+            method = "moveBlocks",
             at = @At("HEAD"),
             cancellable = true
     )
     private void eroded$protectPistonBoundaryMove(
-            World world,
+            Level world,
             BlockPos pos,
             Direction direction,
             boolean extend,
             CallbackInfoReturnable<Boolean> cir
     ) {
-        if (!(world instanceof ServerWorld serverWorld)) {
+        if (!(world instanceof ServerLevel serverWorld)) {
             return;
         }
 
@@ -36,14 +36,14 @@ public abstract class PistonProtectionMixin {
             return;
         }
 
-        PistonHandler handler = new PistonHandler(
+        PistonStructureResolver handler = new PistonStructureResolver(
                 world,
                 pos,
                 direction,
                 extend
         );
 
-        if (!handler.calculatePush()) {
+        if (!handler.resolve()) {
             return;
         }
 
@@ -51,8 +51,8 @@ public abstract class PistonProtectionMixin {
                 ? direction
                 : direction.getOpposite();
 
-        for (BlockPos movedPos : handler.getMovedBlocks()) {
-            BlockPos targetPos = movedPos.offset(moveDirection);
+        for (BlockPos movedPos : handler.getToPush()) {
+            BlockPos targetPos = movedPos.relative(moveDirection);
 
             if (!ProtectionBoundaryManager.canPistonMoveBlock(
                     serverWorld,
@@ -64,7 +64,7 @@ public abstract class PistonProtectionMixin {
             }
         }
 
-        for (BlockPos brokenPos : handler.getBrokenBlocks()) {
+        for (BlockPos brokenPos : handler.getToDestroy()) {
             if (!ProtectionBoundaryManager.canPistonBreakBlock(
                     serverWorld,
                     brokenPos

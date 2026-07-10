@@ -5,12 +5,12 @@ import cz.mcsworld.eroded.death.RespawnProtectionManager;
 import cz.mcsworld.eroded.world.darkness.DarknessEnvironment;
 import cz.mcsworld.eroded.world.darkness.DarknessLightResolver;
 import cz.mcsworld.eroded.world.darkness.DarknessMobLightMemory;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.entity.mob.HostileEntity;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.monster.Monster;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -20,7 +20,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class LivingEntityCanTargetMixin {
 
     @Inject(
-            method = "canTarget(Lnet/minecraft/entity/LivingEntity;)Z",
+            method = "canAttack(Lnet/minecraft/world/entity/LivingEntity;)Z",
             at = @At("HEAD"),
             cancellable = true
     )
@@ -28,14 +28,14 @@ public abstract class LivingEntityCanTargetMixin {
             LivingEntity target,
             CallbackInfoReturnable<Boolean> cir
     ) {
-        if (target instanceof ServerPlayerEntity player
+        if (target instanceof ServerPlayer player
                 && RespawnProtectionManager.isProtected(player)) {
             cir.setReturnValue(false);
         }
     }
 
     @Inject(
-            method = "canTarget(Lnet/minecraft/entity/LivingEntity;)Z",
+            method = "canAttack(Lnet/minecraft/world/entity/LivingEntity;)Z",
             at = @At("HEAD"),
             cancellable = true
     )
@@ -47,12 +47,12 @@ public abstract class LivingEntityCanTargetMixin {
 
         if (!root.enabled) return;
         if (!root.server.mobLightFearEnabled) return;
-        if (!((Object) this instanceof HostileEntity mob)) return;
-        if (!(mob.getWorld() instanceof ServerWorld world) || !mob.isAlive()) return;
+        if (!((Object) this instanceof Monster mob)) return;
+        if (!(mob.level() instanceof ServerLevel world) || !mob.isAlive()) return;
 
-        if (mob.distanceTo(target) < 4.0f || mob.getAttacker() == target) return;
+        if (mob.distanceTo(target) < 4.0f || mob.getLastHurtByMob() == target) return;
 
-        BlockPos pos = mob.getBlockPos();
+        BlockPos pos = mob.blockPosition();
 
         if (!DarknessEnvironment.isDarkForMobs(world, pos)) return;
 
@@ -63,19 +63,19 @@ public abstract class LivingEntityCanTargetMixin {
     }
 
     @Inject(
-            method = "damage",
+            method = "hurtServer",
             at = @At("HEAD"),
             cancellable = true
     )
     private void eroded$respawnProtectionPreventsDamage(
-            ServerWorld world,
+            ServerLevel world,
             DamageSource source,
             float amount,
             CallbackInfoReturnable<Boolean> cir
     ) {
         Object self = this;
 
-        if (!(self instanceof ServerPlayerEntity player)) {
+        if (!(self instanceof ServerPlayer player)) {
             return;
         }
 

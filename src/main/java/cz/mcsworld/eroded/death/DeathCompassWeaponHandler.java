@@ -3,14 +3,14 @@ package cz.mcsworld.eroded.death;
 import cz.mcsworld.eroded.config.death.DeathConfig;
 import cz.mcsworld.eroded.core.ErodedItems;
 import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.mob.HostileEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.ActionResult;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 
 public final class DeathCompassWeaponHandler {
 
@@ -19,73 +19,73 @@ public final class DeathCompassWeaponHandler {
 
     public static void register() {
         AttackEntityCallback.EVENT.register((player, world, hand, entity, hitResult) -> {
-            ItemStack stack = player.getStackInHand(hand);
+            ItemStack stack = player.getItemInHand(hand);
 
-            if (!stack.isOf(ErodedItems.DEATH_COMPASS)) {
-                return ActionResult.PASS;
+            if (!stack.is(ErodedItems.DEATH_COMPASS)) {
+                return InteractionResult.PASS;
             }
 
-            if (world.isClient()) {
-                return ActionResult.SUCCESS;
+            if (world.isClientSide()) {
+                return InteractionResult.SUCCESS;
             }
 
-            if (!(player instanceof ServerPlayerEntity serverPlayer)) {
-                return ActionResult.PASS;
+            if (!(player instanceof ServerPlayer serverPlayer)) {
+                return InteractionResult.PASS;
             }
 
-            if (!(world instanceof ServerWorld serverWorld)) {
-                return ActionResult.PASS;
+            if (!(world instanceof ServerLevel serverWorld)) {
+                return InteractionResult.PASS;
             }
 
             DeathConfig cfg = DeathConfig.get();
 
             if (!cfg.compassWeapon.enabled) {
-                return ActionResult.PASS;
+                return InteractionResult.PASS;
             }
 
             if (cfg.compassWeapon.requireActiveDeathMemory && !hasActiveDeathMemory(serverPlayer)) {
-                return ActionResult.PASS;
+                return InteractionResult.PASS;
             }
 
-            if (serverPlayer.getItemCooldownManager().isCoolingDown(stack)) {
-                return ActionResult.FAIL;
+            if (serverPlayer.getCooldowns().isOnCooldown(stack)) {
+                return InteractionResult.FAIL;
             }
 
             if (!canDamageTarget(entity, cfg.compassWeapon)) {
-                return ActionResult.FAIL;
+                return InteractionResult.FAIL;
             }
 
             if (!(entity instanceof LivingEntity target)) {
-                return ActionResult.PASS;
+                return InteractionResult.PASS;
             }
 
-            boolean damaged = target.damage(
+            boolean damaged = target.hurtServer(
                     serverWorld,
-                    serverPlayer.getDamageSources().playerAttack(serverPlayer),
+                    serverPlayer.damageSources().playerAttack(serverPlayer),
                     cfg.compassWeapon.damage
             );
 
             if (!damaged) {
-                return ActionResult.FAIL;
+                return InteractionResult.FAIL;
             }
 
-            serverPlayer.getItemCooldownManager().set(
+            serverPlayer.getCooldowns().addCooldown(
                     stack,
                     Math.max(1, cfg.compassWeapon.cooldownTicks)
             );
 
-            serverPlayer.swingHand(hand, true);
+            serverPlayer.swing(hand, true);
 
-            return ActionResult.SUCCESS;
+            return InteractionResult.SUCCESS;
         });
     }
 
     private static boolean canDamageTarget(Entity entity, DeathConfig.CompassWeapon cfg) {
-        if (entity instanceof PlayerEntity) {
+        if (entity instanceof Player) {
             return cfg.damagePlayers;
         }
 
-        if (entity instanceof HostileEntity) {
+        if (entity instanceof Monster) {
             return cfg.damageHostileMobs;
         }
 
@@ -96,14 +96,14 @@ public final class DeathCompassWeaponHandler {
         return false;
     }
 
-    private static boolean hasActiveDeathMemory(ServerPlayerEntity player) {
-        ErodedDeathMemory mem = ErodedDeathStorage.get(player.getUuid());
+    private static boolean hasActiveDeathMemory(ServerPlayer player) {
+        ErodedDeathMemory mem = ErodedDeathStorage.get(player.getUUID());
 
         if (mem == null) {
             return false;
         }
 
-        int serverTicks = player.getServer().getTicks();
+        int serverTicks = player.level().getServer().getTickCount();
 
         return !mem.isExpired(serverTicks) && !mem.isResolved();
     }

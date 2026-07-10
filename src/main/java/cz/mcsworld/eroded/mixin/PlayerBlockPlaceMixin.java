@@ -1,21 +1,15 @@
 package cz.mcsworld.eroded.mixin;
 
 import cz.mcsworld.eroded.world.spawn.ExplosionProtectionManager;
-
-import net.minecraft.item.BlockItem;
-import net.minecraft.item.ItemStack;
-
-import net.minecraft.server.network.ServerPlayerInteractionManager;
-import net.minecraft.server.network.ServerPlayerEntity;
-
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
-import net.minecraft.util.math.BlockPos;
-
-import net.minecraft.util.hit.BlockHitResult;
-
-import net.minecraft.world.World;
-
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerPlayerGameMode;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.BlockHitResult;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -24,39 +18,39 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(ServerPlayerInteractionManager.class)
+@Mixin(ServerPlayerGameMode.class)
 public abstract class PlayerBlockPlaceMixin {
 
     @Shadow
     @Final
-    protected ServerPlayerEntity player;
+    protected ServerPlayer player;
 
-    @Inject(method = "interactBlock", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "useItemOn", at = @At("HEAD"), cancellable = true)
     private void eroded$preventPlacement(
-            ServerPlayerEntity player,
-            World world,
+            ServerPlayer player,
+            Level world,
             ItemStack stack,
-            Hand hand,
+            InteractionHand hand,
             BlockHitResult hit,
-            CallbackInfoReturnable<ActionResult> cir
+            CallbackInfoReturnable<InteractionResult> cir
     ) {
         if (!(stack.getItem() instanceof BlockItem)) {
             return;
         }
 
-        BlockPos placePos = hit.getBlockPos().offset(hit.getSide());
+        BlockPos placePos = hit.getBlockPos().relative(hit.getDirection());
 
         if (!ExplosionProtectionManager.canPlace(this.player, placePos)) {
 
-            cir.setReturnValue(ActionResult.FAIL);
+            cir.setReturnValue(InteractionResult.FAIL);
 
-            player.getInventory().markDirty();
+            player.getInventory().setChanged();
 
-            player.networkHandler.sendPacket(new net.minecraft.network.packet.s2c.play.ScreenHandlerSlotUpdateS2CPacket(
-                    -2, 0, player.getInventory().getSelectedSlot(), player.getInventory().getStack(player.getInventory().getSelectedSlot())
+            player.connection.send(new net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket(
+                    -2, 0, player.getInventory().getSelectedSlot(), player.getInventory().getItem(player.getInventory().getSelectedSlot())
             ));
 
-            player.currentScreenHandler.syncState();
+            player.containerMenu.sendAllDataToRemote();
         }
     }
 }

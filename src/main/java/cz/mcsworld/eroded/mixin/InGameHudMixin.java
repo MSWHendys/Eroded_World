@@ -2,18 +2,18 @@ package cz.mcsworld.eroded.mixin;
 
 import cz.mcsworld.eroded.client.data.DarknessClientData;
 import cz.mcsworld.eroded.config.darkness.DarknessConfigs;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.hud.InGameHud;
-import net.minecraft.client.render.RenderTickCounter;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Gui;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.util.Mth;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(InGameHud.class)
+@Mixin(Gui.class)
 public class InGameHudMixin {
 
     @Unique
@@ -24,16 +24,16 @@ public class InGameHudMixin {
             at = @At("HEAD")
     )
     private void eroded$renderDarknessUnderHud(
-            DrawContext context,
-            RenderTickCounter tickCounter,
+            GuiGraphics context,
+            DeltaTracker tickCounter,
             CallbackInfo ci
     ) {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client.world == null || client.player == null) return;
+        Minecraft client = Minecraft.getInstance();
+        if (client.level == null || client.player == null) return;
 
-        if (client.player.age < 40) return;
+        if (client.player.tickCount < 40) return;
 
-        boolean guiOpen = client.currentScreen != null;
+        boolean guiOpen = client.screen != null;
 
         float targetAlpha;
         if (guiOpen) {
@@ -48,7 +48,7 @@ public class InGameHudMixin {
             targetAlpha = base * sky * block;
         }
 
-        smoothAlpha = MathHelper.lerp(0.08f, smoothAlpha, targetAlpha);
+        smoothAlpha = Mth.lerp(0.08f, smoothAlpha, targetAlpha);
 
         if (smoothAlpha <= 0.001f) return;
 
@@ -58,8 +58,8 @@ public class InGameHudMixin {
         var cfg = root.client;
 
 
-        int w = context.getScaledWindowWidth();
-        int h = context.getScaledWindowHeight();
+        int w = context.guiWidth();
+        int h = context.guiHeight();
 
         int maxAlpha = Math.max(0, Math.min(255, cfg.darknessMaxAlpha));
         int alpha = Math.round(maxAlpha * smoothAlpha);
@@ -76,7 +76,7 @@ public class InGameHudMixin {
 
     @Unique
     private void drawVignette(
-            DrawContext context,
+            GuiGraphics context,
             int w,
             int h,
             int baseAlpha,

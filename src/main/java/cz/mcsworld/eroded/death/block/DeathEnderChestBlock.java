@@ -3,57 +3,57 @@ package cz.mcsworld.eroded.death.block;
 import cz.mcsworld.eroded.death.DeathChestProtection;
 import cz.mcsworld.eroded.death.DeathChestState;
 import cz.mcsworld.eroded.death.gui.DeathInventoryScreenFactory;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.Text;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.BlockHitResult;
 
 public class DeathEnderChestBlock extends Block {
 
-    public DeathEnderChestBlock(Settings settings) {
+    public DeathEnderChestBlock(Properties settings) {
         super(settings);
     }
 
     @Override
-    protected ActionResult onUse(
+    protected InteractionResult useWithoutItem(
             BlockState state,
-            World world,
+            Level world,
             BlockPos pos,
-            PlayerEntity player,
+            Player player,
             BlockHitResult hit
     ) {
-        if (world.isClient) return ActionResult.SUCCESS;
-        if (!(player instanceof ServerPlayerEntity sp)) return ActionResult.PASS;
-        if (!(world instanceof ServerWorld sw)) return ActionResult.PASS;
+        if (world.isClientSide()) return InteractionResult.SUCCESS;
+        if (!(player instanceof ServerPlayer sp)) return InteractionResult.PASS;
+        if (!(world instanceof ServerLevel sw)) return InteractionResult.PASS;
 
         DeathChestState st = DeathChestState.get(sw);
         DeathChestState.Entry e = st.get(pos);
 
         if (e == null) {
-            sp.sendMessage(
-                    Text.translatable("eroded.death.chest.empty"),
+            sp.displayClientMessage(
+                    Component.translatable("eroded.death.chest.empty"),
                     true
             );
-            return ActionResult.CONSUME;
+            return InteractionResult.CONSUME;
         }
 
-        if (!e.owner().equals(sp.getUuid())
+        if (!e.owner().equals(sp.getUUID())
                 && DeathChestProtection.isProtected(sw, pos)) {
 
-            sp.sendMessage(
-                    Text.translatable("eroded.death.chest.not_owner"),
+            sp.displayClientMessage(
+                    Component.translatable("eroded.death.chest.not_owner"),
                     true
             );
-            return ActionResult.CONSUME;
+            return InteractionResult.CONSUME;
         }
 
-        sp.openHandledScreen(new DeathInventoryScreenFactory(sw, pos));
-        return ActionResult.CONSUME;
+        sp.openMenu(new DeathInventoryScreenFactory(sw, pos));
+        return InteractionResult.CONSUME;
     }
 }

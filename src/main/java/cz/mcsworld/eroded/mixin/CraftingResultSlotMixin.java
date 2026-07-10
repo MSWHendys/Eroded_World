@@ -7,15 +7,6 @@ import cz.mcsworld.eroded.crafting.context.CraftingContextFactory;
 import cz.mcsworld.eroded.death.block.ErodedBlocks;
 import cz.mcsworld.eroded.network.CraftingRequirementPacket;
 import cz.mcsworld.eroded.network.SafeNetworkUtil;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.inventory.RecipeInputInventory;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.recipe.Recipe;
-import net.minecraft.screen.slot.CraftingResultSlot;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -26,8 +17,15 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.CraftingContainer;
+import net.minecraft.world.inventory.ResultSlot;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.Recipe;
 
-@Mixin(CraftingResultSlot.class)
+@Mixin(ResultSlot.class)
 public class CraftingResultSlotMixin {
 
     @Unique
@@ -37,7 +35,7 @@ public class CraftingResultSlotMixin {
     private static final Map<UUID, Long> ERODED_LEVEL_MESSAGE_COOLDOWN = new ConcurrentHashMap<>();
 
     @Inject(
-            method = "takeStack",
+            method = "remove",
             at = @At("HEAD"),
             cancellable = true
     )
@@ -45,16 +43,16 @@ public class CraftingResultSlotMixin {
             int amount,
             CallbackInfoReturnable<ItemStack> cir
     ) {
-        CraftingResultSlot self = (CraftingResultSlot) (Object) this;
-        ItemStack result = self.getStack();
+        ResultSlot self = (ResultSlot) (Object) this;
+        ItemStack result = self.getItem();
 
         if (!eroded$requiresLevel10(result)) {
             return;
         }
 
-        PlayerEntity player = ((CraftingResultSlotAccessor) self).eroded$getPlayer();
+        Player player = ((CraftingResultSlotAccessor) self).eroded$getPlayer();
 
-        if (!(player instanceof ServerPlayerEntity serverPlayer)) {
+        if (!(player instanceof ServerPlayer serverPlayer)) {
             return;
         }
 
@@ -68,19 +66,19 @@ public class CraftingResultSlotMixin {
     }
 
     @Inject(
-            method = "onTakeItem",
+            method = "onTake",
             at = @At("HEAD"),
             cancellable = true
     )
     private void eroded$onTakeItem(
-            PlayerEntity player,
+            Player player,
             ItemStack stack,
             CallbackInfo ci
     ) {
-        if (!(player instanceof ServerPlayerEntity serverPlayer)) return;
+        if (!(player instanceof ServerPlayer serverPlayer)) return;
         if (stack == null || stack.isEmpty()) return;
 
-        CraftingResultSlot self = (CraftingResultSlot) (Object) this;
+        ResultSlot self = (ResultSlot) (Object) this;
 
         if (eroded$requiresLevel10(stack) && serverPlayer.experienceLevel < ERODED_REQUIRED_LEVEL) {
             eroded$sendLevelMessage(serverPlayer);
@@ -89,7 +87,7 @@ public class CraftingResultSlotMixin {
             return;
         }
 
-        RecipeInputInventory inputInv =
+        CraftingContainer inputInv =
                 ((CraftingResultSlotAccessor) self).eroded$getInput();
 
         Recipe<?> recipe = null;
@@ -118,15 +116,15 @@ public class CraftingResultSlotMixin {
                 || item == ErodedItems.ADRENALINE_SHOT;
     }
     @Unique
-    private static void eroded$sendLevelMessage(ServerPlayerEntity player) {
+    private static void eroded$sendLevelMessage(ServerPlayer player) {
         long now = System.currentTimeMillis();
-        long last = ERODED_LEVEL_MESSAGE_COOLDOWN.getOrDefault(player.getUuid(), 0L);
+        long last = ERODED_LEVEL_MESSAGE_COOLDOWN.getOrDefault(player.getUUID(), 0L);
 
         if (now - last < 1000L) {
             return;
         }
 
-        ERODED_LEVEL_MESSAGE_COOLDOWN.put(player.getUuid(), now);
+        ERODED_LEVEL_MESSAGE_COOLDOWN.put(player.getUUID(), now);
 
         SafeNetworkUtil.safeSend(
                 player,

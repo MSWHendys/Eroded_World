@@ -1,8 +1,8 @@
 package cz.mcsworld.eroded.mixin;
 
-import net.minecraft.entity.ai.goal.DoorInteractGoal;
-import net.minecraft.entity.mob.MobEntity;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.ai.goal.DoorInteractGoal;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
@@ -13,5 +13,5 @@ public interface DoorInteractGoalAccessor {
     BlockPos eroded$getDoorPos();
 
     @Accessor("mob")
-    MobEntity eroded$getMob();
+    Mob eroded$getMob();
 }

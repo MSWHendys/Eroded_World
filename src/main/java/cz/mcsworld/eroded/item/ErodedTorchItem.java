@@ -1,18 +1,18 @@
 package cz.mcsworld.eroded.item;
 
 import cz.mcsworld.eroded.config.darkness.DarknessConfigs;
-import net.minecraft.block.Block;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.VerticallyAttachableBlockItem;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.core.Direction;
+import net.minecraft.util.Mth;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.StandingAndWallBlockItem;
+import net.minecraft.world.level.block.Block;
 
-public final class ErodedTorchItem extends VerticallyAttachableBlockItem {
+public final class ErodedTorchItem extends StandingAndWallBlockItem {
 
     public ErodedTorchItem(
             Block standingBlock,
             Block wallBlock,
-            Settings settings
+            Properties settings
     ) {
         super(
                 standingBlock,
@@ -25,7 +25,7 @@ public final class ErodedTorchItem extends VerticallyAttachableBlockItem {
     public static int getTargetMaxDamage() {
         return Math.max(
                 2,
-                MathHelper.ceil(
+                Mth.ceil(
                         DarknessConfigs.get()
                                 .server
                                 .erodedTorch
@@ -36,24 +36,24 @@ public final class ErodedTorchItem extends VerticallyAttachableBlockItem {
 
     public static boolean hasCharge(ItemStack stack) {
         return !stack.isEmpty()
-                && stack.isDamageable()
-                && stack.getDamage() < stack.getMaxDamage();
+                && stack.isDamageableItem()
+                && stack.getDamageValue() < stack.getMaxDamage();
     }
 
     public static boolean isFullyCharged(ItemStack stack) {
         return !stack.isEmpty()
-                && stack.isDamageable()
-                && stack.getDamage() <= 0;
+                && stack.isDamageableItem()
+                && stack.getDamageValue() <= 0;
     }
 
     public static void drain(ItemStack stack) {
-        if (stack.isEmpty() || !stack.isDamageable()) {
+        if (stack.isEmpty() || !stack.isDamageableItem()) {
             return;
         }
 
-        stack.setDamage(
-                MathHelper.clamp(
-                        stack.getDamage() + 1,
+        stack.setDamageValue(
+                Mth.clamp(
+                        stack.getDamageValue() + 1,
                         0,
                         stack.getMaxDamage()
                 )
@@ -61,52 +61,52 @@ public final class ErodedTorchItem extends VerticallyAttachableBlockItem {
     }
 
     public static void recharge(ItemStack stack, int amount) {
-        if (stack.isEmpty() || !stack.isDamageable() || amount <= 0) {
+        if (stack.isEmpty() || !stack.isDamageableItem() || amount <= 0) {
             return;
         }
 
-        stack.setDamage(
+        stack.setDamageValue(
                 Math.max(
                         0,
-                        stack.getDamage() - amount
+                        stack.getDamageValue() - amount
                 )
         );
     }
 
     @Override
-    public boolean isItemBarVisible(ItemStack stack) {
+    public boolean isBarVisible(ItemStack stack) {
         return DarknessConfigs.get().client.showTorchChargeHud
-                && stack.isDamageable()
-                && stack.getDamage() > 0;
+                && stack.isDamageableItem()
+                && stack.getDamageValue() > 0;
     }
 
     @Override
-    public int getItemBarStep(ItemStack stack) {
-        if (!stack.isDamageable()) {
+    public int getBarWidth(ItemStack stack) {
+        if (!stack.isDamageableItem()) {
             return 13;
         }
 
         float ratio = 1.0F - (
-                (float) stack.getDamage()
+                (float) stack.getDamageValue()
                         / (float) Math.max(1, stack.getMaxDamage())
         );
 
-        return Math.round(13.0F * MathHelper.clamp(ratio, 0.0F, 1.0F));
+        return Math.round(13.0F * Mth.clamp(ratio, 0.0F, 1.0F));
     }
 
     @Override
-    public int getItemBarColor(ItemStack stack) {
-        if (!stack.isDamageable()) {
-            return MathHelper.hsvToRgb(1.0F / 3.0F, 1.0F, 1.0F);
+    public int getBarColor(ItemStack stack) {
+        if (!stack.isDamageableItem()) {
+            return Mth.hsvToRgb(1.0F / 3.0F, 1.0F, 1.0F);
         }
 
         float ratio = 1.0F - (
-                (float) stack.getDamage()
+                (float) stack.getDamageValue()
                         / (float) Math.max(1, stack.getMaxDamage())
         );
 
-        return MathHelper.hsvToRgb(
-                MathHelper.clamp(ratio, 0.0F, 1.0F) / 3.0F,
+        return Mth.hsvToRgb(
+                Mth.clamp(ratio, 0.0F, 1.0F) / 3.0F,
                 1.0F,
                 1.0F
         );

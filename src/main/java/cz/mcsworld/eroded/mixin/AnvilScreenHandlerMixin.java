@@ -8,29 +8,29 @@ import cz.mcsworld.eroded.network.AnvilFeedbackPacket;
 import cz.mcsworld.eroded.network.SafeNetworkUtil;
 import cz.mcsworld.eroded.skills.SkillData;
 import cz.mcsworld.eroded.skills.SkillManager;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.screen.AnvilScreenHandler;
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AnvilMenu;
+import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(AnvilScreenHandler.class)
+@Mixin(AnvilMenu.class)
 public class AnvilScreenHandlerMixin {
 
     @ModifyVariable(
-            method = "updateResult",
+            method = "createResult",
             at = @At(value = "STORE"),
             ordinal = 0
     )
     private int eroded$modifyRepairAmount(int repairedAmount) {
 
-        AnvilScreenHandler self = (AnvilScreenHandler) (Object) this;
+        AnvilMenu self = (AnvilMenu) (Object) this;
 
-        ItemStack input = self.getSlot(0).getStack();
+        ItemStack input = self.getSlot(0).getItem();
         if (input.isEmpty()) return repairedAmount;
 
         Quality quality = ItemQuality.get(input);
@@ -40,40 +40,40 @@ public class AnvilScreenHandlerMixin {
     }
 
     @Inject(
-            method = "updateResult",
+            method = "createResult",
             at = @At("HEAD"),
             cancellable = true
     )
     private void eroded$blockTooDamaged(CallbackInfo ci) {
 
-        AnvilScreenHandler self = (AnvilScreenHandler)(Object)this;
+        AnvilMenu self = (AnvilMenu)(Object)this;
 
-        ItemStack input = self.getSlot(0).getStack();
+        ItemStack input = self.getSlot(0).getItem();
         if (input.isEmpty()) return;
 
         if (ItemQuality.get(input) == Quality.POOR) {
 
-            self.getSlot(2).setStack(ItemStack.EMPTY);
+            self.getSlot(2).setByPlayer(ItemStack.EMPTY);
             ci.cancel();
         }
     }
 
     @Inject(
-            method = "onTakeOutput",
+            method = "onTake",
             at = @At("HEAD"),
             cancellable = true
     )
     private void eroded$anvilProcess(
-            PlayerEntity player,
+            Player player,
             ItemStack stack,
             CallbackInfo ci
     ) {
 
-        if (!(player instanceof ServerPlayerEntity serverPlayer)) return;
+        if (!(player instanceof ServerPlayer serverPlayer)) return;
         if (stack == null || stack.isEmpty()) return;
 
-        AnvilScreenHandler self = (AnvilScreenHandler) (Object) this;
-        ItemStack input = self.getSlot(0).getStack();
+        AnvilMenu self = (AnvilMenu) (Object) this;
+        ItemStack input = self.getSlot(0).getItem();
         if (input.isEmpty()) return;
 
         SkillData data = SkillManager.get(serverPlayer);

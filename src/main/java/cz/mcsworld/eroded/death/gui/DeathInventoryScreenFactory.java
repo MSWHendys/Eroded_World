@@ -1,33 +1,33 @@
 package cz.mcsworld.eroded.death.gui;
 
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.screen.NamedScreenHandlerFactory;
-import net.minecraft.screen.ScreenHandler;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.Text;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.MenuProvider;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 
 public class DeathInventoryScreenFactory
-        implements NamedScreenHandlerFactory {
+        implements MenuProvider {
 
-    private final ServerWorld world;
+    private final ServerLevel world;
     private final BlockPos pos;
 
-    public DeathInventoryScreenFactory(ServerWorld world, BlockPos pos) {
+    public DeathInventoryScreenFactory(ServerLevel world, BlockPos pos) {
         this.world = world;
         this.pos = pos;
     }
 
     @Override
-    public Text getDisplayName() {
-        return Text.translatable("eroded.death.chest.title");
+    public Component getDisplayName() {
+        return Component.translatable("eroded.death.chest.title");
     }
 
     @Override
-    public ScreenHandler createMenu(
+    public AbstractContainerMenu createMenu(
             int syncId,
-            PlayerInventory inv,
-            net.minecraft.entity.player.PlayerEntity player
+            Inventory inv,
+            net.minecraft.world.entity.player.Player player
     ) {
         return new DeathInventoryScreenHandler(
                 syncId,

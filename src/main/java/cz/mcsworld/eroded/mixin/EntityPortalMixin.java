@@ -1,35 +1,35 @@
 package cz.mcsworld.eroded.mixin;
 
 import cz.mcsworld.eroded.death.ErodedPortalMemoryState;
-import net.minecraft.entity.Entity;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.TeleportTarget;
-import net.minecraft.world.World;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.portal.TeleportTransition;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(ServerPlayerEntity.class)
+@Mixin(ServerPlayer.class)
 public abstract class EntityPortalMixin {
 
-    @Inject(method = "teleportTo", at = @At("HEAD"))
+    @Inject(method = "teleport", at = @At("HEAD"))
     private void onPortalTeleport(
-            TeleportTarget target,
+            TeleportTransition target,
             CallbackInfoReturnable<Entity> cir
     ) {
 
-        ServerPlayerEntity player = (ServerPlayerEntity) (Object) this;
+        ServerPlayer player = (ServerPlayer) (Object) this;
 
-        ServerWorld origin = player.getWorld();
-        ServerWorld destination = target.world();
+        ServerLevel origin = player.level();
+        ServerLevel destination = target.newLevel();
 
-        if (origin.getRegistryKey().equals(World.OVERWORLD)
-                && destination.getRegistryKey().equals(World.NETHER)) {
+        if (origin.dimension().equals(Level.OVERWORLD)
+                && destination.dimension().equals(Level.NETHER)) {
 
-            BlockPos approx = BlockPos.ofFloored(
+            BlockPos approx = BlockPos.containing(
                     player.getX(),
                     player.getY(),
                     player.getZ()
@@ -41,13 +41,13 @@ public abstract class EntityPortalMixin {
             if (portal != null) {
                 ErodedPortalMemoryState
                         .get(origin)
-                        .setOverworldPortal(player.getUuid(), portal);
+                        .setOverworldPortal(player.getUUID(), portal);
 
             }
         }
     }
-    private static BlockPos findNearestPortal(ServerWorld world, BlockPos center, int radius) {
-        BlockPos.Mutable m = new BlockPos.Mutable();
+    private static BlockPos findNearestPortal(ServerLevel world, BlockPos center, int radius) {
+        BlockPos.MutableBlockPos m = new BlockPos.MutableBlockPos();
 
         for (int x = -radius; x <= radius; x++) {
             for (int y = -radius; y <= radius; y++) {
@@ -58,8 +58,8 @@ public abstract class EntityPortalMixin {
                             center.getZ() + z
                     );
 
-                    if (world.getBlockState(m).isOf(net.minecraft.block.Blocks.NETHER_PORTAL)) {
-                        return m.toImmutable();
+                    if (world.getBlockState(m).is(net.minecraft.world.level.block.Blocks.NETHER_PORTAL)) {
+                        return m.immutable();
                     }
                 }
             }

@@ -1,17 +1,17 @@
 package cz.mcsworld.eroded.mixin;
 
 import cz.mcsworld.eroded.protection.ProjectileProtectionManager;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.projectile.ExplosiveProjectileEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.projectile.AbstractHurtingProjectile;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(ExplosiveProjectileEntity.class)
+@Mixin(AbstractHurtingProjectile.class)
 public abstract class ExplosiveProjectileBoundaryMixin {
 
     @Unique
@@ -23,7 +23,7 @@ public abstract class ExplosiveProjectileBoundaryMixin {
     )
     private void eroded$rememberProjectilePosition(CallbackInfo ci) {
         Entity projectile = (Entity) (Object) this;
-        eroded$previousBlockPos = projectile.getBlockPos();
+        eroded$previousBlockPos = projectile.blockPosition();
     }
 
     @Inject(
@@ -33,7 +33,7 @@ public abstract class ExplosiveProjectileBoundaryMixin {
     private void eroded$preventProjectileCrossingProtectionBoundary(CallbackInfo ci) {
         Entity projectile = (Entity) (Object) this;
 
-        if (!(projectile.getWorld() instanceof ServerWorld world)) {
+        if (!(projectile.level() instanceof ServerLevel world)) {
             return;
         }
 
@@ -41,7 +41,7 @@ public abstract class ExplosiveProjectileBoundaryMixin {
             return;
         }
 
-        BlockPos currentPos = projectile.getBlockPos();
+        BlockPos currentPos = projectile.blockPosition();
 
         if (currentPos.equals(eroded$previousBlockPos)) {
             return;

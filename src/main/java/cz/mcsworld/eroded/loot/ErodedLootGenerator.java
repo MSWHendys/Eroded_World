@@ -5,28 +5,27 @@ import cz.mcsworld.eroded.config.loot.LootEntry;
 
 import cz.mcsworld.eroded.crafting.CraftingQualityApplier;
 import cz.mcsworld.eroded.crafting.QualityApplicable;
-import net.minecraft.inventory.Inventory;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.registry.Registries;
-import net.minecraft.util.Identifier;
-
 import cz.mcsworld.eroded.crafting.Quality;
 
 import java.util.Random;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.Container;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 
 public class ErodedLootGenerator {
 
     private static final Random random = new Random();
 
-    public static void generate(Inventory inv) {
+    public static void generate(Container inv) {
 
         LootConfig config = LootConfig.get();
 
         if (config.loot == null || config.loot.isEmpty())
             return;
 
-        int max = Math.min(config.maxItemsPerChest, inv.size());
+        int max = Math.min(config.maxItemsPerChest, inv.getContainerSize());
 
         for (int i = 0; i < max; i++) {
 
@@ -35,12 +34,12 @@ public class ErodedLootGenerator {
             if (random.nextDouble() > entry.chance)
                 continue;
 
-            Identifier id = Identifier.tryParse(entry.item);
+            ResourceLocation id = ResourceLocation.tryParse(entry.item);
 
             if (id == null)
                 continue;
 
-            Item item = Registries.ITEM.get(id);
+            Item item = BuiltInRegistries.ITEM.getValue(id);
 
             if (item == null)
                 continue;
@@ -51,10 +50,10 @@ public class ErodedLootGenerator {
 
             applyQuality(stack);
 
-            int slot = random.nextInt(inv.size());
+            int slot = random.nextInt(inv.getContainerSize());
 
-            if (inv.getStack(slot).isEmpty()) {
-                inv.setStack(slot, stack);
+            if (inv.getItem(slot).isEmpty()) {
+                inv.setItem(slot, stack);
             }
         }
     }
@@ -70,6 +69,6 @@ public class ErodedLootGenerator {
             CraftingQualityApplier.apply(stack, Quality.POOR);
         }
 
-        stack.setDamage(0);
+        stack.setDamageValue(0);
     }
 }

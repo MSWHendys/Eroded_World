@@ -1,23 +1,23 @@
 package cz.mcsworld.eroded.death;
 
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.Level;
 
 public final class DeathDistanceHelper {
 
     private DeathDistanceHelper() {}
 
     public static double getDeathToWorldSpawnDistance(
-            ServerPlayerEntity player,
+            ServerPlayer player,
             BlockPos deathPos,
-            RegistryKey<World> deathDim
+            ResourceKey<Level> deathDim
     ) {
-        ServerWorld world = player.getWorld();
-        BlockPos spawnPos = world.getSpawnPos();
-        RegistryKey<World> spawnDim = world.getRegistryKey();
+        ServerLevel world = player.level();
+        BlockPos spawnPos = world.getRespawnData().pos();
+        ResourceKey<Level> spawnDim = world.dimension();
 
         if (!deathDim.equals(spawnDim)) {
             return -1;

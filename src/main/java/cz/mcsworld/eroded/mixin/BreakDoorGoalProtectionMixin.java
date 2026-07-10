@@ -1,10 +1,10 @@
 package cz.mcsworld.eroded.mixin;
 
 import cz.mcsworld.eroded.protection.MobGriefingProtectionManager;
-import net.minecraft.entity.ai.goal.BreakDoorGoal;
-import net.minecraft.entity.mob.MobEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.ai.goal.BreakDoorGoal;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -15,7 +15,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class BreakDoorGoalProtectionMixin {
 
     @Inject(
-            method = "canStart",
+            method = "canUse",
             at = @At("RETURN"),
             cancellable = true
     )
@@ -32,7 +32,7 @@ public abstract class BreakDoorGoalProtectionMixin {
     }
 
     @Inject(
-            method = "shouldContinue",
+            method = "canContinueToUse",
             at = @At("RETURN"),
             cancellable = true
     )
@@ -63,9 +63,9 @@ public abstract class BreakDoorGoalProtectionMixin {
         DoorInteractGoalAccessor accessor =
                 (DoorInteractGoalAccessor) (Object) this;
 
-        MobEntity mob = accessor.eroded$getMob();
+        Mob mob = accessor.eroded$getMob();
 
-        if (!(mob.getWorld() instanceof ServerWorld world)) {
+        if (!(mob.level() instanceof ServerLevel world)) {
             return false;
         }
 

@@ -4,9 +4,8 @@ import cz.mcsworld.eroded.crafting.ItemQuality;
 import cz.mcsworld.eroded.crafting.Quality;
 import cz.mcsworld.eroded.config.crafting.CraftingConfig;
 import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
-
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
 import java.util.List;
 
 public class ErodedTooltip {
@@ -24,7 +23,7 @@ public class ErodedTooltip {
                     var root = CraftingConfig.get();
                     var cfg = root.quality;
 
-                    lines.add(Text.literal(""));
+                    lines.add(Component.literal(""));
 
                     float durabilityMult = switch (quality) {
                         case POOR -> cfg.poorDurabilityMultiplier;
@@ -40,13 +39,13 @@ public class ErodedTooltip {
 
                     addMultiplierLine(
                             lines,
-                            Text.translatable("eroded.tooltip.durability"),
+                            Component.translatable("eroded.tooltip.durability"),
                             durabilityMult
                     );
 
                     addMultiplierLine(
                             lines,
-                            Text.translatable("eroded.tooltip.repair"),
+                            Component.translatable("eroded.tooltip.repair"),
                             repairMult
                     );
                 }
@@ -54,22 +53,22 @@ public class ErodedTooltip {
     }
 
     private static void addMultiplierLine(
-            List<Text> lines,
-            Text label,
+            List<Component> lines,
+            Component label,
             float mult
     ) {
         int percent = Math.round((mult - 1.0f) * 100.0f);
         if (percent == 0) return;
 
-        Formatting fmt = (percent > 0) ? Formatting.GREEN : Formatting.RED;
+        ChatFormatting fmt = (percent > 0) ? ChatFormatting.GREEN : ChatFormatting.RED;
         String sign = (percent > 0) ? "+" : "";
 
         lines.add(
-                Text.translatable(
+                Component.translatable(
                         "eroded.tooltip.multiplier",
                         label,
                         sign + percent
-                ).formatted(fmt)
+                ).withStyle(fmt)
         );
     }
 }

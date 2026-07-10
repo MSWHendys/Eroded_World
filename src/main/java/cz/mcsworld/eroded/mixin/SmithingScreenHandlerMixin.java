@@ -7,30 +7,30 @@ import cz.mcsworld.eroded.crafting.QualityResolver;
 import cz.mcsworld.eroded.energy.EnergyCostResolver;
 import cz.mcsworld.eroded.skills.SkillData;
 import cz.mcsworld.eroded.skills.SkillManager;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.screen.SmithingScreenHandler;
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.SmithingMenu;
+import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(SmithingScreenHandler.class)
+@Mixin(SmithingMenu.class)
 public class SmithingScreenHandlerMixin {
 
     @Inject(
-            method = "onTakeOutput",
+            method = "onTake",
             at = @At("HEAD"),
             cancellable = true
     )
     private void eroded$smithingEnergyCost(
-            PlayerEntity player,
+            Player player,
             ItemStack stack,
             CallbackInfo ci
     ) {
 
-        if (!(player instanceof ServerPlayerEntity serverPlayer)) return;
+        if (!(player instanceof ServerPlayer serverPlayer)) return;
         if (stack == null || stack.isEmpty()) return;
 
         SkillData data = SkillManager.get(serverPlayer);

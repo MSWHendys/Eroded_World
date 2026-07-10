@@ -1,10 +1,10 @@
 package cz.mcsworld.eroded.mixin.client;
 
 import cz.mcsworld.eroded.death.block.ErodedBlocks;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.client.render.item.HeldItemRenderer;
-import net.minecraft.item.ItemStack;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.renderer.ItemInHandRenderer;
+import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -12,40 +12,40 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(HeldItemRenderer.class)
+@Mixin(ItemInHandRenderer.class)
 public class HeldItemRendererMixin {
 
     @Shadow
-    private ItemStack mainHand;
+    private ItemStack mainHandItem;
 
     @Shadow
-    private ItemStack offHand;
+    private ItemStack offHandItem;
 
-    @Inject(method = "updateHeldItems", at = @At("HEAD"))
+    @Inject(method = "tick", at = @At("HEAD"))
     private void eroded$preventTimedLightBobbing(CallbackInfo ci) {
-        MinecraftClient client = MinecraftClient.getInstance();
-        ClientPlayerEntity player = client.player;
+        Minecraft client = Minecraft.getInstance();
+        LocalPlayer player = client.player;
 
         if (player == null) {
             return;
         }
 
-        ItemStack currentMainStack = player.getMainHandStack();
+        ItemStack currentMainStack = player.getMainHandItem();
 
         if (isStableTimedLightItem(currentMainStack)
-                && isStableTimedLightItem(this.mainHand)
-                && ItemStack.areItemsEqual(currentMainStack, this.mainHand)) {
+                && isStableTimedLightItem(this.mainHandItem)
+                && ItemStack.isSameItem(currentMainStack, this.mainHandItem)) {
 
-            this.mainHand = currentMainStack;
+            this.mainHandItem = currentMainStack;
         }
 
-        ItemStack currentOffStack = player.getOffHandStack();
+        ItemStack currentOffStack = player.getOffhandItem();
 
         if (isStableTimedLightItem(currentOffStack)
-                && isStableTimedLightItem(this.offHand)
-                && ItemStack.areItemsEqual(currentOffStack, this.offHand)) {
+                && isStableTimedLightItem(this.offHandItem)
+                && ItemStack.isSameItem(currentOffStack, this.offHandItem)) {
 
-            this.offHand = currentOffStack;
+            this.offHandItem = currentOffStack;
         }
     }
 
@@ -54,8 +54,8 @@ public class HeldItemRendererMixin {
         return stack != null
                 && !stack.isEmpty()
                 && (
-                stack.isOf(ErodedBlocks.WARDING_LANTERN.asItem())
-                        || stack.isOf(ErodedBlocks.ERODED_TORCH_ITEM)
+                stack.is(ErodedBlocks.WARDING_LANTERN.asItem())
+                        || stack.is(ErodedBlocks.ERODED_TORCH_ITEM)
         );
     }
 }
