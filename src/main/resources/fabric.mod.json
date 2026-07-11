@@ -23,7 +23,7 @@
   ],
   "depends": {
     "fabricloader": ">=${loader_version}",
-    "fabric": ">=${fabric_version}",
+    "fabric-api": "${fabric_api_range}",
     "minecraft": "${minecraft_range}",
     "cloth-config": "*"
   }
