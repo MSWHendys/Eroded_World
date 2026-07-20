@@ -6,14 +6,14 @@ import cz.mcsworld.eroded.crafting.Quality;
 import net.minecraft.core.Registry;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public final class ErodedComponents {
 
     public static final DataComponentType<Quality> QUALITY =
             Registry.register(
                     BuiltInRegistries.DATA_COMPONENT_TYPE,
-                    ResourceLocation.fromNamespaceAndPath(ErodedMod.MOD_ID, "quality"),
+                    Identifier.fromNamespaceAndPath(ErodedMod.MOD_ID, "quality"),
                     DataComponentType.<Quality>builder()
                             .persistent(Codec.STRING.xmap(
                                     value -> {

@@ -8,8 +8,8 @@ import cz.mcsworld.eroded.item.TerritoryAnchorItem;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTabs;
@@ -30,7 +30,7 @@ public final class ErodedBlocks {
 
     public static void register() {
 
-        ResourceLocation chestId = ResourceLocation.fromNamespaceAndPath(ErodedMod.MOD_ID, "death_ender_chest");
+        Identifier chestId = Identifier.fromNamespaceAndPath(ErodedMod.MOD_ID, "death_ender_chest");
         ResourceKey<Block> chestBlockKey = ResourceKey.create(BuiltInRegistries.BLOCK.key(), chestId);
         ResourceKey<Item> chestItemKey = ResourceKey.create(BuiltInRegistries.ITEM.key(), chestId);
 
@@ -55,7 +55,7 @@ public final class ErodedBlocks {
                 )
         );
 
-        ResourceLocation lanternId = ResourceLocation.fromNamespaceAndPath(ErodedMod.MOD_ID, "eroded_lamp");
+        Identifier lanternId = Identifier.fromNamespaceAndPath(ErodedMod.MOD_ID, "eroded_lamp");
         ResourceKey<Block> lanternBlockKey = ResourceKey.create(BuiltInRegistries.BLOCK.key(), lanternId);
         ResourceKey<Item> lanternItemKey = ResourceKey.create(BuiltInRegistries.ITEM.key(), lanternId);
 
@@ -87,7 +87,7 @@ public final class ErodedBlocks {
                 )
         );
 
-        ResourceLocation erodedBlockId = ResourceLocation.fromNamespaceAndPath(ErodedMod.MOD_ID, "eroded_block");
+        Identifier erodedBlockId = Identifier.fromNamespaceAndPath(ErodedMod.MOD_ID, "eroded_block");
         ResourceKey<Block> erodedBlockKey = ResourceKey.create(BuiltInRegistries.BLOCK.key(), erodedBlockId);
         ResourceKey<Item> erodedBlockItemKey = ResourceKey.create(BuiltInRegistries.ITEM.key(), erodedBlockId);
 
@@ -111,7 +111,7 @@ public final class ErodedBlocks {
                 )
         );
 
-        ResourceLocation territoryAnchorId = ResourceLocation.fromNamespaceAndPath(ErodedMod.MOD_ID, "territory_anchor");
+        Identifier territoryAnchorId = Identifier.fromNamespaceAndPath(ErodedMod.MOD_ID, "territory_anchor");
 
         ResourceKey<Block> territoryAnchorBlockKey =
                 ResourceKey.create(BuiltInRegistries.BLOCK.key(), territoryAnchorId);
@@ -162,11 +162,11 @@ public final class ErodedBlocks {
 
 
     private static void registerErodedTorch() {
-        ResourceLocation torchId =
-                ResourceLocation.fromNamespaceAndPath(ErodedMod.MOD_ID, "eroded_torch");
+        Identifier torchId =
+                Identifier.fromNamespaceAndPath(ErodedMod.MOD_ID, "eroded_torch");
 
-        ResourceLocation wallTorchId =
-                ResourceLocation.fromNamespaceAndPath(ErodedMod.MOD_ID, "eroded_wall_torch");
+        Identifier wallTorchId =
+                Identifier.fromNamespaceAndPath(ErodedMod.MOD_ID, "eroded_wall_torch");
 
         ResourceKey<Block> torchBlockKey = ResourceKey.create(
                 BuiltInRegistries.BLOCK.key(),

@@ -36,8 +36,8 @@ public final class ErodedPortalMemoryState extends SavedData {
     public static final SavedDataType<ErodedPortalMemoryState> TYPE =
             new SavedDataType<>(
                     "eroded_portal_memory",
-                    ctx -> new ErodedPortalMemoryState(),
-                    ctx -> CODEC,
+                    ErodedPortalMemoryState::new,
+                    CODEC,
                     DataFixTypes.LEVEL
             );
 

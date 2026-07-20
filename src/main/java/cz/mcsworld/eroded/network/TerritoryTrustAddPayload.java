@@ -5,7 +5,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public record TerritoryTrustAddPayload(
         BlockPos anchorPos,
@@ -14,7 +14,7 @@ public record TerritoryTrustAddPayload(
 ) implements CustomPacketPayload {
 
     public static final Type<TerritoryTrustAddPayload> ID =
-            new Type<>(ResourceLocation.fromNamespaceAndPath(ErodedMod.MOD_ID, "territory_trust_add"));
+            new Type<>(Identifier.fromNamespaceAndPath(ErodedMod.MOD_ID, "territory_trust_add"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, TerritoryTrustAddPayload> CODEC =
             StreamCodec.ofMember(

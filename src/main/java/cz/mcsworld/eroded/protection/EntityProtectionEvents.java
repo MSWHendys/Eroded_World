@@ -12,7 +12,7 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.decoration.ItemFrame;
-import net.minecraft.world.entity.decoration.Painting;
+import net.minecraft.world.entity.decoration.painting.Painting;
 
 public final class EntityProtectionEvents {
 

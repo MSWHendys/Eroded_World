@@ -4,7 +4,7 @@ import cz.mcsworld.eroded.core.ErodedItems;
 import cz.mcsworld.eroded.death.block.ErodedBlocks;
 import cz.mcsworld.eroded.skills.SkillType;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
@@ -13,7 +13,7 @@ public class CraftingSkillResolver {
     public static SkillType resolve(ItemStack stack) {
 
         Item item = stack.getItem();
-        ResourceLocation id = BuiltInRegistries.ITEM.getKey(item);
+        Identifier id = BuiltInRegistries.ITEM.getKey(item);
         String path = id.getPath();
 
         if (item == ErodedItems.ENERGY_DRINK || item == ErodedItems.ADRENALINE_SHOT) {

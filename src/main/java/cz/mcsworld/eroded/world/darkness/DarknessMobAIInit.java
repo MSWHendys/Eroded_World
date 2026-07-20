@@ -6,8 +6,8 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ai.goal.GoalSelector;
-import net.minecraft.world.entity.monster.AbstractSkeleton;
 import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.entity.monster.skeleton.AbstractSkeleton;
 
 public final class DarknessMobAIInit {
 

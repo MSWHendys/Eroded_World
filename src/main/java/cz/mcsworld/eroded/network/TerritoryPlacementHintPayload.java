@@ -4,12 +4,12 @@ import cz.mcsworld.eroded.ErodedMod;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public record TerritoryPlacementHintPayload(boolean showMessage) implements CustomPacketPayload {
 
     public static final Type<TerritoryPlacementHintPayload> ID =
-            new Type<>(ResourceLocation.fromNamespaceAndPath(ErodedMod.MOD_ID, "territory_placement_hint"));
+            new Type<>(Identifier.fromNamespaceAndPath(ErodedMod.MOD_ID, "territory_placement_hint"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, TerritoryPlacementHintPayload> CODEC =
             StreamCodec.ofMember(

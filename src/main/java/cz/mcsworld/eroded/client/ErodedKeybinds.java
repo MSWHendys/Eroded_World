@@ -5,7 +5,7 @@ import cz.mcsworld.eroded.client.debug.ErodedDebug;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.minecraft.client.KeyMapping;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.lwjgl.glfw.GLFW;
 
 public final class ErodedKeybinds {
@@ -13,7 +13,7 @@ public final class ErodedKeybinds {
     private static KeyMapping DEBUG_KEY;
 
     private static final KeyMapping.Category ERODED_CATEGORY =
-            KeyMapping.Category.register(ResourceLocation.fromNamespaceAndPath("eroded", "eroded"));
+            KeyMapping.Category.register(Identifier.fromNamespaceAndPath("eroded", "eroded"));
 
     public static void register() {
 

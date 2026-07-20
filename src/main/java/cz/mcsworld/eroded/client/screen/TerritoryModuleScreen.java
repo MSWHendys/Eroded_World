@@ -70,10 +70,10 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
                 new TerritoryModuleRequestPayload(this.menu.getAnchorPos())
         );
 
-        rebuildWidgets();
+        rebuildErodedWidgets();
     }
 
-    protected void rebuildWidgets() {
+    private void rebuildErodedWidgets() {
         BlockPos anchorPos = this.menu.getAnchorPos();
 
         String oldText = "";
@@ -163,7 +163,7 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
                                     playerScopeModes.remove(selected.uuid());
                                     selectedTrustedUuid = null;
                                     page = Page.MAIN;
-                                    rebuildWidgets();
+                                    rebuildErodedWidgets();
                                 }
                         )
                         .bounds(this.leftPos + 24, this.topPos + 104, 100, 20)
@@ -188,7 +188,7 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
                                         );
                                     }
 
-                                    rebuildWidgets();
+                                    rebuildErodedWidgets();
                                 }
                         )
                         .bounds(this.leftPos + 231, this.topPos + 104, 85, 20)
@@ -206,7 +206,7 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
                                 Component.translatable("screen.eroded.territory_module.detail.back"),
                                 button -> {
                                     page = Page.MAIN;
-                                    rebuildWidgets();
+                                    rebuildErodedWidgets();
                                 }
                         )
                         .bounds(this.leftPos + 110, this.topPos + 220, 120, 20)
@@ -342,7 +342,7 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
                                     button -> {
                                         selectedTrustedUuid = entry.uuid();
                                         page = Page.PLAYER_DETAIL;
-                                        rebuildWidgets();
+                                        rebuildErodedWidgets();
                                     }
                             )
                             .bounds(this.leftPos + 181, buttonY, TRUSTED_NAME_BUTTON_WIDTH, 19)
@@ -368,7 +368,7 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
                                             selectedTrustedUuid = null;
                                         }
 
-                                        rebuildWidgets();
+                                        rebuildErodedWidgets();
                                     }
                             )
                             .bounds(this.leftPos + 293, buttonY, 24, 19)
@@ -397,7 +397,7 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
                                 button -> {
                                     trustedScrollOffset--;
                                     clampTrustedScroll();
-                                    rebuildWidgets();
+                                    rebuildErodedWidgets();
                                 }
                         )
                         .bounds(this.leftPos + 273, this.topPos + 140, 22, 18)
@@ -410,7 +410,7 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
                                 button -> {
                                     trustedScrollOffset++;
                                     clampTrustedScroll();
-                                    rebuildWidgets();
+                                    rebuildErodedWidgets();
                                 }
                         )
                         .bounds(this.leftPos + 295, this.topPos + 140, 22, 18)
@@ -492,7 +492,7 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
     @Override
     public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
         if (this.lastDataVersion != ClientTerritoryModuleData.version()) {
-            rebuildWidgets();
+            rebuildErodedWidgets();
         }
 
         drawPanel(context, this.leftPos, this.topPos, this.imageWidth, this.imageHeight);
@@ -752,7 +752,7 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
                 0xEE0B0D10
         );
 
-        context.submitOutline(
+        context.renderOutline(
                 left,
                 top,
                 width,
@@ -760,7 +760,7 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
                 0xFF6B6B6B
         );
 
-        context.submitOutline(
+        context.renderOutline(
                 left + 3,
                 top + 3,
                 width - 6,
@@ -867,7 +867,7 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
             }
 
             clampTrustedScroll();
-            rebuildWidgets();
+            rebuildErodedWidgets();
             return true;
         }
 
@@ -915,7 +915,7 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
 
         if (keyCode == GLFW.GLFW_KEY_ESCAPE && page == Page.PLAYER_DETAIL) {
             page = Page.MAIN;
-            rebuildWidgets();
+            rebuildErodedWidgets();
             return true;
         }
 

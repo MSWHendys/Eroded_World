@@ -5,7 +5,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public record TerritoryTrustRemovePayload(
         BlockPos anchorPos,
@@ -15,7 +15,7 @@ public record TerritoryTrustRemovePayload(
 ) implements CustomPacketPayload {
 
     public static final Type<TerritoryTrustRemovePayload> ID =
-            new Type<>(ResourceLocation.fromNamespaceAndPath(ErodedMod.MOD_ID, "territory_trust_remove"));
+            new Type<>(Identifier.fromNamespaceAndPath(ErodedMod.MOD_ID, "territory_trust_remove"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, TerritoryTrustRemovePayload> CODEC =
             StreamCodec.ofMember(

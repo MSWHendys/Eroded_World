@@ -9,7 +9,7 @@ import cz.mcsworld.eroded.crafting.Quality;
 
 import java.util.Random;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.Container;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -34,7 +34,7 @@ public class ErodedLootGenerator {
             if (random.nextDouble() > entry.chance)
                 continue;
 
-            ResourceLocation id = ResourceLocation.tryParse(entry.item);
+            Identifier id = Identifier.tryParse(entry.item);
 
             if (id == null)
                 continue;

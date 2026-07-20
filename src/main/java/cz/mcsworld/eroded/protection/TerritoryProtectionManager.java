@@ -900,16 +900,14 @@ public final class TerritoryProtectionManager {
     }
 
     private static void playTerritoryModuleOpenSound(ServerPlayer player) {
-        player.playNotifySound(
+        player.playSound(
                 SoundEvents.BEACON_POWER_SELECT,
-                SoundSource.PLAYERS,
                 0.8F,
                 1.25F
         );
 
-        player.playNotifySound(
+        player.playSound(
                 SoundEvents.AMETHYST_BLOCK_CHIME,
-                SoundSource.PLAYERS,
                 0.55F,
                 1.45F
         );

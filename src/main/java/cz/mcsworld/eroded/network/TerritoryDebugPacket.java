@@ -1,5 +1,6 @@
 package cz.mcsworld.eroded.network;
 
+
 public record TerritoryDebugPacket(
         int miningBlocks,
         int mining,
@@ -9,7 +10,7 @@ public record TerritoryDebugPacket(
 ) implements net.minecraft.network.protocol.common.custom.CustomPacketPayload {
 
     public static final Type<TerritoryDebugPacket> ID =
-            new Type<>(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("eroded", "territory_debug"));
+            new Type<>(net.minecraft.resources.Identifier.fromNamespaceAndPath("eroded", "territory_debug"));
 
     public static final net.minecraft.network.codec.StreamCodec<net.minecraft.network.RegistryFriendlyByteBuf, TerritoryDebugPacket> CODEC =
             net.minecraft.network.codec.StreamCodec.ofMember(

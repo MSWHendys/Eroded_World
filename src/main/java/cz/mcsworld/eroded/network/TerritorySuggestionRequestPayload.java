@@ -5,7 +5,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public record TerritorySuggestionRequestPayload(
         BlockPos anchorPos,
@@ -13,7 +13,7 @@ public record TerritorySuggestionRequestPayload(
 ) implements CustomPacketPayload {
 
     public static final Type<TerritorySuggestionRequestPayload> ID =
-            new Type<>(ResourceLocation.fromNamespaceAndPath(ErodedMod.MOD_ID, "territory_suggestion_request"));
+            new Type<>(Identifier.fromNamespaceAndPath(ErodedMod.MOD_ID, "territory_suggestion_request"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, TerritorySuggestionRequestPayload> CODEC =
             StreamCodec.ofMember(

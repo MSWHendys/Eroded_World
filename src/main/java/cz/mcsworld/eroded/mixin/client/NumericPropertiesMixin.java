@@ -14,7 +14,7 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.renderer.item.properties.numeric.RangeSelectItemModelProperties;
 import net.minecraft.client.renderer.item.properties.numeric.RangeSelectItemModelProperty;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.ExtraCodecs;
 
 @Environment(EnvType.CLIENT)
@@ -22,10 +22,10 @@ import net.minecraft.util.ExtraCodecs;
 public class NumericPropertiesMixin {
 
     @Shadow @Final
-    public static ExtraCodecs.LateBoundIdMapper<ResourceLocation, MapCodec<? extends RangeSelectItemModelProperty>> ID_MAPPER;
+    public static ExtraCodecs.LateBoundIdMapper<Identifier, MapCodec<? extends RangeSelectItemModelProperty>> ID_MAPPER;
 
     @Inject(method = "bootstrap()V", at = @At("TAIL"))
     private static void eroded$registerAngle(CallbackInfo info) {
-        ID_MAPPER.put(ResourceLocation.fromNamespaceAndPath("eroded", "angle"), ErodedDeathCompassAngle.MAP_CODEC);
+        ID_MAPPER.put(Identifier.fromNamespaceAndPath("eroded", "angle"), ErodedDeathCompassAngle.MAP_CODEC);
     }
 }

@@ -37,8 +37,8 @@ public final class CalmDownEffect {
         mc.getSoundManager().play(
                 SimpleSoundInstance.forUI(
                         SoundEvents.PLAYER_BREATH,
-                        calm.volume,
-                        calm.pitchMin + RandomSource.create().nextFloat() * calm.pitchRand
+                        calm.pitchMin + RandomSource.create().nextFloat() * calm.pitchRand,
+                        calm.volume
                 )
         );
     }

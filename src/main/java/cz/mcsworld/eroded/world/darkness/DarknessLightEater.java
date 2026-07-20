@@ -17,6 +17,7 @@ import net.minecraft.world.phys.AABB;
 import java.util.HashMap;
 import java.util.Map;
 
+
 public final class DarknessLightEater {
 
     private static int tickCounter = 0;

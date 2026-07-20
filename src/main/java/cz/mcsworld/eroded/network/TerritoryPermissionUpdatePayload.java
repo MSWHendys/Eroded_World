@@ -5,7 +5,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public record TerritoryPermissionUpdatePayload(
         BlockPos anchorPos,
@@ -16,7 +16,7 @@ public record TerritoryPermissionUpdatePayload(
 ) implements CustomPacketPayload {
 
     public static final Type<TerritoryPermissionUpdatePayload> ID =
-            new Type<>(ResourceLocation.fromNamespaceAndPath(ErodedMod.MOD_ID, "territory_permission_update"));
+            new Type<>(Identifier.fromNamespaceAndPath(ErodedMod.MOD_ID, "territory_permission_update"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, TerritoryPermissionUpdatePayload> CODEC =
             StreamCodec.ofMember(

@@ -4,8 +4,8 @@ import cz.mcsworld.eroded.ErodedMod;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.item.Item;
@@ -35,7 +35,7 @@ public final class ErodedEntityItems {
             String name,
             EntityType<? extends Mob> entityType
     ) {
-        ResourceLocation id = ResourceLocation.fromNamespaceAndPath(ErodedMod.MOD_ID, name);
+        Identifier id = Identifier.fromNamespaceAndPath(ErodedMod.MOD_ID, name);
 
         ResourceKey<Item> key = ResourceKey.create(
                 Registries.ITEM,

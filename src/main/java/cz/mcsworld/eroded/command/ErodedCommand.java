@@ -62,7 +62,7 @@ public final class ErodedCommand {
                 Commands.literal("eroded")
 
                         .then(Commands.literal("reload")
-                                .requires(src -> src.hasPermission(2))
+                                .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
                                 .executes(ctx -> {
                                     try {
                                         ErodedConfigs.reload();
@@ -90,7 +90,7 @@ public final class ErodedCommand {
                         )
 
                         .then(Commands.literal("chest")
-                                .requires(src -> src.hasPermission(2))
+                                .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
                                 .executes(ctx -> {
                                     ServerPlayer player =
                                             ctx.getSource().getPlayer();
@@ -123,7 +123,7 @@ public final class ErodedCommand {
                         )
 
                         .then(Commands.literal("energy")
-                                .requires(src -> src.hasPermission(2))
+                                .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
                                 .then(Commands.argument(
                                                         "player",
                                                         EntityArgument.player()
@@ -502,7 +502,7 @@ public final class ErodedCommand {
                         )
 
                         .then(Commands.literal("territory")
-                                .requires(src -> src.hasPermission(2))
+                                .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
 
                                 .then(Commands.literal("info")
                                         .executes(ctx -> {

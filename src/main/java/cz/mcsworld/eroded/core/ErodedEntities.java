@@ -6,8 +6,8 @@ import cz.mcsworld.eroded.entity.ErodedSpecialZombieEntity;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
@@ -41,7 +41,7 @@ public final class ErodedEntities {
             String name,
             EntityType.Builder<T> builder
     ) {
-        ResourceLocation id = ResourceLocation.fromNamespaceAndPath(ErodedMod.MOD_ID, name);
+        Identifier id = Identifier.fromNamespaceAndPath(ErodedMod.MOD_ID, name);
         ResourceKey<EntityType<?>> key = ResourceKey.create(Registries.ENTITY_TYPE, id);
 
         return Registry.register(

@@ -4,13 +4,13 @@ import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public record DodgeRequestPacket(float dirX, float dirZ)
         implements CustomPacketPayload {
 
     public static final Type<DodgeRequestPacket> ID =
-            new Type<>(ResourceLocation.fromNamespaceAndPath("eroded", "dodge_request"));
+            new Type<>(Identifier.fromNamespaceAndPath("eroded", "dodge_request"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, DodgeRequestPacket> CODEC =
             StreamCodec.ofMember(

@@ -107,8 +107,8 @@ public final class DeathChestState extends SavedData {
     public static final SavedDataType<DeathChestState> TYPE =
             new SavedDataType<>(
                     "eroded_death_chest_state",
-                    ctx -> new DeathChestState(),
-                    ctx -> CODEC,
+                    DeathChestState::new,
+                    CODEC,
                     DataFixTypes.LEVEL
             );
 

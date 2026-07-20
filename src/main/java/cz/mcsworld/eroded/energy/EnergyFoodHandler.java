@@ -6,7 +6,7 @@ import cz.mcsworld.eroded.skills.SkillManager;
 import cz.mcsworld.eroded.skills.SkillType;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -21,13 +21,13 @@ public final class EnergyFoodHandler {
     private EnergyFoodHandler() {}
 
     private static TagKey<Item> c(String path) {
-        return TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath("c", path));
+        return TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath("c", path));
     }
 
     private static final TagKey<Item> ERODED_OVERRIDE = tag("food_override");
 
     private static TagKey<Item> tag(String name) {
-        return TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath("eroded", name));
+        return TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath("eroded", name));
     }
 
     public static void onEat(Player player, ItemStack stack) {

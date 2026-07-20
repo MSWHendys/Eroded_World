@@ -85,7 +85,7 @@ public final class ErodedCompassHandler {
 
                     CompoundTag nbt = new CompoundTag();
                     nbt.putLong("ChestPos", mem.getDeathPos().asLong());
-                    nbt.putString("DeathDim", mem.getDeathDimension().location().toString());
+                    nbt.putString("DeathDim", mem.getDeathDimension().identifier().toString());
 
                     BlockPos portal = ErodedPortalMemoryState.get(player.level().getServer().getLevel(Level.OVERWORLD))
                             .getOverworldPortal(player.getUUID());

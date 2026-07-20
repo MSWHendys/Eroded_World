@@ -5,7 +5,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public record TerritoryModuleSyncPayload(
         BlockPos anchorPos,
@@ -20,7 +20,7 @@ public record TerritoryModuleSyncPayload(
 ) implements CustomPacketPayload {
 
     public static final Type<TerritoryModuleSyncPayload> ID =
-            new Type<>(ResourceLocation.fromNamespaceAndPath(ErodedMod.MOD_ID, "territory_module_sync"));
+            new Type<>(Identifier.fromNamespaceAndPath(ErodedMod.MOD_ID, "territory_module_sync"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, TerritoryModuleSyncPayload> CODEC =
             StreamCodec.ofMember(

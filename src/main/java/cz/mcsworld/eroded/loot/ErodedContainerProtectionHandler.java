@@ -3,6 +3,7 @@ package cz.mcsworld.eroded.loot;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.permissions.Permissions;
 import net.minecraft.world.level.block.BarrelBlock;
 import net.minecraft.world.level.block.ChestBlock;
 
@@ -13,7 +14,9 @@ public class ErodedContainerProtectionHandler {
             if (!(world instanceof ServerLevel serverWorld)) return true;
 
             if (state.getBlock() instanceof ChestBlock || state.getBlock() instanceof BarrelBlock) {
-                if (player.hasPermissions(2)) return true;
+                if (player.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) {
+                    return true;
+                }
 
                 ErodedLootState lootState = ErodedLootState.get(serverWorld);
                 long posKey = pos.asLong();

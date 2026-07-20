@@ -26,10 +26,10 @@ import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ChunkPos;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import java.util.List;
+import net.minecraft.world.level.Level;
 
 public final class TerritoryCaveCollapseHandler {
 
@@ -321,7 +321,7 @@ public final class TerritoryCaveCollapseHandler {
     private static boolean isStabilizer(BlockState state) {
         var stabilizerTag = net.minecraft.tags.TagKey.create(
                 net.minecraft.core.registries.Registries.BLOCK,
-                net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("eroded", "stabilizers")
+                net.minecraft.resources.Identifier.fromNamespaceAndPath("eroded", "stabilizers")
         );
 
         return state.is(stabilizerTag);
