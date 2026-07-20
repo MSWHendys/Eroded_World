@@ -1,14 +1,14 @@
-![Minecraft](https://img.shields.io/badge/Minecraft-1.21.9-green)
+![Minecraft](https://img.shields.io/badge/Minecraft-1.21.10-green)
 ![Loader](https://img.shields.io/badge/Loader-Fabric-blue)
 ![Java](https://img.shields.io/badge/Java-21-orange)
 ![Requires](https://img.shields.io/badge/Requires-Fabric%20API%20%2B%20Cloth%20Config%20API-yellow)
 ![Status](https://img.shields.io/badge/Status-BETA-red)
 
-![Eroded World Banner](https://github.com/MSWHendys/Eroded_World/blob/1.21.9/gradle/wrapper/img/fabric%201.21.9.webp?raw=true)
+![Eroded World Banner](https://github.com/MSWHendys/Eroded_World/blob/1.21.6-1.21.8/img/Eroded_World_1.21.10.png?raw=true)
 
 # Eroded World
 
-**Hardcore survival overhaul for Minecraft Fabric 1.21.9**
+**Hardcore survival overhaul for Minecraft Fabric 1.21.10**
 
 > Darkness is not cosmetic.  
 > Mining has consequences.  
@@ -305,8 +305,8 @@ Use this command after manual changes:
 ## Technical Information
 
 - **Mod ID:** `eroded`
-- **Minecraft target:** `1.21.9`
-- **Minecraft compatibility range:** `1.21.9`
+- **Minecraft target:** `1.21.10`
+- **Minecraft compatibility range:** `1.21.10`
 - **Java:** `21`
 - **Loader:** Fabric
 - **Architecture:** client + server split
@@ -322,8 +322,9 @@ Use this command after manual changes:
 
 The project wiki contains gameplay and administration documentation:
 
-[GitHub.com](https://github.com/MSWHendys/Eroded_World/wiki)
-
+```text
+https://github.com/MSWHendys/Eroded_World/wiki
+```
 
 Recommended pages:
 

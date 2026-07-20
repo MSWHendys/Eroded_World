@@ -96,6 +96,6 @@ publishing {
     }
 
     repositories {
-        // Sem případně přijde repozitář pro publikování.
+        // ***
     }
 }

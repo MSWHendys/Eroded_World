@@ -27,6 +27,7 @@ public abstract class PressurePlateProtectionMixin {
             BlockPos pos,
             Entity entity,
             InsideBlockEffectApplier handler,
+            boolean bl,
             CallbackInfo ci
     ) {
         if (!(world instanceof ServerLevel serverWorld)) {

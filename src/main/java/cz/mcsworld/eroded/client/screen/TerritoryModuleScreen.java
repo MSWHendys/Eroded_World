@@ -73,7 +73,6 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
         rebuildWidgets();
     }
 
-    @Override
     protected void rebuildWidgets() {
         BlockPos anchorPos = this.menu.getAnchorPos();
 
