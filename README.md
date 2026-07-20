@@ -4,7 +4,7 @@
 ![Requires](https://img.shields.io/badge/Requires-Fabric%20API%20%2B%20Cloth%20Config%20API-yellow)
 ![Status](https://img.shields.io/badge/Status-BETA-red)
 
-![Eroded World Banner](https://mcstoryworld.cz/minecraft/mods/eroded_world_banner.png)
+![Eroded World Banner](https://github.com/MSWHendys/Eroded_World/blob/26.2/gradle/wrapper/img/fabric%2026.2.webp?raw=true)
 
 # Eroded World
 
