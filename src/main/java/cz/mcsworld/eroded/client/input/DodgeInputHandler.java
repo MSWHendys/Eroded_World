@@ -49,7 +49,7 @@ public final class DodgeInputHandler {
             client.player.setSprinting(false);
         }
 
-        if (client.screen != null) return;
+        if (client.gui.screen() != null) return;
 
         long now = System.currentTimeMillis();
 

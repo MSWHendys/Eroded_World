@@ -13,8 +13,8 @@ public final class DarknessHudGuard {
 
         if (DarknessClientData.isDarknessActive()) {
 
-            if (client.options.hideGui) {
-                client.options.hideGui = false;
+            if (client.gui.hud.isHidden()) {
+                client.gui.hud.toggle();
             }
         }
     }

@@ -90,7 +90,7 @@ public final class EnergyHud {
         }
 
         int total = cfg.numberEnergyFlashes;
-        int ticks = client.gui.getGuiTicks();
+        int ticks = client.gui.hud.getGuiTicks();
 
         int screenW = client.getWindow().getGuiScaledWidth();
         int screenH = client.getWindow().getGuiScaledHeight();
@@ -132,7 +132,7 @@ public final class EnergyHud {
             }
         }
 
-        boolean hideIconsBecauseChat = client.screen instanceof ChatScreen;
+        boolean hideIconsBecauseChat = client.gui.screen() instanceof ChatScreen;;
 
         if (!hideIconsBecauseChat) {
             for (int i = 0; i < total; i++) {

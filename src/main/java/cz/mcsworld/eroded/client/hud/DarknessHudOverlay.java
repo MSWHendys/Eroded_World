@@ -32,7 +32,7 @@ public final class DarknessHudOverlay {
             return;
         }
 
-        if (client.options.hideGui) {
+        if (client.gui.hud.isHidden()) {
             return;
         }
 
@@ -40,7 +40,7 @@ public final class DarknessHudOverlay {
             return;
         }
 
-        boolean guiOpen = client.screen != null;
+        boolean guiOpen = client.gui.screen() != null;
 
         float targetAlpha;
 

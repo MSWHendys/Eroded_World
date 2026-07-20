@@ -23,6 +23,8 @@ repositories {
 }
 
 dependencies {
+    // Minecraft 26.1+ je neobfuskovaný.
+    // Řádek mappings se již nepoužívá.
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
 
     // Fabric

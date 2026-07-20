@@ -23,6 +23,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -374,7 +375,7 @@ public final class TerritoryMobSpawnHandler {
 
             BlockPos pos = new BlockPos(x, y, z);
 
-            if (center.distToCenterSqr(pos.getCenter()) < minSq) {
+            if (center.distToCenterSqr(Vec3.atCenterOf(pos)) < minSq) {
                 continue;
             }
 

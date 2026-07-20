@@ -9,10 +9,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.entity.Display;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -68,7 +65,7 @@ public final class DeathHologramHandler {
         world.addFreshEntity(stand);
 
         double textY = baseY + 2.6;
-        Display.TextDisplay text = new Display.TextDisplay(EntityType.TEXT_DISPLAY, world);
+        Display.TextDisplay text = new Display.TextDisplay(EntityTypes.TEXT_DISPLAY, world);
         text.setPos(baseX, textY, baseZ);
         text.setBillboardConstraints(Display.BillboardConstraints.CENTER);
         text.setBackgroundColor(0x60000000);

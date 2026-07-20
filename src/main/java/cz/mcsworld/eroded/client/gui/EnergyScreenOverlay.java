@@ -10,9 +10,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.client.gui.screens.inventory.AnvilScreen;
-import net.minecraft.client.gui.screens.inventory.CraftingScreen;
-import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 
 public final class EnergyScreenOverlay {
 
@@ -70,7 +67,7 @@ public final class EnergyScreenOverlay {
             int mouseY,
             float delta
     ) {
-        if (!shouldRender(screen)) {
+        if (screen instanceof TerritoryModuleScreen) {
             return;
         }
 
@@ -107,7 +104,7 @@ public final class EnergyScreenOverlay {
         lastEnergyValue = energy;
 
         int total = cfg.numberEnergyFlashes;
-        int ticks = client.gui.getGuiTicks();
+        int ticks = client.gui.hud.getGuiTicks();
 
         int screenW = client.getWindow().getGuiScaledWidth();
 
@@ -209,15 +206,5 @@ public final class EnergyScreenOverlay {
                     true
             );
         }
-    }
-    private static boolean shouldRender(Screen screen) {
-
-        if (screen instanceof TerritoryModuleScreen) {
-            return true;
-        }
-
-        return screen instanceof InventoryScreen
-                || screen instanceof CraftingScreen
-                || screen instanceof AnvilScreen;
     }
 }

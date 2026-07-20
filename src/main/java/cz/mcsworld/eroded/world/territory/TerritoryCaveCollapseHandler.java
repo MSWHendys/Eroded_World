@@ -22,6 +22,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -39,10 +40,10 @@ public final class TerritoryCaveCollapseHandler {
 
     private static final List<EntityType<? extends @NotNull Monster>> COLLAPSE_MOBS =
             List.of(
-                    EntityType.ZOMBIE,
-                    EntityType.SKELETON,
-                    EntityType.SPIDER,
-                    EntityType.CREEPER
+                    EntityTypes.ZOMBIE,
+                    EntityTypes.SKELETON,
+                    EntityTypes.SPIDER,
+                    EntityTypes.CREEPER
             );
 
     public static void register() {

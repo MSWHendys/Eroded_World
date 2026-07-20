@@ -1,4 +1,4 @@
-![Minecraft](https://img.shields.io/badge/Minecraft-26.1_--_26.1.2-green)
+![Minecraft](https://img.shields.io/badge/Minecraft-26.2-green)
 ![Loader](https://img.shields.io/badge/Loader-Fabric-blue)
 ![Java](https://img.shields.io/badge/Java-25-orange)
 ![Requires](https://img.shields.io/badge/Requires-Fabric%20API%20%2B%20Cloth%20Config%20API-yellow)
@@ -8,7 +8,7 @@
 
 # Eroded World
 
-**Hardcore survival overhaul for Minecraft Fabric 26.1 - 26.1.2**
+**Hardcore survival overhaul for Minecraft Fabric 26.2**
 
 > Darkness is not cosmetic.  
 > Mining has consequences.  
@@ -305,8 +305,8 @@ Use this command after manual changes:
 ## Technical Information
 
 - **Mod ID:** `eroded`
-- **Minecraft target:** `26.1`
-- **Minecraft compatibility range:** `26.1 - 26.1.2`
+- **Minecraft target:** `26.2`
+- **Minecraft compatibility range:** `26.2`
 - **Java:** `25`
 - **Loader:** Fabric
 - **Architecture:** client + server split
