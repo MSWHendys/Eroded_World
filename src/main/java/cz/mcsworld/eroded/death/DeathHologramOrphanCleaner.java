@@ -17,8 +17,8 @@ public final class DeathHologramOrphanCleaner {
     private DeathHologramOrphanCleaner() {}
 
     public static void register() {
-        ServerChunkEvents.CHUNK_LOAD.register(
-                DeathHologramOrphanCleaner::onChunkLoad
+        ServerChunkEvents.CHUNK_LOAD.register((world, chunk, ignored) ->
+                onChunkLoad(world, chunk)
         );
     }
 
@@ -42,9 +42,9 @@ public final class DeathHologramOrphanCleaner {
 
         for (Entity e : world.getEntities(null, chunkBox)) {
 
-            if (e.getTags().isEmpty()) continue;
+            if (e.entityTags().isEmpty()) continue;
 
-            for (String tag : e.getTags()) {
+            for (String tag : e.entityTags()) {
                 if (tag.startsWith(TAG_HOLOGRAM_ID)) {
                     try {
                         UUID id = UUID.fromString(tag.substring(TAG_HOLOGRAM_ID.length()));

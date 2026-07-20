@@ -15,18 +15,19 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import org.jetbrains.annotations.NotNull;
 
 public final class EnergyFoodHandler {
 
     private EnergyFoodHandler() {}
 
-    private static TagKey<Item> c(String path) {
+    private static TagKey<@NotNull Item> c(String path) {
         return TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath("c", path));
     }
 
-    private static final TagKey<Item> ERODED_OVERRIDE = tag("food_override");
+    private static final TagKey<@NotNull Item> ERODED_OVERRIDE = tag("food_override");
 
-    private static TagKey<Item> tag(String name) {
+    private static TagKey<@NotNull Item> tag(String name) {
         return TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath("eroded", name));
     }
 

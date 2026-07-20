@@ -6,7 +6,7 @@ import cz.mcsworld.eroded.core.ErodedItems;
 import cz.mcsworld.eroded.death.block.ErodedBlocks;
 import cz.mcsworld.eroded.screen.TerritoryModuleScreenData;
 import cz.mcsworld.eroded.screen.TerritoryModuleScreenHandler;
-import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
+import net.fabricmc.fabric.api.menu.v1.ExtendedMenuProvider;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
@@ -20,6 +20,8 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
+import org.jetbrains.annotations.NotNull;
+
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -333,40 +335,41 @@ public final class TerritoryProtectionManager {
             giveModuleBack(player);
         }
 
-        player.displayClientMessage(
-                Component.translatable("eroded.territory.anchor.removed"),
-                true
+        sendActionBar(
+                player,
+                Component.translatable("eroded.territory.anchor.removed")
         );
     }
 
     public static void sendProtectedMessage(ServerPlayer player) {
         playActionDeniedSound(player);
 
-        player.displayClientMessage(
-                Component.translatable("eroded.territory.protected"),
-                true
+        sendActionBar(
+                player,
+                Component.translatable("eroded.territory.protected")
+
         );
     }
 
     public static void sendAnchorOwnerOnlyMessage(ServerPlayer player) {
         playActionDeniedSound(player);
 
-        player.displayClientMessage(
-                Component.translatable("eroded.territory.anchor.owner_only"),
-                true
+        sendActionBar(
+                player,
+                Component.translatable("eroded.territory.anchor.owner_only")
         );
     }
 
     public static void sendMaxClaimsMessage(ServerPlayer player, int current, int max) {
         playActionDeniedSound(player);
 
-        player.displayClientMessage(
+        sendActionBar(
+                player,
                 Component.translatable(
                         "eroded.territory.anchor.max_claims",
                         current,
                         max
-                ),
-                true
+                )
         );
     }
 
@@ -374,19 +377,19 @@ public final class TerritoryProtectionManager {
         playActionDeniedSound(player);
 
         if (overlappingClaim.isOwner(player)) {
-            player.displayClientMessage(
-                    Component.translatable("eroded.territory.anchor.overlap_own"),
-                    true
+            sendActionBar(
+                    player,
+                    Component.translatable("eroded.territory.anchor.overlap_own")
             );
             return;
         }
 
-        player.displayClientMessage(
+        sendActionBar(
+                player,
                 Component.translatable(
                         "eroded.territory.anchor.overlap_other",
                         overlappingClaim.ownerName()
-                ),
-                true
+                )
         );
     }
 
@@ -406,17 +409,17 @@ public final class TerritoryProtectionManager {
         TerritoryClaim claim = getAnchorClaim(world, anchorPos);
 
         if (claim == null) {
-            player.displayClientMessage(
-                    Component.translatable("eroded.territory.trust.no_claim"),
-                    true
+            sendActionBar(
+                    player,
+                    Component.translatable("eroded.territory.trust.no_claim")
             );
             return;
         }
 
         if (!canManageClaim(player, claim)) {
-            player.displayClientMessage(
-                    Component.translatable("eroded.territory.trust.no_permission"),
-                    true
+            sendActionBar(
+                    player,
+                    Component.translatable("eroded.territory.trust.no_permission")
             );
             return;
         }
@@ -425,22 +428,22 @@ public final class TerritoryProtectionManager {
 
         playTerritoryModuleOpenSound(player);
 
-        player.openMenu(new ExtendedScreenHandlerFactory<TerritoryModuleScreenData>() {
+        player.openMenu(new ExtendedMenuProvider<@NotNull TerritoryModuleScreenData>() {
             @Override
-            public TerritoryModuleScreenData getScreenOpeningData(ServerPlayer player) {
+            public TerritoryModuleScreenData getScreenOpeningData(@NotNull ServerPlayer player) {
                 return data;
             }
 
             @Override
-            public Component getDisplayName() {
+            public @NotNull Component getDisplayName() {
                 return Component.translatable("screen.eroded.territory_module");
             }
 
             @Override
             public AbstractContainerMenu createMenu(
                     int syncId,
-                    Inventory playerInventory,
-                    Player player
+                    @NotNull Inventory playerInventory,
+                    @NotNull Player player
             ) {
                 return new TerritoryModuleScreenHandler(
                         syncId,
@@ -465,25 +468,22 @@ public final class TerritoryProtectionManager {
         }
 
         if (claim == null) {
-            manager.displayClientMessage(
-                    Component.translatable("eroded.territory.trust.no_claim"),
-                    true
+            sendActionBar(manager,
+                    Component.translatable("eroded.territory.trust.no_claim")
             );
             return false;
         }
 
         if (!canManageClaim(manager, claim)) {
-            manager.displayClientMessage(
-                    Component.translatable("eroded.territory.trust.no_permission"),
-                    true
+            sendActionBar(manager,
+                    Component.translatable("eroded.territory.trust.no_permission")
             );
             return false;
         }
 
         if (claim.isOwner(target)) {
-            manager.displayClientMessage(
-                    Component.translatable("eroded.territory.trust.owner"),
-                    true
+            sendActionBar(manager,
+                    Component.translatable("eroded.territory.trust.owner")
             );
             return false;
         }
@@ -504,34 +504,31 @@ public final class TerritoryProtectionManager {
         }
 
         if (!changed) {
-            manager.displayClientMessage(
+            sendActionBar(manager,
                     Component.translatable(
                             "eroded.territory.trust.already",
                             target.getName().getString()
-                    ),
-                    true
+                    )
             );
             return false;
         }
 
         TerritoryClaimState.get(world).setDirty();
 
-        manager.displayClientMessage(
+        sendActionBar(manager,
                 Component.translatable(
                         connectedArea
                                 ? "eroded.territory.trust.added.connected"
                                 : "eroded.territory.trust.added",
                         target.getName().getString()
-                ),
-                true
+                )
         );
 
-        target.displayClientMessage(
+        sendActionBar(target,
                 Component.translatable(
                         "eroded.territory.trust.added.target",
                         claim.ownerName()
-                ),
-                true
+                )
         );
 
         playTrustAddedSound(manager);
@@ -556,17 +553,15 @@ public final class TerritoryProtectionManager {
         }
 
         if (claim == null) {
-            manager.displayClientMessage(
-                    Component.translatable("eroded.territory.trust.no_claim"),
-                    true
+            sendActionBar(manager,
+                    Component.translatable("eroded.territory.trust.no_claim")
             );
             return false;
         }
 
         if (!canManageClaim(manager, claim)) {
-            manager.displayClientMessage(
-                    Component.translatable("eroded.territory.trust.no_permission"),
-                    true
+            sendActionBar(manager,
+                    Component.translatable("eroded.territory.trust.no_permission")
             );
             return false;
         }
@@ -616,17 +611,15 @@ public final class TerritoryProtectionManager {
         }
 
         if (claim == null) {
-            manager.displayClientMessage(
-                    Component.translatable("eroded.territory.trust.no_claim"),
-                    true
+            sendActionBar(manager,
+                    Component.translatable("eroded.territory.trust.no_claim")
             );
             return false;
         }
 
         if (!canManageClaim(manager, claim)) {
-            manager.displayClientMessage(
-                    Component.translatable("eroded.territory.trust.no_permission"),
-                    true
+            sendActionBar(manager,
+                    Component.translatable("eroded.territory.trust.no_permission")
             );
             return false;
         }
@@ -672,17 +665,15 @@ public final class TerritoryProtectionManager {
         }
 
         if (claim == null) {
-            manager.displayClientMessage(
-                    Component.translatable("eroded.territory.trust.no_claim"),
-                    true
+            sendActionBar(manager,
+                    Component.translatable("eroded.territory.trust.no_claim")
             );
             return false;
         }
 
         if (!canManageClaim(manager, claim)) {
-            manager.displayClientMessage(
-                    Component.translatable("eroded.territory.trust.no_permission"),
-                    true
+            sendActionBar(manager,
+                    Component.translatable("eroded.territory.trust.no_permission")
             );
             return false;
         }
@@ -700,26 +691,24 @@ public final class TerritoryProtectionManager {
         }
 
         if (!removed) {
-            manager.displayClientMessage(
+            sendActionBar(manager,
                     Component.translatable(
                             "eroded.territory.trust.not_trusted",
                             targetName
-                    ),
-                    true
+                    )
             );
             return false;
         }
 
         TerritoryClaimState.get(world).setDirty();
 
-        manager.displayClientMessage(
+        sendActionBar(manager,
                 Component.translatable(
                         connectedArea
                                 ? "eroded.territory.trust.removed.connected"
                                 : "eroded.territory.trust.removed",
                         targetName
-                ),
-                true
+                )
         );
 
         ServerPlayer target = world.getServer()
@@ -727,12 +716,11 @@ public final class TerritoryProtectionManager {
                 .getPlayer(targetUuid);
 
         if (target != null) {
-            target.displayClientMessage(
+            sendActionBar(target,
                     Component.translatable(
                             "eroded.territory.trust.removed.target",
                             claim.ownerName()
-                    ),
-                    true
+                    )
             );
 
             playTrustRemovedSound(target);
@@ -1132,9 +1120,8 @@ public final class TerritoryProtectionManager {
 
         if (claim == null) {
             if (showMessage) {
-                player.displayClientMessage(
-                        Component.translatable("eroded.territory.hint.no_active_claim"),
-                        true
+                sendActionBar(player,
+                        Component.translatable("eroded.territory.hint.no_active_claim")
                 );
             }
 
@@ -1158,12 +1145,11 @@ public final class TerritoryProtectionManager {
         if (showMessage) {
             playPlacementHintActivatedSound(player);
 
-            player.displayClientMessage(
+            sendActionBar(player,
                     Component.translatable(
                             "eroded.territory.hint.shown",
                             spacing
-                    ),
-                    true
+                    )
             );
         }
     }
@@ -1215,5 +1201,8 @@ public final class TerritoryProtectionManager {
                 0.22,
                 0.02
         );
+    }
+    private static void sendActionBar(ServerPlayer player, Component message) {
+        player.sendSystemMessage(message, true);
     }
 }

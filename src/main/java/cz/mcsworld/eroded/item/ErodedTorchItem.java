@@ -6,6 +6,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.StandingAndWallBlockItem;
 import net.minecraft.world.level.block.Block;
+import org.jetbrains.annotations.NotNull;
 
 public final class ErodedTorchItem extends StandingAndWallBlockItem {
 
@@ -74,7 +75,7 @@ public final class ErodedTorchItem extends StandingAndWallBlockItem {
     }
 
     @Override
-    public boolean isBarVisible(ItemStack stack) {
+    public boolean isBarVisible(@NotNull ItemStack stack) {
         return DarknessConfigs.get().client.showTorchChargeHud
                 && stack.isDamageableItem()
                 && stack.getDamageValue() > 0;

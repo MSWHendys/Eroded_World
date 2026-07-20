@@ -29,25 +29,25 @@ public final class DispenserDropperProtectionManager {
             BlockState state
     ) {
         if (!cfg().enabled) {
-            return true;
+            return false;
         }
 
         if (!state.hasProperty(DispenserBlock.FACING)) {
-            return true;
+            return false;
         }
 
         Direction direction = state.getValue(DispenserBlock.FACING);
         BlockPos targetPos = sourcePos.relative(direction);
 
         if (crossesSpawnBoundary(world, sourcePos, targetPos)) {
-            return !ExplosionProtectionManager.preventDispenserDropperBoundaryActions();
+            return ExplosionProtectionManager.preventDispenserDropperBoundaryActions();
         }
 
         if (!isClaimDispenserDropperProtectionEnabled()) {
-            return true;
+            return false;
         }
 
-        return ProtectionBoundaryManager.canAutomationMoveBetween(
+        return !ProtectionBoundaryManager.canAutomationMoveBetween(
                 world,
                 sourcePos,
                 targetPos

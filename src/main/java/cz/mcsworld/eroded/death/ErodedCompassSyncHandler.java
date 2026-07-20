@@ -2,7 +2,6 @@ package cz.mcsworld.eroded.death;
 
 import cz.mcsworld.eroded.network.ErodedCompassSyncPacket;
 import cz.mcsworld.eroded.network.SafeNetworkUtil;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 

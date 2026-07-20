@@ -17,7 +17,7 @@ public final class MutatedMobHandler {
                 (Entity entity, ServerLevel world) -> {
 
                     if (!(entity instanceof Monster mob)) return;
-                    if (mob.getTags().contains(MutatedMobResolver.MUTATED_TAG)) return;
+                    if (mob.entityTags().contains(MutatedMobResolver.MUTATED_TAG)) return;
 
                     if (!MutatedMobResolver.shouldBeMutated(world, mob)) return;
 

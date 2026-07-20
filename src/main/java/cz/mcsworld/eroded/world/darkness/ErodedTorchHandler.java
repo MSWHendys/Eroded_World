@@ -17,6 +17,8 @@ import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LightBlock;
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -30,7 +32,7 @@ public final class ErodedTorchHandler {
     }
 
     private record LastLight(
-            ResourceKey<Level> worldKey,
+            ResourceKey<@NotNull Level> worldKey,
             BlockPos pos
     ) {
     }
@@ -184,7 +186,7 @@ public final class ErodedTorchHandler {
     ) {
         var cfg = DarknessConfigs.get().server.erodedTorch;
 
-        long time = world.getDayTime() % 24000L;
+        long time = world.getDefaultClockTime() % 24000L;
 
         boolean eveningOrNight = isTimeInside(
                 time,

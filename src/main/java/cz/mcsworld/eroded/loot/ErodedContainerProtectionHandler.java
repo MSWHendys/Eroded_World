@@ -22,17 +22,17 @@ public class ErodedContainerProtectionHandler {
                 long posKey = pos.asLong();
 
                 if (lootState.isAdminPlaced(posKey)) {
-                    player.displayClientMessage(Component.translatable("eroded.loot.chest.protected"), true);
+                    player.sendSystemMessage(Component.translatable("eroded.loot.chest.protected"));
                     return false;
                 }
 
                 if (lootState.isErodedGenerated(posKey)) {
-                    player.displayClientMessage(Component.translatable("eroded.loot.chest.protected"), true);
+                    player.sendSystemMessage(Component.translatable("eroded.loot.chest.protected"));
                     return false;
                 }
 
                 if (!lootState.isPlayerPlaced(posKey) && !lootState.hasAnyPlayerOpened(posKey)) {
-                    player.displayClientMessage(Component.translatable("eroded.loot.chest.protected"), true);
+                    player.sendSystemMessage(Component.translatable("eroded.loot.chest.protected"));
                     return false;
                 }
 

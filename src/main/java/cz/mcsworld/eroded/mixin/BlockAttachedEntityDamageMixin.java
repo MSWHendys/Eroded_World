@@ -26,7 +26,7 @@ public abstract class BlockAttachedEntityDamageMixin {
     ) {
         Entity target = (Entity) (Object) this;
 
-        if (!EntityProtectionEvents.canDamageProtectedEntity(
+        if (EntityProtectionEvents.canDamageProtectedEntity(
                 target,
                 world,
                 source

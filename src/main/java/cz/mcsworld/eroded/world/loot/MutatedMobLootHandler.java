@@ -29,7 +29,7 @@ public final class MutatedMobLootHandler {
     ) {
 
         if (!(entity instanceof Monster mob)) return;
-        if (!mob.getTags().contains(MUTATED_TAG)) return;
+        if (!mob.entityTags().contains(MUTATED_TAG)) return;
         if (!(entity.level() instanceof ServerLevel world)) return;
 
         RandomSource random = world.getRandom();

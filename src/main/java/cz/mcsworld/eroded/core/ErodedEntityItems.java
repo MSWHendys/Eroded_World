@@ -10,6 +10,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.SpawnEggItem;
+import org.jetbrains.annotations.NotNull;
 
 public final class ErodedEntityItems {
 
@@ -33,11 +34,11 @@ public final class ErodedEntityItems {
 
     private static Item registerSpawnEgg(
             String name,
-            EntityType<? extends Mob> entityType
+            EntityType<? extends @NotNull Mob> entityType
     ) {
         Identifier id = Identifier.fromNamespaceAndPath(ErodedMod.MOD_ID, name);
 
-        ResourceKey<Item> key = ResourceKey.create(
+        ResourceKey<@NotNull Item> key = ResourceKey.create(
                 Registries.ITEM,
                 id
         );

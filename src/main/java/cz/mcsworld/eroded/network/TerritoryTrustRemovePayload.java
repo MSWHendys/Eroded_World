@@ -6,6 +6,7 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
+import org.jetbrains.annotations.NotNull;
 
 public record TerritoryTrustRemovePayload(
         BlockPos anchorPos,
@@ -14,10 +15,10 @@ public record TerritoryTrustRemovePayload(
         boolean connectedArea
 ) implements CustomPacketPayload {
 
-    public static final Type<TerritoryTrustRemovePayload> ID =
+    public static final Type<@NotNull TerritoryTrustRemovePayload> ID =
             new Type<>(Identifier.fromNamespaceAndPath(ErodedMod.MOD_ID, "territory_trust_remove"));
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, TerritoryTrustRemovePayload> CODEC =
+    public static final StreamCodec<@NotNull RegistryFriendlyByteBuf, @NotNull TerritoryTrustRemovePayload> CODEC =
             StreamCodec.ofMember(
                     TerritoryTrustRemovePayload::write,
                     TerritoryTrustRemovePayload::read
@@ -44,7 +45,7 @@ public record TerritoryTrustRemovePayload(
     }
 
     @Override
-    public Type<? extends CustomPacketPayload> type() {
+    public @NotNull Type<? extends @NotNull CustomPacketPayload> type() {
         return ID;
     }
 }

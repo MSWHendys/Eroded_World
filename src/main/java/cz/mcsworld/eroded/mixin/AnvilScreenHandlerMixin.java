@@ -24,8 +24,7 @@ public class AnvilScreenHandlerMixin {
     @ModifyVariable(
             method = "createResult",
             at = @At(value = "STORE"),
-            ordinal = 0
-    )
+            name = "price")
     private int eroded$modifyRepairAmount(int repairedAmount) {
 
         AnvilMenu self = (AnvilMenu) (Object) this;

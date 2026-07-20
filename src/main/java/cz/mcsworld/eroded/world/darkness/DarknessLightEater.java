@@ -5,6 +5,7 @@ import cz.mcsworld.eroded.death.block.ErodedBlocks;
 import cz.mcsworld.eroded.world.territory.*;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.SectionPos;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -53,7 +54,7 @@ public final class DarknessLightEater {
                 for (Monster mob : world.getEntitiesOfClass(
                         Monster.class,
                         playerZone,
-                        e -> e.getTags().contains(MutatedMobResolver.MUTATED_TAG)
+                        e -> e.entityTags().contains(MutatedMobResolver.MUTATED_TAG)
                 )) {
                     if (actions >= cfg.maxLightActionsPerTick) return;
                     tryExtinguish(world, mob, threatCache, tick, cfg);
@@ -75,11 +76,12 @@ public final class DarknessLightEater {
                 return;
             }
         }
-
-        ChunkPos cp = new ChunkPos(center);
+        int chunkX = SectionPos.blockToSectionCoord(center.getX());
+        int chunkZ = SectionPos.blockToSectionCoord(center.getZ());
+        ChunkPos cp = new ChunkPos(chunkX, chunkZ);
         float threat = threatCache.computeIfAbsent(cp, c -> {
             TerritoryWorldState worldState = TerritoryWorldState.get(world);
-            TerritoryCellKey key = TerritoryCellKey.fromChunk(c.x, c.z);
+            TerritoryCellKey key = TerritoryCellKey.fromChunk(c.x(), c.z());
             TerritoryCell cell = worldState.getOrCreateCell(key);
             return TerritoryThreatResolver.computeThreat(cell, tick);
         });

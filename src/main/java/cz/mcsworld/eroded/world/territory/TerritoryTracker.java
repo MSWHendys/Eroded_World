@@ -3,7 +3,6 @@ package cz.mcsworld.eroded.world.territory;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BlockTags;
-import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -35,9 +34,17 @@ public final class TerritoryTracker {
         }
     }
 
-    private static void updateCell(ServerLevel world, BlockPos pos, long tick, java.util.function.Consumer<TerritoryCell> action) {
-        ChunkPos chunk = new ChunkPos(pos);
-        TerritoryCellKey key = TerritoryCellKey.fromChunk(chunk.x, chunk.z);
+    private static void updateCell(
+            ServerLevel world,
+            BlockPos pos,
+            long tick,
+            java.util.function.Consumer<TerritoryCell> action
+    ) {
+        TerritoryCellKey key = TerritoryCellKey.fromChunk(
+                pos.getX() >> 4,
+                pos.getZ() >> 4
+        );
+
         TerritoryWorldState worldState = TerritoryWorldState.get(world);
         TerritoryCell cell = worldState.getOrCreateCell(key);
 

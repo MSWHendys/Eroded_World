@@ -15,7 +15,7 @@ public final class SprintEnergyHandler {
     private static final Map<UUID, Integer> sprintTicks = new HashMap<>();
 
     public static void register() {
-        ServerTickEvents.END_WORLD_TICK.register(SprintEnergyHandler::onWorldTick);
+        ServerTickEvents.END_LEVEL_TICK.register(SprintEnergyHandler::onWorldTick);
     }
 
     private static void onWorldTick(ServerLevel world) {

@@ -6,14 +6,15 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
+import org.jetbrains.annotations.NotNull;
 
 public record SoundTuningSyncPacket(Float volumeMul, Float delayMul)
         implements CustomPacketPayload {
 
-    public static final CustomPacketPayload.Type<SoundTuningSyncPacket> ID =
+    public static final CustomPacketPayload.Type<@NotNull SoundTuningSyncPacket> ID =
             new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath("eroded", "sound_tuning"));
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, SoundTuningSyncPacket> CODEC =
+    public static final StreamCodec<@NotNull RegistryFriendlyByteBuf, @NotNull SoundTuningSyncPacket> CODEC =
             StreamCodec.ofMember(
                     (packet, buf) -> {
                         buf.writeBoolean(packet.volumeMul() != null);
@@ -42,7 +43,7 @@ public record SoundTuningSyncPacket(Float volumeMul, Float delayMul)
             );
 
     @Override
-    public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
+    public CustomPacketPayload.@NotNull Type<? extends @NotNull CustomPacketPayload> type() {
         return ID;
     }
 

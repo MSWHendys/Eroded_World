@@ -10,10 +10,11 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.Item;
+import org.jetbrains.annotations.NotNull;
 
 public final class ErodedItems {
 
-    public static final ResourceKey<Item> DEATH_COMPASS_KEY =
+    public static final ResourceKey<@NotNull Item> DEATH_COMPASS_KEY =
             ResourceKey.create(
                     BuiltInRegistries.ITEM.key(),
                     Identifier.fromNamespaceAndPath(ErodedMod.MOD_ID, "death_compass")
@@ -21,12 +22,12 @@ public final class ErodedItems {
 
     public static Item DEATH_COMPASS;
 
-    public static final ResourceKey<Item> ENERGY_DRINK_KEY =
+    public static final ResourceKey<@NotNull Item> ENERGY_DRINK_KEY =
             ResourceKey.create(BuiltInRegistries.ITEM.key(), Identifier.fromNamespaceAndPath(ErodedMod.MOD_ID, "energy_drink"));
 
     public static Item ENERGY_DRINK;
 
-    public static final ResourceKey<Item> ADRENALINE_SHOT_KEY =
+    public static final ResourceKey<@NotNull Item> ADRENALINE_SHOT_KEY =
             ResourceKey.create(BuiltInRegistries.ITEM.key(), Identifier.fromNamespaceAndPath(ErodedMod.MOD_ID, "adrenaline_shot"));
 
     public static final Item ADRENALINE_SHOT = Registry.register(
@@ -35,7 +36,7 @@ public final class ErodedItems {
             new AdrenalineShotItem(new Item.Properties().stacksTo(1).setId(ADRENALINE_SHOT_KEY))
     );
 
-    public static final ResourceKey<Item> TERRITORY_MODULE_KEY =
+    public static final ResourceKey<@NotNull Item> TERRITORY_MODULE_KEY =
             ResourceKey.create(BuiltInRegistries.ITEM.key(), Identifier.fromNamespaceAndPath(ErodedMod.MOD_ID, "territory_module"));
 
     public static Item TERRITORY_MODULE;

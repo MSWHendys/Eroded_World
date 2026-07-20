@@ -51,9 +51,8 @@ public final class DeathChestBreakHandler {
 
         if (e.isProtected(System.currentTimeMillis())) {
 
-            sp.displayClientMessage(
-                    Component.translatable("eroded.death.chest.protected"),
-                    true
+            sp.sendOverlayMessage(
+                    Component.translatable("eroded.death.chest.protected")
             );
             return false;
         }

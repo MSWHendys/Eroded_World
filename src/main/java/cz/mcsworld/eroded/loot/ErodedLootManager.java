@@ -27,7 +27,7 @@ public class ErodedLootManager {
             }
 
             else if (!state.hasAnyPlayerOpened(key)) {
-                if (world.random.nextDouble() <= config.erodedLootChance) {
+                if (world.getRandom().nextDouble() <= config.erodedLootChance) {
                     state.markErodedGenerated(key);
                     ErodedLootGenerator.generate(inv);
                 }

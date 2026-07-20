@@ -12,7 +12,7 @@ public final class TerritoryPlacementHintNetworking {
     }
 
     public static void registerPayloadTypes() {
-        PayloadTypeRegistry.playC2S().register(
+        PayloadTypeRegistry.serverboundPlay().register(
                 TerritoryPlacementHintPayload.ID,
                 TerritoryPlacementHintPayload.CODEC
         );

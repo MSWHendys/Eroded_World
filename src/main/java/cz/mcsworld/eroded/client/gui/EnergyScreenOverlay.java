@@ -7,12 +7,12 @@ import cz.mcsworld.eroded.config.energy.EnergyConfig;
 import cz.mcsworld.eroded.skills.SkillData;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 import net.minecraft.client.gui.screens.inventory.AnvilScreen;
 import net.minecraft.client.gui.screens.inventory.CraftingScreen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
-import net.minecraft.network.chat.Component;
 
 public final class EnergyScreenOverlay {
 
@@ -34,12 +34,11 @@ public final class EnergyScreenOverlay {
     private static Component customMessage = null;
     private static int customMessageColor = 0xFFFFFFFF;
 
-    private EnergyScreenOverlay() {
-    }
+    private EnergyScreenOverlay() {}
 
     public static void register() {
-        ScreenEvents.AFTER_INIT.register((client, screen, width, height) ->
-                ScreenEvents.afterRender(screen).register(EnergyScreenOverlay::render)
+        ScreenEvents.AFTER_INIT.register((client, screen, w, h) ->
+                ScreenEvents.afterExtract(screen).register(EnergyScreenOverlay::render)
         );
     }
 
@@ -55,27 +54,18 @@ public final class EnergyScreenOverlay {
     public static void showAnvilMessage(Component text, String quality) {
         anvilMessage = text;
         anvilQuality = quality;
-        anvilMessageTicks =
-                EnergyConfig.get().client.hud.warningMessageTime * 5;
+        anvilMessageTicks = EnergyConfig.get().client.hud.warningMessageTime * 5;
     }
 
     public static void showCustomMessage(Component text, int color) {
         customMessage = text;
         customMessageColor = color;
-        customMessageTicks =
-                EnergyConfig.get().client.hud.warningMessageTime * 2;
-    }
-
-    private static boolean shouldRender(Screen screen) {
-        return screen instanceof InventoryScreen
-                || screen instanceof CraftingScreen
-                || screen instanceof AnvilScreen
-                || screen instanceof TerritoryModuleScreen;
+        customMessageTicks = EnergyConfig.get().client.hud.warningMessageTime * 2;
     }
 
     private static void render(
             Screen screen,
-            GuiGraphics context,
+            GuiGraphicsExtractor graphics,
             int mouseX,
             int mouseY,
             float delta
@@ -86,8 +76,7 @@ public final class EnergyScreenOverlay {
 
         Minecraft client = Minecraft.getInstance();
 
-        if (client.player == null
-                || !ClientEnergyData.isInitialized()) {
+        if (client == null || client.player == null || !ClientEnergyData.isInitialized()) {
             return;
         }
 
@@ -120,10 +109,10 @@ public final class EnergyScreenOverlay {
         int total = cfg.numberEnergyFlashes;
         int ticks = client.gui.getGuiTicks();
 
-        int screenWidth = context.guiWidth();
+        int screenW = client.getWindow().getGuiScaledWidth();
 
         int barWidth = total * 8;
-        int iconsX = (screenWidth - barWidth) / 2;
+        int iconsX = (screenW - barWidth) / 2;
         int barCenterX = iconsX + barWidth / 2;
         int iconsY = 8;
 
@@ -131,47 +120,34 @@ public final class EnergyScreenOverlay {
             int drawX = iconsX + i * 8;
 
             EnergyHudLogic.SegmentVisual visual =
-                    EnergyHudLogic.resolve(
-                            i,
-                            total,
-                            energy,
-                            maxEnergy,
-                            isRegenerating,
-                            ticks
-                    );
+                    EnergyHudLogic.resolve(i, total, energy, maxEnergy, isRegenerating, ticks);
 
-            int iconColor;
+            int color;
 
             if (!visual.visible()) {
-                iconColor = EnergyHudLogic.EMPTY;
+                color = EnergyHudLogic.EMPTY;
             } else {
-                iconColor =
-                        0xFF000000
-                                | (visual.color() & 0x00FFFFFF);
+                color = 0xFF000000 | (visual.color() & 0x00FFFFFF);
             }
 
-            var matrices = context.pose();
 
+            var matrices = graphics.pose();;
             matrices.pushMatrix();
+            float cx = drawX + 4;
+            float cy = iconsY + 4;
+            matrices.translate(cx, cy);
+            matrices.scale(visual.scale(), visual.scale());
+            matrices.translate(-cx, -cy);
 
-            float centerX = drawX + 4.0F;
-            float centerY = iconsY + 4.0F;
-
-            matrices.translate(centerX, centerY);
-            matrices.scale(
-                    visual.scale(),
-                    visual.scale()
-            );
-            matrices.translate(-centerX, -centerY);
-
-            context.drawString(
+            graphics.text(
                     client.font,
                     ICON,
                     drawX,
                     iconsY,
-                    iconColor,
+                    (0xFF << 24) | (visual.color() & 0x00FFFFFF),
                     true
             );
+
 
             matrices.popMatrix();
         }
@@ -184,95 +160,64 @@ public final class EnergyScreenOverlay {
 
             if (anvilQuality != null) {
                 switch (anvilQuality) {
-                    case "POOR" ->
-                            textColor = EnergyHudLogic.RED;
-
-                    case "STANDARD" ->
-                            textColor = EnergyHudLogic.YELLOW;
-
-                    case "EXCELLENT" ->
-                            textColor = EnergyHudLogic.GREEN;
-
-                    default ->
-                            textColor = 0xFFFFFFFF;
+                    case "POOR" -> textColor = EnergyHudLogic.RED;
+                    case "STANDARD" -> textColor = EnergyHudLogic.YELLOW;
+                    case "EXCELLENT" -> textColor = EnergyHudLogic.GREEN;
+                    default -> textColor = 0xFFFFFFFF;
                 }
+            } else {
+                textColor = 0xFFFFFFFF;
             }
 
             anvilMessageTicks--;
-
-            if (anvilMessageTicks <= 0) {
-                anvilMessage = null;
-                anvilQuality = null;
-            }
-
-        } else if (customMessageTicks > 0
-                && customMessage != null) {
-
+        } else if (customMessageTicks > 0 && customMessage != null) {
             textToDraw = customMessage;
             textColor = customMessageColor;
             customMessageTicks--;
 
             if (customMessageTicks <= 0) {
                 customMessage = null;
-                customMessageColor = 0xFFFFFFFF;
             }
-
         } else if (craftingFailTicks > 0) {
-            textToDraw = Component.translatable(
-                    "eroded.crafting.not_enough_energy"
-            );
-
+            textToDraw = Component.translatable("eroded.crafting.not_enough_energy");
             textColor = EnergyHudLogic.RED;
             craftingFailTicks--;
+        } else if (warningTicks > 0 && activeWarningState != null) {
+            String key = EnergyHudLogic.getWarningTranslationKey(activeWarningState);
 
-        } else if (warningTicks > 0
-                && activeWarningState != null) {
-
-            String translationKey =
-                    EnergyHudLogic.getWarningTranslationKey(
-                            activeWarningState
-                    );
-
-            if (translationKey != null) {
-                textToDraw =
-                        Component.translatable(translationKey);
-
+            if (key != null) {
+                textToDraw = Component.translatable(key);
                 textColor = EnergyHudLogic.RED;
                 warningTicks--;
-
-                if (warningTicks <= 0) {
-                    activeWarningState = null;
-                }
             } else {
                 warningTicks = 0;
-                activeWarningState = null;
             }
-
         } else {
-            textToDraw =
-                    Component.translatable(
-                            "eroded.gui.energy.prefix"
-                    ).append(
-                            Component.literal(
-                                    energy + " / " + maxEnergy
-                            )
-                    );
+            textToDraw = Component.translatable("eroded.gui.energy.prefix")
+                    .append(Component.literal(energy + " / " + maxEnergy));
         }
 
-        if (textToDraw == null) {
-            return;
+        if (textToDraw != null) {
+            int width = client.font.width(textToDraw);
+
+            graphics.text(
+                    client.font,
+                    textToDraw,
+                    barCenterX - width / 2,
+                    iconsY + 10,
+                    textColor,
+                    true
+            );
+        }
+    }
+    private static boolean shouldRender(Screen screen) {
+
+        if (screen instanceof TerritoryModuleScreen) {
+            return true;
         }
 
-        int textWidth =
-                client.font.width(textToDraw);
-
-        context.drawString(
-                client.font,
-                textToDraw,
-                barCenterX - textWidth / 2,
-                iconsY + 10,
-                textColor,
-                true
-        );
+        return screen instanceof InventoryScreen
+                || screen instanceof CraftingScreen
+                || screen instanceof AnvilScreen;
     }
 }

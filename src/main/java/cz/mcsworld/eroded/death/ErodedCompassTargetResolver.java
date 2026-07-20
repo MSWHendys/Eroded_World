@@ -6,6 +6,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
+import org.jetbrains.annotations.NotNull;
 
 public final class ErodedCompassTargetResolver {
 
@@ -16,8 +17,8 @@ public final class ErodedCompassTargetResolver {
             ErodedDeathMemory memory
     ) {
         ServerLevel playerWorld = player.level();
-        ResourceKey<Level> playerDim = playerWorld.dimension();
-        ResourceKey<Level> deathDim  = memory.getDeathDimension();
+        ResourceKey<@NotNull Level> playerDim = playerWorld.dimension();
+        ResourceKey<@NotNull Level> deathDim  = memory.getDeathDimension();
 
         if (playerDim.equals(deathDim)) {
             return memory.getDeathPos();

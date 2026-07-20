@@ -30,13 +30,14 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import java.util.List;
 import net.minecraft.world.level.Level;
+import org.jetbrains.annotations.NotNull;
 
 public final class TerritoryCaveCollapseHandler {
 
     private TerritoryCaveCollapseHandler() {
     }
 
-    private static final List<EntityType<? extends Monster>> COLLAPSE_MOBS =
+    private static final List<EntityType<? extends @NotNull Monster>> COLLAPSE_MOBS =
             List.of(
                     EntityType.ZOMBIE,
                     EntityType.SKELETON,
@@ -57,8 +58,10 @@ public final class TerritoryCaveCollapseHandler {
 
             if (pos.getY() > cfg.collapseMaxY) return;
 
-            ChunkPos chunk = new ChunkPos(pos);
-            TerritoryCellKey key = TerritoryCellKey.fromChunk(chunk.x, chunk.z);
+            ChunkPos chunk = new ChunkPos(
+                    player.blockPosition().getX() >> 4,
+                    player.blockPosition().getZ() >> 4);
+            TerritoryCellKey key = TerritoryCellKey.fromChunk(chunk.x(), chunk.z());
 
             TerritoryWorldState stateData = TerritoryWorldState.get(serverWorld);
             TerritoryCell cell = stateData.getOrCreateCell(key);
@@ -199,7 +202,7 @@ public final class TerritoryCaveCollapseHandler {
         );
 
         if (player instanceof ServerPlayer serverPlayer) {
-            serverPlayer.displayClientMessage(
+            serverPlayer.sendSystemMessage(
                     Component.translatable("eroded.lamp_blocked_collapse")
                             .withStyle(ChatFormatting.GOLD),
                     true
@@ -460,7 +463,7 @@ public final class TerritoryCaveCollapseHandler {
                 continue;
             }
 
-            EntityType<? extends Monster> type =
+            EntityType<? extends @NotNull Monster> type =
                     COLLAPSE_MOBS.get(random.nextInt(COLLAPSE_MOBS.size()));
 
             Monster mob = type.create(world, EntitySpawnReason.EVENT);

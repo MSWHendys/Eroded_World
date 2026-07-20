@@ -50,9 +50,8 @@ public final class DeathChestAccessHandler {
             return InteractionResult.PASS;
         }
 
-        serverPlayer.displayClientMessage(
-                Component.translatable("eroded.death.chest.protected"),
-                true
+        serverPlayer.sendOverlayMessage(
+                Component.translatable("eroded.death.chest.protected")
         );
 
         return InteractionResult.FAIL;

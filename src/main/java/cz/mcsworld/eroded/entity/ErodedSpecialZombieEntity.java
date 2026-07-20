@@ -7,19 +7,20 @@ import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class ErodedSpecialZombieEntity extends Zombie {
 
-    public ErodedSpecialZombieEntity(EntityType<? extends Zombie> type, Level world) {
+    public ErodedSpecialZombieEntity(EntityType<? extends @NotNull Zombie> type, Level world) {
         super(type, world);
     }
 
     @Override
     public SpawnGroupData finalizeSpawn(
-            ServerLevelAccessor world,
-            DifficultyInstance difficulty,
-            EntitySpawnReason spawnReason,
+            @NotNull ServerLevelAccessor world,
+            @NotNull DifficultyInstance difficulty,
+            @NotNull EntitySpawnReason spawnReason,
             @Nullable SpawnGroupData entityData
     ) {
         SpawnGroupData data = super.finalizeSpawn(world, difficulty, spawnReason, entityData);

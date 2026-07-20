@@ -5,17 +5,18 @@ import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 public final class NetworkPayloads {
 
     public static void registerAll() {
-        PayloadTypeRegistry.playS2C().register(CraftingFailPacket.ID, CraftingFailPacket.CODEC.cast());
-        PayloadTypeRegistry.playS2C().register(EnergySyncPacket.ID, EnergySyncPacket.CODEC);
-        PayloadTypeRegistry.playS2C().register(EnergyWarningPacket.ID, EnergyWarningPacket.CODEC);
-        PayloadTypeRegistry.playS2C().register(DarknessStatePacket.ID, DarknessStatePacket.CODEC);
-        PayloadTypeRegistry.playS2C().register(ErodedCompassSyncPacket.ID, ErodedCompassSyncPacket.CODEC);
-        PayloadTypeRegistry.playS2C().register(CompassDarknessBreakPacket.ID, CompassDarknessBreakPacket.CODEC);
-        PayloadTypeRegistry.playC2S().register(DodgeRequestPacket.ID, DodgeRequestPacket.CODEC);
-        PayloadTypeRegistry.playS2C().register(SoundTuningSyncPacket.ID,SoundTuningSyncPacket.CODEC);
-        PayloadTypeRegistry.playS2C().register(SkillSyncPacket.ID, SkillSyncPacket.CODEC);
-        PayloadTypeRegistry.playS2C().register( AnvilFeedbackPacket.ID, AnvilFeedbackPacket.CODEC);
-        PayloadTypeRegistry.playS2C().register(CraftingRequirementPacket.ID, CraftingRequirementPacket.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(CraftingFailPacket.ID, CraftingFailPacket.CODEC.cast());
+        PayloadTypeRegistry.clientboundPlay().register(EnergySyncPacket.ID, EnergySyncPacket.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(EnergyWarningPacket.ID, EnergyWarningPacket.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(DarknessStatePacket.ID, DarknessStatePacket.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(ErodedCompassSyncPacket.ID, ErodedCompassSyncPacket.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(CompassDarknessBreakPacket.ID, CompassDarknessBreakPacket.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(DodgeRequestPacket.ID, DodgeRequestPacket.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(SoundTuningSyncPacket.ID, SoundTuningSyncPacket.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(SkillSyncPacket.ID, SkillSyncPacket.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(AnvilFeedbackPacket.ID, AnvilFeedbackPacket.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(CraftingRequirementPacket.ID, CraftingRequirementPacket.CODEC);
+
         TerritoryModuleNetworking.registerPayloadTypes();
         TerritoryPlacementHintNetworking.registerPayloadTypes();
     }

@@ -10,6 +10,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
+import org.jetbrains.annotations.NotNull;
 
 public class TerritoryModuleScreenHandler extends AbstractContainerMenu {
 
@@ -29,7 +30,7 @@ public class TerritoryModuleScreenHandler extends AbstractContainerMenu {
     }
 
     @Override
-    public boolean stillValid(Player player) {
+    public boolean stillValid(@NotNull Player player) {
 
         if (!(player instanceof ServerPlayer serverPlayer)) {
             return true;
@@ -53,7 +54,7 @@ public class TerritoryModuleScreenHandler extends AbstractContainerMenu {
     }
 
     @Override
-    public ItemStack quickMoveStack(Player player, int slot) {
+    public @NotNull ItemStack quickMoveStack(@NotNull Player player, int slot) {
         return ItemStack.EMPTY;
     }
 }

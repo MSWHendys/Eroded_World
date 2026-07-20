@@ -6,6 +6,7 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
+import org.jetbrains.annotations.NotNull;
 
 public record TerritoryModuleSyncPayload(
         BlockPos anchorPos,
@@ -19,10 +20,10 @@ public record TerritoryModuleSyncPayload(
         String suggestionData
 ) implements CustomPacketPayload {
 
-    public static final Type<TerritoryModuleSyncPayload> ID =
+    public static final Type<@NotNull TerritoryModuleSyncPayload> ID =
             new Type<>(Identifier.fromNamespaceAndPath(ErodedMod.MOD_ID, "territory_module_sync"));
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, TerritoryModuleSyncPayload> CODEC =
+    public static final StreamCodec<@NotNull RegistryFriendlyByteBuf, @NotNull TerritoryModuleSyncPayload> CODEC =
             StreamCodec.ofMember(
                     TerritoryModuleSyncPayload::write,
                     TerritoryModuleSyncPayload::read
@@ -73,7 +74,7 @@ public record TerritoryModuleSyncPayload(
     }
 
     @Override
-    public Type<? extends CustomPacketPayload> type() {
+    public @NotNull Type<? extends @NotNull CustomPacketPayload> type() {
         return ID;
     }
 }

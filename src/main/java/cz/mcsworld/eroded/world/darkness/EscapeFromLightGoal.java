@@ -39,9 +39,9 @@ public final class EscapeFromLightGoal extends Goal {
         var cfg = DarknessConfigs.get().server;
         BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();
         for (int i = 0; i < 15; i++) {
-            int x = origin.getX() + world.random.nextInt(16) - 8;
-            int z = origin.getZ() + world.random.nextInt(16) - 8;
-            int y = origin.getY() + world.random.nextInt(4) - 2;
+            int x = origin.getX() + world.getRandom().nextInt(16) - 8;
+            int z = origin.getZ() + world.getRandom().nextInt(16) - 8;
+            int y = origin.getY() + world.getRandom().nextInt(4) - 2;
             mutable.set(x, y, z);
 
             if (world.getBrightness(LightLayer.BLOCK, mutable) < cfg.fearLightThreshold) {

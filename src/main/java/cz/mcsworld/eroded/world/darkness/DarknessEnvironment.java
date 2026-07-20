@@ -16,7 +16,7 @@ public final class DarknessEnvironment {
     }
 
     public static boolean isNight(ServerLevel world) {
-        long t = world.getDayTime() % 24000;
+        long t = world.getDefaultClockTime() % 24000;
         return t >= 13000 && t <= 23000;
     }
 }

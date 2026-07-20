@@ -6,13 +6,17 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
+import org.jetbrains.annotations.NotNull;
 
 public final class TerritoryWorldState extends SavedData {
 
-    private static final String ID = "eroded_territory";
+    private static final Identifier ID =
+            Identifier.fromNamespaceAndPath("eroded","eroded_territory");
     private final Map<TerritoryCellKey, TerritoryCell> cells = new HashMap<>();
     private record CellEntry(
             int x,
@@ -75,7 +79,7 @@ public final class TerritoryWorldState extends SavedData {
                     }
             );
 
-    public static final SavedDataType<TerritoryWorldState> TYPE =
+    public static final SavedDataType<@NotNull TerritoryWorldState> TYPE =
             new SavedDataType<>(
                     ID,
                     TerritoryWorldState::new,

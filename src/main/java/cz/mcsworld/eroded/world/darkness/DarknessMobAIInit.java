@@ -45,7 +45,7 @@ public final class DarknessMobAIInit {
             return;
         }
 
-        if (mob.getTags().contains(TAG_LIGHT_FEAR_AI)) {
+        if (mob.entityTags().contains(TAG_LIGHT_FEAR_AI)) {
             return;
         }
 

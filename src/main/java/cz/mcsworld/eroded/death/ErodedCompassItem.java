@@ -12,6 +12,8 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -25,7 +27,7 @@ public class ErodedCompassItem extends Item {
     }
 
     @Override
-    public InteractionResult use(Level world, Player player, InteractionHand hand) {
+    public @NotNull InteractionResult use(Level world, @NotNull Player player, @NotNull InteractionHand hand) {
         if (world.isClientSide()) {
             return InteractionResult.SUCCESS;
         }
@@ -43,7 +45,7 @@ public class ErodedCompassItem extends Item {
         }
 
         if (mem == null || mem.isExpired(sp.level().getServer().getTickCount())) {
-            sp.displayClientMessage(
+            sp.sendSystemMessage(
                     Component.translatable("eroded.compass.empty"),
                     true
             );
@@ -57,7 +59,7 @@ public class ErodedCompassItem extends Item {
 
         String timeString = String.format("%02d:%02d", min, sec);
 
-        sp.displayClientMessage(
+        sp.sendSystemMessage(
                 Component.translatable(
                         "eroded.compass.whisper",
                         timeString
@@ -67,7 +69,7 @@ public class ErodedCompassItem extends Item {
 
         BlockPos pos = mem.getDeathPos();
 
-        sp.displayClientMessage(
+        sp.sendSystemMessage(
                 Component.translatable(
                         "eroded.compass.whisper.coords",
                         pos.getX(),
@@ -88,7 +90,7 @@ public class ErodedCompassItem extends Item {
                 DeathConfig.get().compass.darknessBreak;
 
         if (!cfg.enabled) {
-            player.displayClientMessage(
+            player.sendSystemMessage(
                     Component.translatable("eroded.compass.darkness_break.disabled")
                             .withStyle(ChatFormatting.GRAY),
                     true
@@ -98,7 +100,7 @@ public class ErodedCompassItem extends Item {
 
         if (cfg.requireValidTarget) {
             if (memory == null || memory.isExpired(player.level().getServer().getTickCount())) {
-                player.displayClientMessage(
+                player.sendSystemMessage(
                         Component.translatable("eroded.compass.empty"),
                         true
                 );
@@ -112,7 +114,7 @@ public class ErodedCompassItem extends Item {
         if (now < readyAt) {
             long remainingSeconds = Math.max(1L, (readyAt - now + 19L) / 20L);
 
-            player.displayClientMessage(
+            player.sendSystemMessage(
                     Component.translatable(
                             "eroded.compass.darkness_break.cooldown",
                             remainingSeconds
@@ -140,7 +142,7 @@ public class ErodedCompassItem extends Item {
                 )
         );
 
-        player.displayClientMessage(
+        player.sendSystemMessage(
                 Component.translatable("eroded.compass.darkness_break.use")
                         .withStyle(ChatFormatting.AQUA),
                 true

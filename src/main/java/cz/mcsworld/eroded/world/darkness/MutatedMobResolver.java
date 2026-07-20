@@ -14,13 +14,16 @@ public final class MutatedMobResolver {
 
     public static boolean shouldBeMutated(ServerLevel world, Monster mob) {
 
-        ChunkPos cp = new ChunkPos(mob.blockPosition());
+        int chunkX = mob.blockPosition().getX() >> 4;
+        int chunkZ = mob.blockPosition().getZ() >> 4;
+
+        ChunkPos cp = new ChunkPos(chunkX, chunkZ);
 
         TerritoryWorldState worldState =
                 TerritoryWorldState.get(world);
 
         TerritoryCellKey key =
-                TerritoryCellKey.fromChunk(cp.x, cp.z);
+                TerritoryCellKey.fromChunk(cp.x(), cp.z());
 
         TerritoryCell cell =
                 worldState.getOrCreateCell(key);
@@ -33,7 +36,7 @@ public final class MutatedMobResolver {
         if (threat < 0.65f) return false;
 
         float chance = (threat - 0.65f) * 2.0f;
-        return world.random.nextFloat() < chance;
+        return world.getRandom().nextFloat() < chance;
 
     }
 

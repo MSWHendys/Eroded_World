@@ -7,10 +7,11 @@ import net.minecraft.core.Registry;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
+import org.jetbrains.annotations.NotNull;
 
 public final class ErodedComponents {
 
-    public static final DataComponentType<Quality> QUALITY =
+    public static final DataComponentType<@NotNull Quality> QUALITY =
             Registry.register(
                     BuiltInRegistries.DATA_COMPONENT_TYPE,
                     Identifier.fromNamespaceAndPath(ErodedMod.MOD_ID, "quality"),

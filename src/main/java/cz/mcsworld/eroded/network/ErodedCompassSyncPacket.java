@@ -4,6 +4,7 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
+import org.jetbrains.annotations.NotNull;
 
 public record ErodedCompassSyncPacket(
         boolean active,
@@ -11,10 +12,10 @@ public record ErodedCompassSyncPacket(
         long deathPosLong
 ) implements CustomPacketPayload {
 
-    public static final Type<ErodedCompassSyncPacket> ID =
+    public static final Type<@NotNull ErodedCompassSyncPacket> ID =
             new Type<>(Identifier.fromNamespaceAndPath("eroded", "compass_sync"));
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, ErodedCompassSyncPacket> CODEC =
+    public static final StreamCodec<@NotNull RegistryFriendlyByteBuf, @NotNull ErodedCompassSyncPacket> CODEC =
             StreamCodec.ofMember(
                     (p, buf) -> {
                         buf.writeBoolean(p.active());
@@ -30,7 +31,7 @@ public record ErodedCompassSyncPacket(
 
 
     @Override
-    public Type<? extends CustomPacketPayload> type() {
+    public @NotNull Type<? extends @NotNull CustomPacketPayload> type() {
         return ID;
     }
 }

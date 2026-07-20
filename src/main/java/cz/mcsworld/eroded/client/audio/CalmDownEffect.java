@@ -1,6 +1,5 @@
 package cz.mcsworld.eroded.client.audio;
 
-import cz.mcsworld.eroded.client.data.DarknessClientData;
 import cz.mcsworld.eroded.config.darkness.DarknessConfigs;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;

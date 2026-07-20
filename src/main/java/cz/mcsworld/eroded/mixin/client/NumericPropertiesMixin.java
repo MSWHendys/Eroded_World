@@ -1,5 +1,6 @@
 package cz.mcsworld.eroded.mixin.client;
 
+import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -20,9 +21,9 @@ import net.minecraft.util.ExtraCodecs;
 @Environment(EnvType.CLIENT)
 @Mixin(RangeSelectItemModelProperties.class)
 public class NumericPropertiesMixin {
-
+    @NotNull
     @Shadow @Final
-    public static ExtraCodecs.LateBoundIdMapper<Identifier, MapCodec<? extends RangeSelectItemModelProperty>> ID_MAPPER;
+    public static ExtraCodecs.LateBoundIdMapper<@NotNull Identifier, @NotNull MapCodec<? extends RangeSelectItemModelProperty>> ID_MAPPER;
 
     @Inject(method = "bootstrap()V", at = @At("TAIL"))
     private static void eroded$registerAngle(CallbackInfo info) {

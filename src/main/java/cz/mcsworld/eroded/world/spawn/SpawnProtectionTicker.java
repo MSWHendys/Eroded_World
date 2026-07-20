@@ -10,7 +10,7 @@ public final class SpawnProtectionTicker {
 
     public static void register() {
 
-        ServerTickEvents.END_WORLD_TICK.register(world -> {
+        ServerTickEvents.END_LEVEL_TICK.register(world -> {
 
             if (world.dimension() != Level.OVERWORLD) return;
 

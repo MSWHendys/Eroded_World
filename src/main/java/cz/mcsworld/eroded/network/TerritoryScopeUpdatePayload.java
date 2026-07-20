@@ -6,6 +6,7 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
+import org.jetbrains.annotations.NotNull;
 
 public record TerritoryScopeUpdatePayload(
         BlockPos anchorPos,
@@ -13,10 +14,10 @@ public record TerritoryScopeUpdatePayload(
         boolean connectedScopeMode
 ) implements CustomPacketPayload {
 
-    public static final Type<TerritoryScopeUpdatePayload> ID =
+    public static final Type<@NotNull TerritoryScopeUpdatePayload> ID =
             new Type<>(Identifier.fromNamespaceAndPath(ErodedMod.MOD_ID, "territory_scope_update"));
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, TerritoryScopeUpdatePayload> CODEC =
+    public static final StreamCodec<@NotNull RegistryFriendlyByteBuf, @NotNull TerritoryScopeUpdatePayload> CODEC =
             StreamCodec.ofMember(
                     TerritoryScopeUpdatePayload::write,
                     TerritoryScopeUpdatePayload::read
@@ -37,7 +38,7 @@ public record TerritoryScopeUpdatePayload(
     }
 
     @Override
-    public Type<? extends CustomPacketPayload> type() {
+    public @NotNull Type<? extends @NotNull CustomPacketPayload> type() {
         return ID;
     }
 }

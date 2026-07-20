@@ -40,7 +40,6 @@
 
   ],
   "client": [
-    "InGameHudMixin",
     "client.NumericPropertiesMixin",
     "client.HeldItemRendererMixin"
   ],

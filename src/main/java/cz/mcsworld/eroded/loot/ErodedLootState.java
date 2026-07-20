@@ -5,12 +5,15 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import cz.mcsworld.eroded.ErodedMod;
 import java.util.*;
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.block.BarrelBlock;
 import net.minecraft.world.level.block.ChestBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
+import org.jetbrains.annotations.NotNull;
 
 public class ErodedLootState extends SavedData {
 
@@ -72,11 +75,11 @@ public class ErodedLootState extends SavedData {
         );
     }));
 
-    public static final SavedDataType<ErodedLootState> TYPE = new SavedDataType<>(
-            ErodedMod.MOD_ID + "_loot_state",
+    public static final SavedDataType<@NotNull ErodedLootState> TYPE = new SavedDataType<>(
+            Identifier.fromNamespaceAndPath(ErodedMod.MOD_ID, "loot_state"),
             ErodedLootState::new,
             CODEC,
-            null
+            DataFixTypes.LEVEL
     );
 
     public static ErodedLootState get(ServerLevel world) {

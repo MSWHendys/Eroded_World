@@ -38,7 +38,7 @@ public final class EntityProtectionEvents {
                 return InteractionResult.PASS;
             }
 
-            if (!isProtectedEntity(entity)) {
+            if (isProtectedEntity(entity)) {
                 return InteractionResult.PASS;
             }
 
@@ -66,7 +66,7 @@ public final class EntityProtectionEvents {
                 return InteractionResult.PASS;
             }
 
-            if (!isProtectedEntity(entity)) {
+            if (isProtectedEntity(entity)) {
                 return InteractionResult.PASS;
             }
 
@@ -81,10 +81,10 @@ public final class EntityProtectionEvents {
     }
 
     public static boolean isProtectedEntity(Entity entity) {
-        return entity instanceof ItemFrame
-                || entity instanceof Painting
-                || entity instanceof ArmorStand
-                || entity instanceof Container;
+        return !(entity instanceof ItemFrame)
+                && !(entity instanceof Painting)
+                && !(entity instanceof ArmorStand)
+                && !(entity instanceof Container);
     }
 
     private static boolean canUseProtectedEntity(
@@ -131,23 +131,23 @@ public final class EntityProtectionEvents {
             ServerLevel world,
             DamageSource source
     ) {
-        if (!isProtectedEntity(target)) {
-            return true;
+        if (isProtectedEntity(target)) {
+            return false;
         }
 
         BlockPos pos = target.blockPosition();
 
 
         if (source.getEntity() instanceof ServerPlayer player) {
-            return canAttackProtectedEntity(player, world, pos);
+            return !canAttackProtectedEntity(player, world, pos);
         }
 
         if (ExplosionProtectionManager.isProtected(world, pos)
                 && ExplosionProtectionManager.preventProtectedEntityInteraction()) {
-            return false;
+            return true;
         }
 
 
-        return TerritoryProtectionManager.getActiveClaimAt(world, pos) == null;
+        return TerritoryProtectionManager.getActiveClaimAt(world, pos) != null;
     }
 }

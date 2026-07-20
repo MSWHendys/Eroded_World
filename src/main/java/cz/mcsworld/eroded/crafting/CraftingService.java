@@ -39,10 +39,9 @@ public final class CraftingService {
 
         if (cfg.energy.enabled && energyCfg.blockWorkAtZero) {
             if (!data.canAffordEnergy(energyCost)) {
-                player.displayClientMessage(
+                player.sendOverlayMessage(
                         Component.translatable("eroded.crafting.not_enough_energy")
-                                .withStyle(ChatFormatting.RED),
-                        true
+                                .withStyle(ChatFormatting.RED)
                 );
 
                 SafeNetworkUtil.safeSend(player, new CraftingFailPacket());
@@ -81,10 +80,9 @@ public final class CraftingService {
                         || item == ErodedItems.ADRENALINE_SHOT;
 
         if (requiresLevel10 && player.experienceLevel < 10) {
-            player.displayClientMessage(
+            player.sendOverlayMessage(
                     Component.translatable("eroded.crafting.requires_level_10")
-                            .withStyle(ChatFormatting.RED),
-                    true
+                            .withStyle(ChatFormatting.RED)
             );
             return false;
         }

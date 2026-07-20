@@ -16,6 +16,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemUseAnimation;
 import net.minecraft.world.item.ItemUtils;
 import net.minecraft.world.level.Level;
+import org.jetbrains.annotations.NotNull;
 
 public class EnergyDrinkItem extends Item {
 
@@ -24,13 +25,13 @@ public class EnergyDrinkItem extends Item {
     }
 
     @Override
-    public InteractionResult use(Level world, Player user, InteractionHand hand) {
+    public @NotNull InteractionResult use(@NotNull Level world, @NotNull Player user, @NotNull InteractionHand hand) {
 
         if (user instanceof ServerPlayer player) {
             SkillData data = SkillManager.get(player);
 
             if (data.getEnergy() >= data.getMaxEnergy()) {
-                player.displayClientMessage(Component.translatable("eroded.energy.full").withStyle(ChatFormatting.GOLD), true);
+                player.sendSystemMessage(Component.translatable("eroded.energy.full").withStyle(ChatFormatting.GOLD), true);
                 return InteractionResult.FAIL;
             }
         }
@@ -39,7 +40,7 @@ public class EnergyDrinkItem extends Item {
     }
 
     @Override
-    public ItemStack finishUsingItem(ItemStack stack, Level world, LivingEntity user) {
+    public @NotNull ItemStack finishUsingItem(@NotNull ItemStack stack, @NotNull Level world, @NotNull LivingEntity user) {
 
         if (user instanceof ServerPlayer player) {
             SkillData data = SkillManager.get(player);
@@ -65,12 +66,12 @@ public class EnergyDrinkItem extends Item {
     }
 
     @Override
-    public int getUseDuration(ItemStack stack, LivingEntity user) {
+    public int getUseDuration(@NotNull ItemStack stack, @NotNull LivingEntity user) {
         return 32;
     }
 
     @Override
-    public ItemUseAnimation getUseAnimation(ItemStack stack) {
+    public @NotNull ItemUseAnimation getUseAnimation(@NotNull ItemStack stack) {
         return ItemUseAnimation.DRINK;
     }
 }

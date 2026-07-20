@@ -3,7 +3,7 @@ package cz.mcsworld.eroded.client;
 import com.mojang.blaze3d.platform.InputConstants;
 import cz.mcsworld.eroded.client.debug.ErodedDebug;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.resources.Identifier;
 import org.lwjgl.glfw.GLFW;
@@ -17,7 +17,7 @@ public final class ErodedKeybinds {
 
     public static void register() {
 
-        DEBUG_KEY = KeyBindingHelper.registerKeyBinding(
+        DEBUG_KEY = KeyMappingHelper.registerKeyMapping(
                 new KeyMapping(
                         "key.eroded.debug",
                         InputConstants.Type.KEYSYM,

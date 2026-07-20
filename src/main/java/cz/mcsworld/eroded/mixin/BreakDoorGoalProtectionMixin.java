@@ -6,6 +6,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.goal.BreakDoorGoal;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -59,6 +60,7 @@ public abstract class BreakDoorGoalProtectionMixin {
         }
     }
 
+    @Unique
     private boolean isDoorProtected() {
         DoorInteractGoalAccessor accessor =
                 (DoorInteractGoalAccessor) (Object) this;

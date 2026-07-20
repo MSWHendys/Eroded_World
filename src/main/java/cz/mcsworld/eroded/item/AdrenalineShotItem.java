@@ -15,14 +15,16 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemUseAnimation;
 import net.minecraft.world.item.ItemUtils;
 import net.minecraft.world.level.Level;
+import org.jetbrains.annotations.NotNull;
 
 public class AdrenalineShotItem extends Item {
     public AdrenalineShotItem(Properties settings) {
         super(settings);
     }
 
+    @NotNull
     @Override
-    public ItemStack finishUsingItem(ItemStack stack, Level world, LivingEntity user) {
+    public  ItemStack finishUsingItem(@NotNull ItemStack stack, @NotNull Level world, @NotNull LivingEntity user) {
         if (user instanceof ServerPlayer player) {
             SkillData data = SkillManager.get(player);
 
@@ -34,7 +36,7 @@ public class AdrenalineShotItem extends Item {
             data.setImmunity(immunitySeconds);
             SkillManager.save(player);
 
-            player.displayClientMessage(Component.translatable("eroded.adrenaline.active").withStyle(ChatFormatting.GOLD), true);
+            player.sendSystemMessage(Component.translatable("eroded.adrenaline.active").withStyle(ChatFormatting.GOLD), true);
         }
 
         if (user instanceof Player player && !player.getAbilities().instabuild) {
@@ -44,17 +46,17 @@ public class AdrenalineShotItem extends Item {
     }
 
     @Override
-    public int getUseDuration(ItemStack stack, LivingEntity user) {
+    public int getUseDuration(@NotNull ItemStack stack, @NotNull LivingEntity user) {
         return 16;
     }
 
     @Override
-    public ItemUseAnimation getUseAnimation(ItemStack stack) {
+    public @NotNull ItemUseAnimation getUseAnimation(@NotNull ItemStack stack) {
         return ItemUseAnimation.DRINK;
     }
 
     @Override
-    public InteractionResult use(Level world, Player user, InteractionHand hand) {
+    public @NotNull InteractionResult use(@NotNull Level world, @NotNull Player user, @NotNull InteractionHand hand) {
         return ItemUtils.startUsingInstantly(world, user, hand);
     }
 }

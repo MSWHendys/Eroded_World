@@ -4,14 +4,15 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
+import org.jetbrains.annotations.NotNull;
 
 public record AnvilFeedbackPacket(String key, String quality)
         implements CustomPacketPayload {
 
-    public static final Type<AnvilFeedbackPacket> ID =
+    public static final Type<@NotNull AnvilFeedbackPacket> ID =
             new Type<>(Identifier.fromNamespaceAndPath("eroded", "anvil_feedback"));
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, AnvilFeedbackPacket> CODEC =
+    public static final StreamCodec<@NotNull RegistryFriendlyByteBuf, @NotNull AnvilFeedbackPacket> CODEC =
             StreamCodec.ofMember(
                     (p, buf) -> {
                         buf.writeUtf(p.key());
@@ -24,7 +25,7 @@ public record AnvilFeedbackPacket(String key, String quality)
             );
 
     @Override
-    public Type<? extends CustomPacketPayload> type() {
+    public @NotNull Type<? extends @NotNull CustomPacketPayload> type() {
         return ID;
     }
 }

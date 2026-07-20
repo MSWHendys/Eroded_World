@@ -12,7 +12,7 @@ public final class DeathChestExpiryTicker {
     private DeathChestExpiryTicker() {}
 
     public static void register() {
-        ServerTickEvents.END_WORLD_TICK.register(DeathChestExpiryTicker::tick);
+        ServerTickEvents.END_LEVEL_TICK.register(DeathChestExpiryTicker::tick);
     }
 
     private static void tick(ServerLevel world) {

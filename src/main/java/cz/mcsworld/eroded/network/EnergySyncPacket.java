@@ -5,13 +5,14 @@ import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
+import org.jetbrains.annotations.NotNull;
 
 public record EnergySyncPacket(int energy, int maxEnergy, int immunitySeconds) implements CustomPacketPayload {
 
-    public static final Type<EnergySyncPacket> ID =
+    public static final Type<@NotNull EnergySyncPacket> ID =
             new Type<>(Identifier.fromNamespaceAndPath("eroded", "energy_sync"));
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, EnergySyncPacket> CODEC =
+    public static final StreamCodec<@NotNull RegistryFriendlyByteBuf, @NotNull EnergySyncPacket> CODEC =
             StreamCodec.composite(
                     ByteBufCodecs.VAR_INT, EnergySyncPacket::energy,
                     ByteBufCodecs.VAR_INT, EnergySyncPacket::maxEnergy,
@@ -20,7 +21,7 @@ public record EnergySyncPacket(int energy, int maxEnergy, int immunitySeconds) i
             );
 
     @Override
-    public Type<? extends CustomPacketPayload> type() {
+    public @NotNull Type<? extends @NotNull CustomPacketPayload> type() {
         return ID;
     }
 }

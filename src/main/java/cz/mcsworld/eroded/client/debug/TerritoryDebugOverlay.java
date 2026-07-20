@@ -7,107 +7,152 @@ import cz.mcsworld.eroded.config.energy.EnergyConfig;
 import cz.mcsworld.eroded.world.territory.*;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
+import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.core.SectionPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.level.ChunkPos;
+
 import java.util.ArrayList;
 import java.util.List;
 
 @Environment(EnvType.CLIENT)
 public final class TerritoryDebugOverlay {
 
+    private static final Identifier ID =
+            Identifier.fromNamespaceAndPath("eroded", "territory_debug_overlay");
+
     private TerritoryDebugOverlay() {}
 
     private record DebugLine(Component text, int color, int extraYSpace) {}
 
     public static void register() {
-        HudRenderCallback.EVENT.register((drawContext, tickDelta) -> {
-            Minecraft client = Minecraft.getInstance();
+        HudElementRegistry.attachElementBefore(
+                VanillaHudElements.CHAT,
+                ID,
+                TerritoryDebugOverlay::render
+        );
+    }
 
-            if (client.player == null || client.level == null || !ErodedDebug.territoryOverlay) return;
-            if (client.getSingleplayerServer() == null) return;
+    private static void render(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker) {
+        Minecraft client = Minecraft.getInstance();
 
-            ServerLevel world = client.getSingleplayerServer().getLevel(client.level.dimension());
-            if (world == null) return;
+        if (client.player == null || client.level == null || !ErodedDebug.territoryOverlay) {
+            return;
+        }
 
-            var player = client.player;
-            int energy = ClientEnergyData.getEnergy();
-            int maxEnergy = ClientEnergyData.getMaxEnergy();
-            float wood = ClientSkillData.getWoodworking();
-            float smelt = ClientSkillData.getSmelting();
-            float avgCg = (wood + smelt) / 2f;
+        if (client.getSingleplayerServer() == null) {
+            return;
+        }
 
-            float percent = (maxEnergy > 0) ? (energy / (float) maxEnergy) * 100f : 100f;
-            var cfg = EnergyConfig.get().server.thresholds;
-            var craftingCfg = CraftingConfig.get().quality;
+        ServerLevel world = client.getSingleplayerServer().getLevel(client.level.dimension());
+        if (world == null) {
+            return;
+        }
 
-            String energyState = (percent <= cfg.emptyPercent) ? "EMPTY" :
-                    (percent <= cfg.exhaustedPercent) ? "EXHAUSTED" :
-                            (percent <= cfg.tiredPercent) ? "TIRED" : "NORMAL";
+        var player = client.player;
 
-            ChunkPos cp = new ChunkPos(player.blockPosition());
-            TerritoryWorldState state = TerritoryWorldState.get(world);
-            TerritoryCell cell = state.getOrCreateCell(TerritoryCellKey.fromChunk(cp.x, cp.z));
+        int energy = ClientEnergyData.getEnergy();
+        int maxEnergy = ClientEnergyData.getMaxEnergy();
 
-            float threat = TerritoryThreatResolver.computeThreat(cell, world.getServer().getTickCount());
+        float wood = ClientSkillData.getWoodworking();
+        float smelt = ClientSkillData.getSmelting();
+        float avgCg = (wood + smelt) / 2f;
 
-            String predictedKey = (avgCg < craftingCfg.qualityPoorToStandard) ? "eroded.crafting.quality.poor" :
-                    (avgCg < craftingCfg.qualityStandardToExcellent) ? "eroded.crafting.quality.standard" :
-                            "eroded.crafting.quality.excellent";
+        float percent = (maxEnergy > 0) ? (energy / (float) maxEnergy) * 100f : 100f;
 
-            List<DebugLine> lines = new ArrayList<>();
-            lines.add(new DebugLine(Component.translatable("eroded.debug.cell.title"), 0xFF55FF55, 0));
-            lines.add(new DebugLine(Component.translatable("eroded.debug.cell.mining_blocks").append(String.valueOf(cell.getMiningScore())), 0xFFFFFFFF, 0));
-            lines.add(new DebugLine(Component.translatable("eroded.debug.cell.mining").append(String.valueOf(cell.getMiningRaw())), 0xFFFFFFFF, 0));
-            lines.add(new DebugLine(Component.translatable("eroded.debug.cell.pollution").append(String.valueOf(cell.getPollutionRaw())), 0xFFFF5555, 0));
-            lines.add(new DebugLine(Component.translatable("eroded.debug.cell.forest").append(String.valueOf(cell.getForestationRaw())), 0xFF55FF55, 0));
-            lines.add(new DebugLine(Component.translatable("eroded.debug.cell.threat").append(String.format("%.2f", threat)), 0xFFFFAA00, 5));
+        var cfg = EnergyConfig.get().server.thresholds;
+        var craftingCfg = CraftingConfig.get().quality;
 
-            lines.add(new DebugLine(Component.literal(Component.translatable("eroded.config.title.energy").getString().toUpperCase() + ":"),0xFF55FF55, 0));
-            lines.add(new DebugLine(Component.translatable("eroded.config.title.energy").append(": " + energy + " / " + maxEnergy), 0xFFFFFF00, 0));
-            lines.add(new DebugLine(Component.translatable("eroded.debug.energy.state").append(": " + energyState), 0xFFFFAA00, 5));
+        String energyState = (percent <= cfg.emptyPercent) ? "EMPTY" :
+                (percent <= cfg.exhaustedPercent) ? "EXHAUSTED" :
+                        (percent <= cfg.tiredPercent) ? "TIRED" : "NORMAL";
 
-            lines.add(new DebugLine(Component.literal("CG:"), 0xFF55FF55, 0));
-            lines.add(new DebugLine(Component.translatable("eroded.skill.woodworking").append(": " + String.format("%.2f", wood)), 0xFFFFFFFF, 0));
-            lines.add(new DebugLine(Component.translatable("eroded.skill.smelting").append(": " + String.format("%.2f", smelt)), 0xFFFFFFFF, 5));
+        int chunkX = SectionPos.blockToSectionCoord(player.getBlockX());
+        int chunkZ = SectionPos.blockToSectionCoord(player.getBlockZ());
 
-            lines.add(new DebugLine(Component.translatable("eroded.text.quality.line"), 0xFF55FF55, 0));
-            lines.add(new DebugLine(Component.translatable("eroded.crafting.quality.poor.standard").append(" " + craftingCfg.qualityPoorToStandard + " cg"), 0xFFFFFFFF, 0));
-            lines.add(new DebugLine(Component.translatable("eroded.crafting.quality.standard.excellent").append(" " + craftingCfg.qualityStandardToExcellent + " cg"), 0xFFFFFFFF, 0));
-            lines.add(new DebugLine(Component.literal("CG avg: " + String.format("%.2f", avgCg)), 0xFF55FFFF, 0));
-            lines.add(new DebugLine(Component.translatable("eroded.crafting.predicted").append(Component.translatable(predictedKey)), 0xFFFFFF55, 0));
+        TerritoryWorldState state = TerritoryWorldState.get(world);
+        TerritoryCell cell = state.getOrCreateCell(TerritoryCellKey.fromChunk(chunkX, chunkZ));
 
-            Font tr = client.font;
-            int maxWidth = 0;
-            int totalHeight = 0;
-            int lineHeight = 10;
+        float threat = TerritoryThreatResolver.computeThreat(
+                cell,
+                world.getServer().getTickCount()
+        );
 
-            for (DebugLine line : lines) {
-                int w = tr.width(line.text);
-                if (w > maxWidth) maxWidth = w;
-                totalHeight += lineHeight + line.extraYSpace;
+        String predictedKey = (avgCg < craftingCfg.qualityPoorToStandard)
+                ? "eroded.crafting.quality.poor"
+                : (avgCg < craftingCfg.qualityStandardToExcellent)
+                ? "eroded.crafting.quality.standard"
+                : "eroded.crafting.quality.excellent";
+
+        List<DebugLine> lines = new ArrayList<>();
+
+        lines.add(new DebugLine(Component.translatable("eroded.debug.cell.title"), 0xFF55FF55, 0));
+        lines.add(new DebugLine(Component.translatable("eroded.debug.cell.mining_blocks").append(String.valueOf(cell.getMiningScore())), 0xFFFFFFFF, 0));
+        lines.add(new DebugLine(Component.translatable("eroded.debug.cell.mining").append(String.valueOf(cell.getMiningRaw())), 0xFFFFFFFF, 0));
+        lines.add(new DebugLine(Component.translatable("eroded.debug.cell.pollution").append(String.valueOf(cell.getPollutionRaw())), 0xFFFF5555, 0));
+        lines.add(new DebugLine(Component.translatable("eroded.debug.cell.forest").append(String.valueOf(cell.getForestationRaw())), 0xFF55FF55, 0));
+        lines.add(new DebugLine(Component.translatable("eroded.debug.cell.threat").append(String.format("%.2f", threat)), 0xFFFFAA00, 5));
+
+        lines.add(new DebugLine(Component.literal(Component.translatable("eroded.config.title.energy").getString().toUpperCase() + ":"), 0xFF55FF55, 0));
+        lines.add(new DebugLine(Component.translatable("eroded.config.title.energy").append(": " + energy + " / " + maxEnergy), 0xFFFFFF00, 0));
+        lines.add(new DebugLine(Component.translatable("eroded.debug.energy.state").append(": " + energyState), 0xFFFFAA00, 5));
+
+        lines.add(new DebugLine(Component.literal("CG:"), 0xFF55FF55, 0));
+        lines.add(new DebugLine(Component.translatable("eroded.skill.woodworking").append(": " + String.format("%.2f", wood)), 0xFFFFFFFF, 0));
+        lines.add(new DebugLine(Component.translatable("eroded.skill.smelting").append(": " + String.format("%.2f", smelt)), 0xFFFFFFFF, 5));
+
+        lines.add(new DebugLine(Component.translatable("eroded.text.quality.line"), 0xFF55FF55, 0));
+        lines.add(new DebugLine(Component.translatable("eroded.crafting.quality.poor.standard").append(" " + craftingCfg.qualityPoorToStandard + " cg"), 0xFFFFFFFF, 0));
+        lines.add(new DebugLine(Component.translatable("eroded.crafting.quality.standard.excellent").append(" " + craftingCfg.qualityStandardToExcellent + " cg"), 0xFFFFFFFF, 0));
+        lines.add(new DebugLine(Component.literal("CG avg: " + String.format("%.2f", avgCg)), 0xFF55FFFF, 0));
+        lines.add(new DebugLine(Component.translatable("eroded.crafting.predicted").append(Component.translatable(predictedKey)), 0xFFFFFF55, 0));
+
+        Font font = client.font;
+
+        int maxWidth = 0;
+        int totalHeight = 0;
+        int lineHeight = 10;
+
+        for (DebugLine line : lines) {
+            int width = font.width(line.text);
+            if (width > maxWidth) {
+                maxWidth = width;
             }
 
-            int x = 10;
-            int y = 10;
-            int padding = 5;
+            totalHeight += lineHeight + line.extraYSpace;
+        }
 
-            drawContext.fill(
-                    x - padding,
-                    y - padding,
-                    x + maxWidth + padding,
-                    y + totalHeight - (lineHeight - 8)+10,
-                    0x88000000
+        int x = 10;
+        int y = 10;
+        int padding = 5;
+
+        graphics.fill(
+                x - padding,
+                y - padding,
+                x + maxWidth + padding,
+                y + totalHeight + padding,
+                0x88000000
+        );
+
+        int currentY = y;
+
+        for (DebugLine line : lines) {
+            graphics.text(
+                    font,
+                    line.text,
+                    x,
+                    currentY,
+                    line.color,
+                    true
             );
 
-            int currentY = y;
-            for (DebugLine line : lines) {
-                drawContext.drawString(tr, line.text, x, currentY, line.color, true);
-                currentY += lineHeight + line.extraYSpace;
-            }
-        });
+            currentY += lineHeight + line.extraYSpace;
+        }
     }
 }

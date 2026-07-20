@@ -23,6 +23,8 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
+import org.jetbrains.annotations.NotNull;
+
 import java.util.List;
 
 public final class TerritoryMobSpawnHandler {
@@ -36,7 +38,7 @@ public final class TerritoryMobSpawnHandler {
     }
 
     public static void register() {
-        ServerTickEvents.END_WORLD_TICK.register(TerritoryMobSpawnHandler::onWorldTick);
+        ServerTickEvents.END_LEVEL_TICK.register(TerritoryMobSpawnHandler::onWorldTick);
     }
 
     private static void onWorldTick(ServerLevel world) {
@@ -68,9 +70,11 @@ public final class TerritoryMobSpawnHandler {
             }
         }
 
-        ChunkPos cp = new ChunkPos(pPos);
+        ChunkPos cp = new ChunkPos(
+                player.blockPosition().getX() >> 4,
+                player.blockPosition().getZ() >> 4);
         TerritoryWorldState worldState = TerritoryWorldState.get(world);
-        TerritoryCell cell = worldState.getOrCreateCell(TerritoryCellKey.fromChunk(cp.x, cp.z));
+        TerritoryCell cell = worldState.getOrCreateCell(TerritoryCellKey.fromChunk(cp.x(), cp.z()));
 
         int mined = cell.getMiningScore();
 
@@ -90,7 +94,7 @@ public final class TerritoryMobSpawnHandler {
                         320,
                         startPos.getZ() + 15
                 ),
-                e -> e.getTags().contains(TAG_ERODED)
+                e -> e.entityTags().contains(TAG_ERODED)
         ).size();
 
         if (currentMobs >= cfg.mobMaxPerChunk) {
@@ -119,7 +123,7 @@ public final class TerritoryMobSpawnHandler {
                 continue;
             }
 
-            EntityType<? extends Monster> type = random.nextBoolean()
+            EntityType<? extends @NotNull Monster> type = random.nextBoolean()
                     ? ErodedEntities.ERODED_SPECIAL_ZOMBIE
                     : ErodedEntities.ERODED_SPECIAL_SKELETON;
 
@@ -186,7 +190,7 @@ public final class TerritoryMobSpawnHandler {
             List<Monster> nearby = world.getEntitiesOfClass(
                     Monster.class,
                     box,
-                    e -> e.getTags().contains(TAG_ERODED)
+                    e -> e.entityTags().contains(TAG_ERODED)
             );
 
             for (Monster mob : nearby) {
@@ -205,7 +209,7 @@ public final class TerritoryMobSpawnHandler {
             return;
         }
 
-        if (mob.getTags().contains(TAG_PERMANENT)) {
+        if (mob.entityTags().contains(TAG_PERMANENT)) {
             if (mob.isOnFire()) {
                 mob.clearFire();
             }
@@ -213,7 +217,7 @@ public final class TerritoryMobSpawnHandler {
             return;
         }
 
-        if (mob.getTags().contains(TAG_TEMPORARY)) {
+        if (mob.entityTags().contains(TAG_TEMPORARY)) {
             long burnTime = getBurnTime(mob);
             long now = world.getGameTime();
 
@@ -237,7 +241,7 @@ public final class TerritoryMobSpawnHandler {
     }
 
     private static long getBurnTime(Monster mob) {
-        for (String tag : mob.getTags()) {
+        for (String tag : mob.entityTags()) {
             if (!tag.startsWith(TAG_BURN_PREFIX)) {
                 continue;
             }
@@ -255,7 +259,7 @@ public final class TerritoryMobSpawnHandler {
     private static void removeBurnTimeTag(Monster mob) {
         String burnTag = null;
 
-        for (String tag : mob.getTags()) {
+        for (String tag : mob.entityTags()) {
             if (tag.startsWith(TAG_BURN_PREFIX)) {
                 burnTag = tag;
                 break;
@@ -279,28 +283,7 @@ public final class TerritoryMobSpawnHandler {
             float threat,
             TerritoryConfig.Server cfg
     ) {
-        double baseHp;
-
-        if (mined <= cfg.titleMidThreshold) {
-            baseHp = 2.0;
-        } else if (mined <= cfg.titleHighThreshold) {
-            double t = (double) (mined - cfg.titleMidThreshold)
-                    / (cfg.titleHighThreshold - cfg.titleMidThreshold);
-
-            baseHp = 4.0 + (t * 16.0);
-        } else {
-            double t = Math.min(
-                    1.0,
-                    (double) (mined - cfg.titleHighThreshold) / 2000.0
-            );
-
-            baseHp = 22.0 + (t * 18.0);
-        }
-
-        double finalMaxHp = Math.min(
-                cfg.mobMaxHp,
-                baseHp + (threat * 20.0)
-        );
+        double finalMaxHp = getFinalMaxHp(mined, threat, cfg);
 
         AttributeInstance hpAttr = mob.getAttribute(Attributes.MAX_HEALTH);
 
@@ -331,6 +314,32 @@ public final class TerritoryMobSpawnHandler {
 
         mob.setCustomNameVisible(cfg.MobNameVisible);
 
+    }
+
+    private static double getFinalMaxHp(int mined, float threat, TerritoryConfig.Server cfg) {
+        double baseHp;
+
+        if (mined <= cfg.titleMidThreshold) {
+            baseHp = 2.0;
+        } else if (mined <= cfg.titleHighThreshold) {
+            double t = (double) (mined - cfg.titleMidThreshold)
+                    / (cfg.titleHighThreshold - cfg.titleMidThreshold);
+
+            baseHp = 4.0 + (t * 16.0);
+        } else {
+            double t = Math.min(
+                    1.0,
+                    (double) (mined - cfg.titleHighThreshold) / 2000.0
+            );
+
+            baseHp = 22.0 + (t * 18.0);
+        }
+
+        double finalMaxHp = Math.min(
+                cfg.mobMaxHp,
+                baseHp + (threat * 20.0)
+        );
+        return finalMaxHp;
     }
 
     private static BlockPos findSpawnPos(

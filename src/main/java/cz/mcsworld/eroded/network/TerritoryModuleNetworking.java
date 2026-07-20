@@ -10,43 +10,44 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import java.util.UUID;
 
+
 public final class TerritoryModuleNetworking {
 
     private TerritoryModuleNetworking() {
     }
 
     public static void registerPayloadTypes() {
-        PayloadTypeRegistry.playC2S().register(
+        PayloadTypeRegistry.serverboundPlay().register(
                 TerritoryModuleRequestPayload.ID,
                 TerritoryModuleRequestPayload.CODEC
         );
 
-        PayloadTypeRegistry.playC2S().register(
+        PayloadTypeRegistry.serverboundPlay().register(
                 TerritoryTrustAddPayload.ID,
                 TerritoryTrustAddPayload.CODEC
         );
 
-        PayloadTypeRegistry.playC2S().register(
+        PayloadTypeRegistry.serverboundPlay().register(
                 TerritoryTrustRemovePayload.ID,
                 TerritoryTrustRemovePayload.CODEC
         );
 
-        PayloadTypeRegistry.playC2S().register(
+        PayloadTypeRegistry.serverboundPlay().register(
                 TerritoryPermissionUpdatePayload.ID,
                 TerritoryPermissionUpdatePayload.CODEC
         );
 
-        PayloadTypeRegistry.playC2S().register(
+        PayloadTypeRegistry.serverboundPlay().register(
                 TerritoryScopeUpdatePayload.ID,
                 TerritoryScopeUpdatePayload.CODEC
         );
 
-        PayloadTypeRegistry.playC2S().register(
+        PayloadTypeRegistry.serverboundPlay().register(
                 TerritorySuggestionRequestPayload.ID,
                 TerritorySuggestionRequestPayload.CODEC
         );
 
-        PayloadTypeRegistry.playS2C().register(
+        PayloadTypeRegistry.clientboundPlay().register(
                 TerritoryModuleSyncPayload.ID,
                 TerritoryModuleSyncPayload.CODEC
         );
@@ -80,7 +81,7 @@ public final class TerritoryModuleNetworking {
                             .getPlayerByName(payload.playerName());
 
                     if (target == null) {
-                        manager.displayClientMessage(
+                        manager.sendSystemMessage(
                                 net.minecraft.network.chat.Component.translatable(
                                         "eroded.territory.trust.player_not_found",
                                         payload.playerName()
