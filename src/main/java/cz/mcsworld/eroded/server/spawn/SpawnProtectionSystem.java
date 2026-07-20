@@ -24,7 +24,7 @@ public final class SpawnProtectionSystem {
         int radiusSq = radius * radius;
         int checkRange = radius + 24;
 
-        BlockPos spawn = world.getSharedSpawnPos();
+        BlockPos spawn = world.getRespawnData().pos();
 
 
         for (ServerPlayer player : world.players()) {
@@ -101,7 +101,7 @@ public final class SpawnProtectionSystem {
         int radiusSq = radius * radius;
         return isInSpawn(
                 player.blockPosition(),
-                world.getSharedSpawnPos(),
+                world.getRespawnData().pos(),
                 radiusSq);
     }
 }

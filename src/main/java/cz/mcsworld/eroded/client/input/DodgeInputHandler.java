@@ -67,7 +67,7 @@ public final class DodgeInputHandler {
             long now
     ) {
         boolean isDown = InputConstants.isKeyDown(
-                client.getWindow().getWindow(),
+                client.getWindow(),
                 glfwKey
         );
 

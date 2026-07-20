@@ -38,6 +38,7 @@ public class ErodedModClient implements ClientModInitializer {
     private static long lastConfigSave = 0;
     private static final long SAVE_COOLDOWN_MS = 2000;
 
+    @Deprecated
     @Override
     public void onInitializeClient() {
 

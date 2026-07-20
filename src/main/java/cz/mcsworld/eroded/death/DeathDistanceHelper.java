@@ -16,7 +16,7 @@ public final class DeathDistanceHelper {
             ResourceKey<Level> deathDim
     ) {
         ServerLevel world = player.level();
-        BlockPos spawnPos = world.getSharedSpawnPos();
+        BlockPos spawnPos = world.getRespawnData().pos();
         ResourceKey<Level> spawnDim = world.dimension();
 
         if (!deathDim.equals(spawnDim)) {

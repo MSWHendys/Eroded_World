@@ -75,7 +75,7 @@ public final class EnergySyncHandler {
 
         LAST_SENT.put(player.getUUID(), current);
 
-        var state = EnergyPersistentState.get(player.getServer().overworld());
+        var state = EnergyPersistentState.get(player.level().getServer().overworld());
         state.setEnergy(player.getUUID(), energy);
 
         SkillManager.sync(player);

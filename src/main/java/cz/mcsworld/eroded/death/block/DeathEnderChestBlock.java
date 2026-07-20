@@ -28,7 +28,7 @@ public class DeathEnderChestBlock extends Block {
             Player player,
             BlockHitResult hit
     ) {
-        if (world.isClientSide) return InteractionResult.SUCCESS;
+        if (world.isClientSide()) return InteractionResult.SUCCESS;
         if (!(player instanceof ServerPlayer sp)) return InteractionResult.PASS;
         if (!(world instanceof ServerLevel sw)) return InteractionResult.PASS;
 

@@ -40,7 +40,7 @@ public final class DeathHologramHandler {
 
     public static void spawn(ServerLevel world, BlockPos pos, GameProfile profile, int protectionSeconds, UUID hologramId) {
         long expiryEpochMs = System.currentTimeMillis() + (protectionSeconds * 1000L);
-        String name = profile.getName();
+        String name = profile.name();
         String hidTag = TAG_HOLOGRAM_ID + hologramId;
 
         double baseX = pos.getX() + 0.5;
@@ -56,7 +56,7 @@ public final class DeathHologramHandler {
         stand.setInvulnerable(true);
 
         ItemStack head = new ItemStack(Items.PLAYER_HEAD);
-        head.set(DataComponents.PROFILE, new ResolvableProfile(profile));
+        head.set(DataComponents.PROFILE, ResolvableProfile.createResolved(profile));
         stand.setItemSlot(EquipmentSlot.HEAD, head);
 
         stand.addTag(TAG);

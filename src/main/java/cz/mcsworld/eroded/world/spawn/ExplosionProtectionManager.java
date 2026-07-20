@@ -27,7 +27,7 @@ public final class ExplosionProtectionManager {
             return false;
         }
 
-        BlockPos spawn = world.getSharedSpawnPos();
+        BlockPos spawn = world.getRespawnData().pos();
 
         int radius = cfg().spawnProtectionRadius;
 

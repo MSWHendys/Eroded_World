@@ -12,6 +12,8 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
@@ -71,7 +73,8 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
         rebuildWidgets();
     }
 
-    public void rebuildWidgets() {
+    @Override
+    protected void rebuildWidgets() {
         BlockPos anchorPos = this.menu.getAnchorPos();
 
         String oldText = "";
@@ -750,7 +753,7 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
                 0xEE0B0D10
         );
 
-        context.renderOutline(
+        context.submitOutline(
                 left,
                 top,
                 width,
@@ -758,7 +761,7 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
                 0xFF6B6B6B
         );
 
-        context.renderOutline(
+        context.submitOutline(
                 left + 3,
                 top + 3,
                 width - 6,
@@ -890,7 +893,9 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+    public boolean keyPressed(KeyEvent input) {
+        int keyCode = input.key();
+
         if (this.playerNameField != null && this.playerNameField.isFocused()) {
             if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
                 this.playerNameField.setFocused(false);
@@ -902,7 +907,7 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
                 return true;
             }
 
-            if (this.playerNameField.keyPressed(keyCode, scanCode, modifiers)) {
+            if (this.playerNameField.keyPressed(input)) {
                 return true;
             }
 
@@ -915,16 +920,16 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
             return true;
         }
 
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return super.keyPressed(input);
     }
 
     @Override
-    public boolean charTyped(char chr, int modifiers) {
+    public boolean charTyped(CharacterEvent input) {
         if (this.playerNameField != null && this.playerNameField.isFocused()) {
-            return this.playerNameField.charTyped(chr, modifiers);
+            return this.playerNameField.charTyped(input);
         }
 
-        return super.charTyped(chr, modifiers);
+        return super.charTyped(input);
     }
 
     private boolean selectedPlayerConnectedAreaMode() {

@@ -103,7 +103,7 @@ public final class DeathCompassWeaponHandler {
             return false;
         }
 
-        int serverTicks = player.getServer().getTickCount();
+        int serverTicks = player.level().getServer().getTickCount();
 
         return !mem.isExpired(serverTicks) && !mem.isResolved();
     }

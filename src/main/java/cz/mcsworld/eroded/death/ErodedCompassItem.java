@@ -26,7 +26,7 @@ public class ErodedCompassItem extends Item {
 
     @Override
     public InteractionResult use(Level world, Player player, InteractionHand hand) {
-        if (world.isClientSide) {
+        if (world.isClientSide()) {
             return InteractionResult.SUCCESS;
         }
 
@@ -42,7 +42,7 @@ public class ErodedCompassItem extends Item {
             return tryBreakDarkness(sp, mem);
         }
 
-        if (mem == null || mem.isExpired(sp.getServer().getTickCount())) {
+        if (mem == null || mem.isExpired(sp.level().getServer().getTickCount())) {
             sp.displayClientMessage(
                     Component.translatable("eroded.compass.empty"),
                     true
@@ -50,7 +50,7 @@ public class ErodedCompassItem extends Item {
             return InteractionResult.CONSUME;
         }
 
-        long ticks = mem.getRemainingTicks(sp.getServer().getTickCount());
+        long ticks = mem.getRemainingTicks(sp.level().getServer().getTickCount());
         long seconds = ticks / 20;
         long min = seconds / 60;
         long sec = seconds % 60;
@@ -97,7 +97,7 @@ public class ErodedCompassItem extends Item {
         }
 
         if (cfg.requireValidTarget) {
-            if (memory == null || memory.isExpired(player.getServer().getTickCount())) {
+            if (memory == null || memory.isExpired(player.level().getServer().getTickCount())) {
                 player.displayClientMessage(
                         Component.translatable("eroded.compass.empty"),
                         true
@@ -106,7 +106,7 @@ public class ErodedCompassItem extends Item {
             }
         }
 
-        long now = player.getServer().getTickCount();
+        long now = player.level().getServer().getTickCount();
         long readyAt = DARKNESS_BREAK_COOLDOWNS.getOrDefault(player.getUUID(), 0L);
 
         if (now < readyAt) {

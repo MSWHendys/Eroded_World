@@ -32,7 +32,7 @@ public final class ErodedCompassHandler {
             return;
         }
 
-        if (mem.isExpired(player.getServer().getTickCount()) || mem.isResolved()) {
+        if (mem.isExpired(player.level().getServer().getTickCount()) || mem.isResolved()) {
 
             removeCompass(player);
             ErodedDeathStorage.clear(player.getUUID());
@@ -68,7 +68,7 @@ public final class ErodedCompassHandler {
                     targetPos = mem.getDeathPos();
                     targetDimKey = currentWorld.dimension();
                 } else if (currentWorld.dimension().equals(Level.OVERWORLD)) {
-                    BlockPos portal = ErodedPortalMemoryState.get(player.getServer().getLevel(Level.OVERWORLD))
+                    BlockPos portal = ErodedPortalMemoryState.get(player.level().getServer().getLevel(Level.OVERWORLD))
                             .getOverworldPortal(player.getUUID());
                     targetPos = (portal != null) ? portal : mem.getDeathPos();
                     targetDimKey = Level.OVERWORLD;
@@ -87,7 +87,7 @@ public final class ErodedCompassHandler {
                     nbt.putLong("ChestPos", mem.getDeathPos().asLong());
                     nbt.putString("DeathDim", mem.getDeathDimension().location().toString());
 
-                    BlockPos portal = ErodedPortalMemoryState.get(player.getServer().getLevel(Level.OVERWORLD))
+                    BlockPos portal = ErodedPortalMemoryState.get(player.level().getServer().getLevel(Level.OVERWORLD))
                             .getOverworldPortal(player.getUUID());
                     if (portal != null) nbt.putLong("PortalPos", portal.asLong());
 

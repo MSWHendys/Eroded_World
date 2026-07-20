@@ -63,7 +63,7 @@ public final class TerritoryMobSpawnHandler {
         BlockPos pPos = player.blockPosition();
 
         if (cfg.spawnProtectionEnabled) {
-            if (pPos.closerThan(world.getSharedSpawnPos(), cfg.spawnProtectionRadius)) {
+            if (pPos.closerThan(world.getRespawnData().pos(), cfg.spawnProtectionRadius)) {
                 return;
             }
         }

@@ -188,7 +188,7 @@ public final class ErodedBlocks {
                 torchBlockKey,
                 new ErodedTorchBlock(
                         BlockBehaviour.Properties.of()
-                                .noCollission()
+                                .noCollision()
                                 .noOcclusion()
                                 .strength(0.0F)
                                 .lightLevel(state -> getConfiguredTorchLightLevel())
@@ -201,7 +201,7 @@ public final class ErodedBlocks {
                 wallTorchBlockKey,
                 new ErodedWallTorchBlock(
                         BlockBehaviour.Properties.of()
-                                .noCollission()
+                                .noCollision()
                                 .noOcclusion()
                                 .strength(0.0F)
                                 .lightLevel(state -> getConfiguredTorchLightLevel())

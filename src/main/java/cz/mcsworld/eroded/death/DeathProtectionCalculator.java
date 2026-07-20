@@ -23,13 +23,15 @@ public final class DeathProtectionCalculator {
 
         var respawn = player.getRespawnConfig();
         if (respawn != null) {
-            if (respawn.dimension().equals(world.dimension())) {
-                respawnPos = respawn.pos();
+            var spawnPoint = respawn.respawnData();
+
+            if (spawnPoint.dimension().equals(world.dimension())) {
+                respawnPos = spawnPoint.pos();
             }
         }
 
         if (respawnPos == null && cfg.useSpawnIfNoBed) {
-            respawnPos = world.getSharedSpawnPos();
+            respawnPos = world.getRespawnData().pos();
         }
 
         if (respawnPos == null) {

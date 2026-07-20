@@ -30,7 +30,7 @@ public final class DeathChestBreakHandler {
             @Nullable BlockEntity blockEntity
     ) {
 
-        if (world.isClientSide) return true;
+        if (world.isClientSide()) return true;
         if (!(world instanceof ServerLevel sw)) return true;
         if (!(player instanceof ServerPlayer sp)) return true;
 

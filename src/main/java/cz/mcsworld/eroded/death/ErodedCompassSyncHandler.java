@@ -23,7 +23,7 @@ public final class ErodedCompassSyncHandler {
             return;
         }
 
-        long now = player.getServer().getTickCount();
+        long now = player.level().getServer().getTickCount();
 
         if (mem.isExpired(now) || mem.isResolved()) {
             SafeNetworkUtil.safeSend(

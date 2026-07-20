@@ -46,8 +46,9 @@ public final class ErodedEntityItems {
                 BuiltInRegistries.ITEM,
                 key,
                 new SpawnEggItem(
-                        entityType,
-                        new Item.Properties().setId(key)
+                        new Item.Properties()
+                                .setId(key)
+                                .spawnEgg(entityType)
                 )
         );
     }

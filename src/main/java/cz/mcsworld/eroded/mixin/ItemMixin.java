@@ -29,7 +29,7 @@ public abstract class ItemMixin {
             InteractionHand hand,
             CallbackInfoReturnable<InteractionResult> cir
     ) {
-        if (world.isClientSide) return;
+        if (world.isClientSide()) return;
         if (!(player instanceof ServerPlayer sp)) return;
 
         ItemStack stack = player.getItemInHand(hand);

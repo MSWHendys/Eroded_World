@@ -74,7 +74,7 @@ public class DeathInventoryScreenHandler extends AbstractContainerMenu {
     public void removed(Player player) {
         super.removed(player);
 
-        if (world.isClientSide) return;
+        if (world.isClientSide()) return;
 
         DeathChestState.Entry entry = state.get(pos);
 
