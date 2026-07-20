@@ -3,16 +3,16 @@ package cz.mcsworld.eroded.protection;
 import cz.mcsworld.eroded.world.spawn.ExplosionProtectionManager;
 import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.entity.decoration.ArmorStandEntity;
-import net.minecraft.entity.decoration.ItemFrameEntity;
-import net.minecraft.entity.decoration.painting.PaintingEntity;
-import net.minecraft.inventory.Inventory;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.Container;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.decoration.ArmorStand;
+import net.minecraft.world.entity.decoration.ItemFrame;
+import net.minecraft.world.entity.decoration.Painting;
 
 public final class EntityProtectionEvents {
 
@@ -26,70 +26,70 @@ public final class EntityProtectionEvents {
 
     private static void registerUseEntityProtection() {
         UseEntityCallback.EVENT.register((player, world, hand, entity, hitResult) -> {
-            if (world.isClient()) {
-                return ActionResult.PASS;
+            if (world.isClientSide()) {
+                return InteractionResult.PASS;
             }
 
-            if (!(world instanceof ServerWorld serverWorld)) {
-                return ActionResult.PASS;
+            if (!(world instanceof ServerLevel serverWorld)) {
+                return InteractionResult.PASS;
             }
 
-            if (!(player instanceof ServerPlayerEntity serverPlayer)) {
-                return ActionResult.PASS;
+            if (!(player instanceof ServerPlayer serverPlayer)) {
+                return InteractionResult.PASS;
             }
 
             if (!isProtectedEntity(entity)) {
-                return ActionResult.PASS;
+                return InteractionResult.PASS;
             }
 
-            BlockPos pos = entity.getBlockPos();
+            BlockPos pos = entity.blockPosition();
 
             if (!canUseProtectedEntity(serverPlayer, serverWorld, pos)) {
-                return ActionResult.FAIL;
+                return InteractionResult.FAIL;
             }
 
-            return ActionResult.PASS;
+            return InteractionResult.PASS;
         });
     }
 
     private static void registerAttackEntityProtection() {
         AttackEntityCallback.EVENT.register((player, world, hand, entity, hitResult) -> {
-            if (world.isClient()) {
-                return ActionResult.PASS;
+            if (world.isClientSide()) {
+                return InteractionResult.PASS;
             }
 
-            if (!(world instanceof ServerWorld serverWorld)) {
-                return ActionResult.PASS;
+            if (!(world instanceof ServerLevel serverWorld)) {
+                return InteractionResult.PASS;
             }
 
-            if (!(player instanceof ServerPlayerEntity serverPlayer)) {
-                return ActionResult.PASS;
+            if (!(player instanceof ServerPlayer serverPlayer)) {
+                return InteractionResult.PASS;
             }
 
             if (!isProtectedEntity(entity)) {
-                return ActionResult.PASS;
+                return InteractionResult.PASS;
             }
 
-            BlockPos pos = entity.getBlockPos();
+            BlockPos pos = entity.blockPosition();
 
             if (!canAttackProtectedEntity(serverPlayer, serverWorld, pos)) {
-                return ActionResult.FAIL;
+                return InteractionResult.FAIL;
             }
 
-            return ActionResult.PASS;
+            return InteractionResult.PASS;
         });
     }
 
     public static boolean isProtectedEntity(Entity entity) {
-        return entity instanceof ItemFrameEntity
-                || entity instanceof PaintingEntity
-                || entity instanceof ArmorStandEntity
-                || entity instanceof Inventory;
+        return entity instanceof ItemFrame
+                || entity instanceof Painting
+                || entity instanceof ArmorStand
+                || entity instanceof Container;
     }
 
     private static boolean canUseProtectedEntity(
-            ServerPlayerEntity player,
-            ServerWorld world,
+            ServerPlayer player,
+            ServerLevel world,
             BlockPos pos
     ) {
 
@@ -107,8 +107,8 @@ public final class EntityProtectionEvents {
     }
 
     private static boolean canAttackProtectedEntity(
-            ServerPlayerEntity player,
-            ServerWorld world,
+            ServerPlayer player,
+            ServerLevel world,
             BlockPos pos
     ) {
 
@@ -128,17 +128,17 @@ public final class EntityProtectionEvents {
 
     public static boolean canDamageProtectedEntity(
             Entity target,
-            ServerWorld world,
+            ServerLevel world,
             DamageSource source
     ) {
         if (!isProtectedEntity(target)) {
             return true;
         }
 
-        BlockPos pos = target.getBlockPos();
+        BlockPos pos = target.blockPosition();
 
 
-        if (source.getAttacker() instanceof ServerPlayerEntity player) {
+        if (source.getEntity() instanceof ServerPlayer player) {
             return canAttackProtectedEntity(player, world, pos);
         }
 

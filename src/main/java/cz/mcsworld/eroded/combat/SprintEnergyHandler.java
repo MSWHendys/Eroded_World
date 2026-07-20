@@ -4,9 +4,8 @@ import cz.mcsworld.eroded.config.combat.CombatConfig;
 import cz.mcsworld.eroded.skills.SkillData;
 import cz.mcsworld.eroded.skills.SkillManager;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -19,28 +18,28 @@ public final class SprintEnergyHandler {
         ServerTickEvents.END_WORLD_TICK.register(SprintEnergyHandler::onWorldTick);
     }
 
-    private static void onWorldTick(ServerWorld world) {
+    private static void onWorldTick(ServerLevel world) {
         CombatConfig root = CombatConfig.get();
         if (!root.enabled || !root.sprint.enabled) return;
         CombatConfig.Sprint cfg = root.sprint;
 
-        for (ServerPlayerEntity player : world.getPlayers()) {
+        for (ServerPlayer player : world.players()) {
 
             if (!player.isAlive()) {
-                sprintTicks.remove(player.getUuid());
+                sprintTicks.remove(player.getUUID());
                 continue;
             }
 
-            if (player.getAbilities().creativeMode
+            if (player.getAbilities().instabuild
                     || player.getAbilities().flying
                     || player.isSpectator()
-                    || player.isGliding()) {
+                    || player.isFallFlying()) {
 
-                sprintTicks.remove(player.getUuid());
+                sprintTicks.remove(player.getUUID());
                 continue;
             }
 
-            UUID id = player.getUuid();
+            UUID id = player.getUUID();
             SkillData data = SkillManager.get(player);
 
             if (!player.isSprinting()) {
@@ -71,7 +70,7 @@ public final class SprintEnergyHandler {
 
             sprintTicks.put(id, ticks);
 
-            if (world.getTime() % 20 == 0 && data.isImmune()) {
+            if (world.getGameTime() % 20 == 0 && data.isImmune()) {
                 SkillManager.sync(player);
             }
         }

@@ -1,28 +1,27 @@
 package cz.mcsworld.eroded.protection;
 
 import com.mojang.serialization.Codec;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtElement;
-import net.minecraft.nbt.NbtList;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.PersistentState;
-import net.minecraft.world.PersistentStateType;
-
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.saveddata.SavedData;
+import net.minecraft.world.level.saveddata.SavedDataType;
 
-public final class TerritoryClaimState extends PersistentState {
+public final class TerritoryClaimState extends SavedData {
 
     private static final String STATE_ID = "eroded_territory_claims";
 
     private static final Codec<TerritoryClaimState> CODEC =
-            NbtCompound.CODEC.xmap(TerritoryClaimState::fromNbt, TerritoryClaimState::toNbt);
+            CompoundTag.CODEC.xmap(TerritoryClaimState::fromNbt, TerritoryClaimState::toNbt);
 
-    private static final PersistentStateType<TerritoryClaimState> TYPE =
-            new PersistentStateType<>(
+    private static final SavedDataType<TerritoryClaimState> TYPE =
+            new SavedDataType<>(
                     STATE_ID,
                     TerritoryClaimState::new,
                     CODEC,
@@ -31,8 +30,8 @@ public final class TerritoryClaimState extends PersistentState {
 
     private final Map<String, TerritoryClaim> claims = new HashMap<>();
 
-    public static TerritoryClaimState get(ServerWorld world) {
-        return world.getPersistentStateManager().getOrCreate(TYPE);
+    public static TerritoryClaimState get(ServerLevel world) {
+        return world.getDataStorage().computeIfAbsent(TYPE);
     }
 
     public Collection<TerritoryClaim> all() {
@@ -45,14 +44,14 @@ public final class TerritoryClaimState extends PersistentState {
 
     public void put(TerritoryClaim claim) {
         claims.put(key(claim.anchorPos()), claim);
-        markDirty();
+        setDirty();
     }
 
     public TerritoryClaim remove(BlockPos pos) {
         TerritoryClaim removed = claims.remove(key(pos));
 
         if (removed != null) {
-            markDirty();
+            setDirty();
         }
 
         return removed;
@@ -72,9 +71,9 @@ public final class TerritoryClaimState extends PersistentState {
         return pos.getX() + "," + pos.getY() + "," + pos.getZ();
     }
 
-    public NbtCompound toNbt() {
-        NbtCompound nbt = new NbtCompound();
-        NbtList list = new NbtList();
+    public CompoundTag toNbt() {
+        CompoundTag nbt = new CompoundTag();
+        ListTag list = new ListTag();
 
         for (TerritoryClaim claim : claims.values()) {
             list.add(claim.toNbt());
@@ -84,13 +83,13 @@ public final class TerritoryClaimState extends PersistentState {
         return nbt;
     }
 
-    public static TerritoryClaimState fromNbt(NbtCompound nbt) {
+    public static TerritoryClaimState fromNbt(CompoundTag nbt) {
         TerritoryClaimState state = new TerritoryClaimState();
 
-        NbtList list = nbt.getListOrEmpty("claims");
+        ListTag list = nbt.getListOrEmpty("claims");
 
-        for (NbtElement element : list) {
-            if (!(element instanceof NbtCompound claimNbt)) {
+        for (Tag element : list) {
+            if (!(element instanceof CompoundTag claimNbt)) {
                 continue;
             }
 

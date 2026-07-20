@@ -2,8 +2,8 @@ package cz.mcsworld.eroded.protection;
 
 import cz.mcsworld.eroded.config.territory.TerritoryConfig;
 import cz.mcsworld.eroded.world.spawn.ExplosionProtectionManager;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
 
 public final class FluidProtectionManager {
 
@@ -21,7 +21,7 @@ public final class FluidProtectionManager {
     }
 
     public static boolean canFluidFlow(
-            ServerWorld world,
+            ServerLevel world,
             BlockPos fromPos,
             BlockPos toPos
     ) {
@@ -49,7 +49,7 @@ public final class FluidProtectionManager {
     }
 
     private static boolean crossesSpawnBoundary(
-            ServerWorld world,
+            ServerLevel world,
             BlockPos fromPos,
             BlockPos toPos
     ) {

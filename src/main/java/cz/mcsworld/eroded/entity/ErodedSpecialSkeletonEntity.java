@@ -1,33 +1,33 @@
 package cz.mcsworld.eroded.entity;
 
-import net.minecraft.entity.EntityData;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.SpawnReason;
-import net.minecraft.entity.mob.SkeletonEntity;
-import net.minecraft.world.LocalDifficulty;
-import net.minecraft.world.ServerWorldAccess;
-import net.minecraft.world.World;
+import net.minecraft.world.DifficultyInstance;
+import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.SpawnGroupData;
+import net.minecraft.world.entity.monster.Skeleton;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.ServerLevelAccessor;
 import org.jetbrains.annotations.Nullable;
 
-public class ErodedSpecialSkeletonEntity extends SkeletonEntity {
+public class ErodedSpecialSkeletonEntity extends Skeleton {
 
-    public ErodedSpecialSkeletonEntity(EntityType<? extends SkeletonEntity> type, World world) {
+    public ErodedSpecialSkeletonEntity(EntityType<? extends Skeleton> type, Level world) {
         super(type, world);
     }
 
     @Override
-    public boolean isAffectedByDaylight() {
+    public boolean isSunBurnTick() {
         return false;
     }
 
     @Override
-    public EntityData initialize(
-            ServerWorldAccess world,
-            LocalDifficulty difficulty,
-            SpawnReason spawnReason,
-            @Nullable EntityData entityData
+    public SpawnGroupData finalizeSpawn(
+            ServerLevelAccessor world,
+            DifficultyInstance difficulty,
+            EntitySpawnReason spawnReason,
+            @Nullable SpawnGroupData entityData
     ) {
-        EntityData data = super.initialize(world, difficulty, spawnReason, entityData);
+        SpawnGroupData data = super.finalizeSpawn(world, difficulty, spawnReason, entityData);
 
         ErodedMobSunBehaviour.applyRandomSunBehaviour(this, getRandom());
 
@@ -38,7 +38,7 @@ public class ErodedSpecialSkeletonEntity extends SkeletonEntity {
     public void tick() {
         super.tick();
 
-        if (getWorld().isClient()) {
+        if (level().isClientSide()) {
             return;
         }
 

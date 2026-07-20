@@ -1,14 +1,14 @@
 package cz.mcsworld.eroded.death;
 
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
 import java.util.UUID;
+import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.level.Level;
 
 public final class ErodedDeathMemory {
 
     private final BlockPos deathPos;
-    private final RegistryKey<World> deathDimension;
+    private final ResourceKey<Level> deathDimension;
     private long expireEpochMs;
     private final long value;
     private final UUID hologramId;
@@ -16,7 +16,7 @@ public final class ErodedDeathMemory {
 
     public ErodedDeathMemory(
             BlockPos deathPos,
-            RegistryKey<World> deathDimension,
+            ResourceKey<Level> deathDimension,
             long expireEpochMs,
             long value,
             UUID hologramId
@@ -30,7 +30,7 @@ public final class ErodedDeathMemory {
 
 
     public static long calculateDynamicExpireMs(BlockPos deathPos, BlockPos respawnPos) {
-        double distance = Math.sqrt(deathPos.getSquaredDistance(respawnPos));
+        double distance = Math.sqrt(deathPos.distSqr(respawnPos));
 
         double baseMin = 5.0;
         double bonusMin = (distance / 200.0) * 1.5;
@@ -53,7 +53,7 @@ public final class ErodedDeathMemory {
         return deathPos;
     }
 
-    public RegistryKey<World> getDeathDimension() {
+    public ResourceKey<Level> getDeathDimension() {
         return deathDimension;
     }
 

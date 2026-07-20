@@ -1,14 +1,14 @@
 package cz.mcsworld.eroded.crafting;
 
 import cz.mcsworld.eroded.config.crafting.CraftingConfig;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.item.ItemStack;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.ItemStack;
 
 public class QualityEffectsApplier {
 
     public static void apply(ItemStack stack, Quality quality) {
 
-        if (!stack.isDamageable()) return;
+        if (!stack.isDamageableItem()) return;
 
         var root = CraftingConfig.get();
         var cfg = root.quality;
@@ -24,11 +24,11 @@ public class QualityEffectsApplier {
 
         if (newMax == vanillaMax) return;
 
-        int currentDamage = stack.getDamage();
+        int currentDamage = stack.getDamageValue();
         float ratio = (float) currentDamage / vanillaMax;
         int newDamage = Math.round(ratio * newMax);
 
-        stack.set(DataComponentTypes.MAX_DAMAGE, newMax);
-        stack.setDamage(newDamage);
+        stack.set(DataComponents.MAX_DAMAGE, newMax);
+        stack.setDamageValue(newDamage);
     }
 }

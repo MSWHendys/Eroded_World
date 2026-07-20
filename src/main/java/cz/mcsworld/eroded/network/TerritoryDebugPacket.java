@@ -6,13 +6,13 @@ public record TerritoryDebugPacket(
         int pollution,
         int forest,
         float threat
-) implements net.minecraft.network.packet.CustomPayload {
+) implements net.minecraft.network.protocol.common.custom.CustomPacketPayload {
 
-    public static final Id<TerritoryDebugPacket> ID =
-            new Id<>(net.minecraft.util.Identifier.of("eroded", "territory_debug"));
+    public static final Type<TerritoryDebugPacket> ID =
+            new Type<>(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("eroded", "territory_debug"));
 
-    public static final net.minecraft.network.codec.PacketCodec<net.minecraft.network.RegistryByteBuf, TerritoryDebugPacket> CODEC =
-            net.minecraft.network.codec.PacketCodec.of(
+    public static final net.minecraft.network.codec.StreamCodec<net.minecraft.network.RegistryFriendlyByteBuf, TerritoryDebugPacket> CODEC =
+            net.minecraft.network.codec.StreamCodec.ofMember(
                     (p, buf) -> {
                         buf.writeInt(p.miningBlocks());
                         buf.writeInt(p.mining());
@@ -26,5 +26,5 @@ public record TerritoryDebugPacket(
             );
 
     @Override
-    public Id<? extends net.minecraft.network.packet.CustomPayload> getId() { return ID; }
+    public Type<? extends net.minecraft.network.protocol.common.custom.CustomPacketPayload> type() { return ID; }
 }

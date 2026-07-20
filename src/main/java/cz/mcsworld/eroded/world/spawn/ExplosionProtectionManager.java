@@ -1,9 +1,9 @@
 package cz.mcsworld.eroded.world.spawn;
 
 import cz.mcsworld.eroded.config.territory.TerritoryConfig;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 
 public final class ExplosionProtectionManager {
 
@@ -22,12 +22,12 @@ public final class ExplosionProtectionManager {
         return isSpawnProtectionEnabled() && cfg().preventExplosions;
     }
 
-    public static boolean isProtected(ServerWorld world, BlockPos pos) {
+    public static boolean isProtected(ServerLevel world, BlockPos pos) {
         if (!isSpawnProtectionEnabled()) {
             return false;
         }
 
-        BlockPos spawn = world.getSpawnPos();
+        BlockPos spawn = world.getSharedSpawnPos();
 
         int radius = cfg().spawnProtectionRadius;
 
@@ -37,7 +37,7 @@ public final class ExplosionProtectionManager {
         return dx <= radius && dz <= radius;
     }
 
-    public static boolean canBreak(ServerPlayerEntity player, BlockPos pos) {
+    public static boolean canBreak(ServerPlayer player, BlockPos pos) {
         if (hasBypass(player)) {
             return true;
         }
@@ -46,10 +46,10 @@ public final class ExplosionProtectionManager {
             return true;
         }
 
-        return !isProtected(player.getWorld(), pos);
+        return !isProtected(player.level(), pos);
     }
 
-    public static boolean canPlace(ServerPlayerEntity player, BlockPos pos) {
+    public static boolean canPlace(ServerPlayer player, BlockPos pos) {
         if (hasBypass(player)) {
             return true;
         }
@@ -58,10 +58,10 @@ public final class ExplosionProtectionManager {
             return true;
         }
 
-        return !isProtected(player.getWorld(), pos);
+        return !isProtected(player.level(), pos);
     }
 
-    public static boolean canUseSpecialBlock(ServerPlayerEntity player, BlockPos pos) {
+    public static boolean canUseSpecialBlock(ServerPlayer player, BlockPos pos) {
         if (hasBypass(player)) {
             return true;
         }
@@ -70,10 +70,10 @@ public final class ExplosionProtectionManager {
             return true;
         }
 
-        return !isProtected(player.getWorld(), pos);
+        return !isProtected(player.level(), pos);
     }
 
-    public static boolean canUseContainer(ServerPlayerEntity player, BlockPos pos) {
+    public static boolean canUseContainer(ServerPlayer player, BlockPos pos) {
         if (hasBypass(player)) {
             return true;
         }
@@ -82,7 +82,7 @@ public final class ExplosionProtectionManager {
             return true;
         }
 
-        return !isProtected(player.getWorld(), pos);
+        return !isProtected(player.level(), pos);
     }
 
     public static boolean preventPistonPush() {
@@ -129,15 +129,15 @@ public final class ExplosionProtectionManager {
         return isSpawnProtectionEnabled() && cfg().spawnPreventSpecialBlockUse;
     }
 
-    public static boolean hasBypassAccess(ServerPlayerEntity player) {
+    public static boolean hasBypassAccess(ServerPlayer player) {
         return hasBypass(player);
     }
 
-    private static boolean hasBypass(ServerPlayerEntity player) {
+    private static boolean hasBypass(ServerPlayer player) {
         if (cfg().bypassCreative && player.isCreative()) {
             return true;
         }
 
-        return cfg().bypassOP && player.hasPermissionLevel(2);
+        return cfg().bypassOP && player.hasPermissions(2);
     }
 }

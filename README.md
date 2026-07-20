@@ -2,9 +2,13 @@
 ![Loader](https://img.shields.io/badge/Loader-Fabric-blue)
 ![Java](https://img.shields.io/badge/Java-21-orange)
 ![Requires](https://img.shields.io/badge/Requires-Fabric%20API%20%2B%20Cloth%20Config%20API-yellow)
-![Status](https://img.shields.io/badge/Status-BETA%20%2F%20EXPERIMENTAL-red)
+![Status](https://img.shields.io/badge/Status-BETA-red)
 
+<<<<<<< Updated upstream
 ![Eroded World Banner](https://mcstoryworld.cz/minecraft/mods/eroded_world.png)
+=======
+![Eroded World Banner](https://github.com/MSWHendys/Eroded_World/blob/d0cad60445756c0dc2024592e5fae37af5b825b6/img/eroded_world_1.21.6-1.21.8.png?raw=true)
+>>>>>>> Stashed changes
 
 # Eroded World
 
@@ -437,7 +441,7 @@ Use this command after manual changes:
 ## Technical Information
 
 - **Mod ID:** `eroded`
-- **Minecraft target:** `1.21.8`
+- **Minecraft target:** `1.21.6`
 - **Minecraft compatibility range:** `1.21.6 - 1.21.8`
 - **Java:** `21`
 - **Loader:** Fabric

@@ -1,10 +1,9 @@
 package cz.mcsworld.eroded.world.darkness;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.util.math.BlockPos;
-
 import java.util.HashMap;
 import java.util.Map;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.state.BlockState;
 
 public final class DarknessLightMemory {
 
@@ -17,7 +16,7 @@ public final class DarknessLightMemory {
     }
 
     public static void store(BlockPos pos, BlockState state) {
-        ORIGINAL.putIfAbsent(pos.toImmutable(), state);
+        ORIGINAL.putIfAbsent(pos.immutable(), state);
     }
 
     public static BlockState get(BlockPos pos) {

@@ -4,21 +4,21 @@ import com.mojang.serialization.MapCodec;
 import cz.mcsworld.eroded.client.data.ErodedCompassClientData;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.client.render.item.property.numeric.NumericProperty;
-import net.minecraft.client.world.ClientWorld;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.renderer.item.properties.numeric.RangeSelectItemModelProperty;
+import net.minecraft.core.BlockPos;
+import net.minecraft.util.Mth;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
 @Environment(EnvType.CLIENT)
-public final class ErodedDeathCompassAngle implements NumericProperty {
+public final class ErodedDeathCompassAngle implements RangeSelectItemModelProperty {
 
     public static final MapCodec<ErodedDeathCompassAngle> MAP_CODEC = MapCodec.unit(new ErodedDeathCompassAngle());
 
     @Override
-    public float getValue(ItemStack stack, @Nullable ClientWorld world, @Nullable LivingEntity entity, int seed) {
+    public float get(ItemStack stack, @Nullable ClientLevel world, @Nullable LivingEntity entity, int seed) {
         if (entity == null || world == null) return 0.0F;
 
         if (!ErodedCompassClientData.isActive()) {
@@ -32,13 +32,13 @@ public final class ErodedDeathCompassAngle implements NumericProperty {
         double dz = (target.getZ() + 0.5) - entity.getZ();
 
         double angleToTarget = (Math.atan2(dz, dx) / (Math.PI * 2.0));
-        double playerYaw = MathHelper.floorMod(entity.getYaw() / 360.0, 1.0);
+        double playerYaw = Mth.positiveModulo(entity.getYRot() / 360.0, 1.0);
 
-        return (float) MathHelper.floorMod(0.5 - (playerYaw - 0.25 - angleToTarget) + 0.5f, 1.0);
+        return (float) Mth.positiveModulo(0.5 - (playerYaw - 0.25 - angleToTarget) + 0.5f, 1.0);
     }
 
     @Override
-    public MapCodec<? extends NumericProperty> getCodec() {
+    public MapCodec<? extends RangeSelectItemModelProperty> type() {
         return MAP_CODEC;
     }
 }

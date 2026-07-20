@@ -2,17 +2,16 @@ package cz.mcsworld.eroded.death;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.minecraft.datafixer.DataFixTypes;
-import net.minecraft.item.ItemStack;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.Uuids;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.PersistentState;
-import net.minecraft.world.PersistentStateType;
-
 import java.util.*;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.UUIDUtil;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.datafix.DataFixTypes;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.saveddata.SavedData;
+import net.minecraft.world.level.saveddata.SavedDataType;
 
-public final class DeathChestState extends PersistentState {
+public final class DeathChestState extends SavedData {
 
     public static final int SIZE = 54;
 
@@ -62,7 +61,7 @@ public final class DeathChestState extends PersistentState {
                     BlockPos.CODEC.fieldOf("pos")
                             .forGetter(Entry::pos),
 
-                    Uuids.CODEC.fieldOf("owner")
+                    UUIDUtil.AUTHLIB_CODEC.fieldOf("owner")
                             .forGetter(Entry::owner),
 
                     Codec.LONG.fieldOf("until")
@@ -86,7 +85,7 @@ public final class DeathChestState extends PersistentState {
                             )
                             .forGetter(Entry::items),
 
-                    Uuids.CODEC.fieldOf("hologramId")
+                    UUIDUtil.AUTHLIB_CODEC.fieldOf("hologramId")
                             .forGetter(Entry::hologramId)
 
             ).apply(inst, Entry::new));
@@ -105,8 +104,8 @@ public final class DeathChestState extends PersistentState {
                 return s;
             }));
 
-    public static final PersistentStateType<DeathChestState> TYPE =
-            new PersistentStateType<>(
+    public static final SavedDataType<DeathChestState> TYPE =
+            new SavedDataType<>(
                     "eroded_death_chest_state",
                     ctx -> new DeathChestState(),
                     ctx -> CODEC,
@@ -117,8 +116,8 @@ public final class DeathChestState extends PersistentState {
 
     private DeathChestState() {}
 
-    public static DeathChestState get(ServerWorld world) {
-        return world.getPersistentStateManager().getOrCreate(TYPE);
+    public static DeathChestState get(ServerLevel world) {
+        return world.getDataStorage().computeIfAbsent(TYPE);
     }
 
     public Entry get(BlockPos pos) {
@@ -139,19 +138,19 @@ public final class DeathChestState extends PersistentState {
         entries.put(
                 pos.asLong(),
                 new Entry(
-                        pos.toImmutable(),
+                        pos.immutable(),
                         owner,
                         protectUntilEpochMs,
                         items,
                         hologramId
                 )
         );
-        markDirty();
+        setDirty();
     }
 
     public void remove(BlockPos pos) {
         if (entries.remove(pos.asLong()) != null) {
-            markDirty();
+            setDirty();
         }
     }
 

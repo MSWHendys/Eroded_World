@@ -1,20 +1,19 @@
 package cz.mcsworld.eroded.crafting.context;
 
-import net.minecraft.item.ItemStack;
-import net.minecraft.recipe.Recipe;
-import net.minecraft.server.network.ServerPlayerEntity;
-
 import java.util.List;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.Recipe;
 
 public final class CraftingContext {
 
-    private final ServerPlayerEntity player;
+    private final ServerPlayer player;
     private final Recipe<?> recipe;
     private final List<ItemStack> inputs;
     private final CraftingStationType station;
 
     public CraftingContext(
-            ServerPlayerEntity player,
+            ServerPlayer player,
             Recipe<?> recipe,
             List<ItemStack> inputs,
             CraftingStationType station
@@ -25,7 +24,7 @@ public final class CraftingContext {
         this.station = station;
     }
 
-    public ServerPlayerEntity getPlayer() {
+    public ServerPlayer getPlayer() {
         return player;
     }
 

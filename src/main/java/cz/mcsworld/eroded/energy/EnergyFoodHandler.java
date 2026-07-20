@@ -4,34 +4,34 @@ import cz.mcsworld.eroded.config.energy.EnergyConfig;
 import cz.mcsworld.eroded.skills.SkillData;
 import cz.mcsworld.eroded.skills.SkillManager;
 import cz.mcsworld.eroded.skills.SkillType;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.FoodComponent;
-import net.minecraft.entity.effect.StatusEffectInstance;
-import net.minecraft.entity.effect.StatusEffects;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Item;
-import net.minecraft.registry.tag.TagKey;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.util.Identifier;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.food.FoodProperties;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 
 public final class EnergyFoodHandler {
 
     private EnergyFoodHandler() {}
 
     private static TagKey<Item> c(String path) {
-        return TagKey.of(RegistryKeys.ITEM, Identifier.of("c", path));
+        return TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath("c", path));
     }
 
     private static final TagKey<Item> ERODED_OVERRIDE = tag("food_override");
 
     private static TagKey<Item> tag(String name) {
-        return TagKey.of(RegistryKeys.ITEM, Identifier.of("eroded", name));
+        return TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath("eroded", name));
     }
 
-    public static void onEat(PlayerEntity player, ItemStack stack) {
-        if (!(player instanceof ServerPlayerEntity serverPlayer)) return;
+    public static void onEat(Player player, ItemStack stack) {
+        if (!(player instanceof ServerPlayer serverPlayer)) return;
 
         SkillData data = SkillManager.get(serverPlayer);
         int value = calculate(stack, data);
@@ -43,8 +43,8 @@ public final class EnergyFoodHandler {
         } else {
             data.consumeEnergy(-value);
 
-            serverPlayer.addStatusEffect(
-                    new StatusEffectInstance(StatusEffects.NAUSEA, 200, 0)
+            serverPlayer.addEffect(
+                    new MobEffectInstance(MobEffects.NAUSEA, 200, 0)
             );
         }
 
@@ -54,28 +54,28 @@ public final class EnergyFoodHandler {
     }
 
     private static int calculate(ItemStack stack, SkillData data) {
-        FoodComponent food = stack.get(DataComponentTypes.FOOD);
+        FoodProperties food = stack.get(DataComponents.FOOD);
         if (food == null) return 0;
 
         var cfg = EnergyConfig.get().server.food;
 
-        if (stack.isIn(c("foods/food_poisoning"))) {
+        if (stack.is(c("foods/food_poisoning"))) {
             return -cfg.dangerousEnergyPenalty;
         }
 
         float base = 0;
 
-        if (stack.isIn(c("foods/feasts")) || stack.isIn(c("foods/meals"))) {
+        if (stack.is(c("foods/feasts")) || stack.is(c("foods/meals"))) {
             base = cfg.mealBase;
-        } else if (stack.isIn(c("foods/meat"))) {
+        } else if (stack.is(c("foods/meat"))) {
             base = cfg.meatBase;
-        } else if (stack.isIn(c("foods/fish"))) {
+        } else if (stack.is(c("foods/fish"))) {
             base = cfg.fishBase;
-        } else if (stack.isIn(c("foods/grain"))) {
+        } else if (stack.is(c("foods/grain"))) {
             base = cfg.grainBase;
-        } else if (stack.isIn(c("foods/vegetables"))) {
+        } else if (stack.is(c("foods/vegetables"))) {
             base = cfg.vegetableBase;
-        } else if (stack.isIn(c("foods/fruits"))) {
+        } else if (stack.is(c("foods/fruits"))) {
             base = cfg.fruitBase;
         }
 
@@ -83,15 +83,15 @@ public final class EnergyFoodHandler {
             base = food.nutrition() * 0.7f;
         }
 
-        if (stack.isIn(c("foods/raw_meat"))) {
+        if (stack.is(c("foods/raw_meat"))) {
             base *= cfg.rawMultiplier;
-        } else if (stack.isIn(c("foods/cooked_foods"))) {
+        } else if (stack.is(c("foods/cooked_foods"))) {
             base *= cfg.cookedMultiplier;
-        } else if (stack.isIn(c("foods/meals"))) {
+        } else if (stack.is(c("foods/meals"))) {
             base *= cfg.processedMultiplier;
         }
 
-        if (stack.isIn(c("foods/feasts"))) {
+        if (stack.is(c("foods/feasts"))) {
             base *= cfg.specialMultiplier;
         }
 

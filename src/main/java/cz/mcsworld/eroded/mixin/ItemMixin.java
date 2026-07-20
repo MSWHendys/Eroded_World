@@ -2,14 +2,14 @@ package cz.mcsworld.eroded.mixin;
 
 import cz.mcsworld.eroded.skills.SkillData;
 import cz.mcsworld.eroded.skills.SkillManager;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
-import net.minecraft.world.World;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -24,25 +24,25 @@ public abstract class ItemMixin {
             cancellable = true
     )
     private void eroded$allowEatingForEnergy(
-            World world,
-            PlayerEntity player,
-            Hand hand,
-            CallbackInfoReturnable<ActionResult> cir
+            Level world,
+            Player player,
+            InteractionHand hand,
+            CallbackInfoReturnable<InteractionResult> cir
     ) {
-        if (world.isClient) return;
-        if (!(player instanceof ServerPlayerEntity sp)) return;
+        if (world.isClientSide) return;
+        if (!(player instanceof ServerPlayer sp)) return;
 
-        ItemStack stack = player.getStackInHand(hand);
+        ItemStack stack = player.getItemInHand(hand);
 
-        if (stack.get(DataComponentTypes.FOOD) == null) return;
+        if (stack.get(DataComponents.FOOD) == null) return;
 
-        if (player.canConsume(false)) return;
+        if (player.canEat(false)) return;
 
         SkillData data = SkillManager.get(sp);
 
         if (data.getEnergy() >= data.getMaxEnergy()) return;
 
-        player.setCurrentHand(hand);
-        cir.setReturnValue(ActionResult.CONSUME);
+        player.startUsingItem(hand);
+        cir.setReturnValue(InteractionResult.CONSUME);
     }
 }

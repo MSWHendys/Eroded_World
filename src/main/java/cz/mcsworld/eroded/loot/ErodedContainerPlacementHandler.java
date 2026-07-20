@@ -1,36 +1,36 @@
 package cz.mcsworld.eroded.loot;
 
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
-import net.minecraft.block.BarrelBlock;
-import net.minecraft.block.Block;
-import net.minecraft.block.ChestBlock;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.NbtComponent;
-import net.minecraft.item.BlockItem;
-import net.minecraft.item.ItemStack;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.level.block.BarrelBlock;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.ChestBlock;
 
 public class ErodedContainerPlacementHandler {
 
     public static void register() {
         UseBlockCallback.EVENT.register((player, world, hand, hit) -> {
-            if (world.isClient()) return ActionResult.PASS;
-            if (!(world instanceof ServerWorld serverWorld)) return ActionResult.PASS;
+            if (world.isClientSide()) return InteractionResult.PASS;
+            if (!(world instanceof ServerLevel serverWorld)) return InteractionResult.PASS;
 
-            ItemStack stack = player.getStackInHand(hand);
-            if (stack.isEmpty()) return ActionResult.PASS;
+            ItemStack stack = player.getItemInHand(hand);
+            if (stack.isEmpty()) return InteractionResult.PASS;
 
-            if (!(stack.getItem() instanceof BlockItem blockItem)) return ActionResult.PASS;
+            if (!(stack.getItem() instanceof BlockItem blockItem)) return InteractionResult.PASS;
             Block block = blockItem.getBlock();
-            if (!(block instanceof ChestBlock) && !(block instanceof BarrelBlock)) return ActionResult.PASS;
+            if (!(block instanceof ChestBlock) && !(block instanceof BarrelBlock)) return InteractionResult.PASS;
 
-            BlockPos placePos = hit.getBlockPos().offset(hit.getSide());
+            BlockPos placePos = hit.getBlockPos().relative(hit.getDirection());
             long posKey = placePos.asLong();
 
-            NbtComponent data = stack.get(DataComponentTypes.CUSTOM_DATA);
-            boolean hasAdminTag = data != null && data.copyNbt().getBoolean("eroded_loot_chest").orElse(false);
+            CustomData data = stack.get(DataComponents.CUSTOM_DATA);
+            boolean hasAdminTag = data != null && data.copyTag().getBoolean("eroded_loot_chest").orElse(false);
 
             if (hasAdminTag) {
 
@@ -42,7 +42,7 @@ public class ErodedContainerPlacementHandler {
                 ErodedLootState.get(serverWorld).unmarkAdminPlaced(posKey);
             }
 
-            return ActionResult.PASS;
+            return InteractionResult.PASS;
         });
     }
 }

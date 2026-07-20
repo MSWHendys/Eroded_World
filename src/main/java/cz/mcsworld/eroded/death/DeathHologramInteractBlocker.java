@@ -1,8 +1,8 @@
 package cz.mcsworld.eroded.death;
 
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
-import net.minecraft.entity.Entity;
-import net.minecraft.util.ActionResult;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.Entity;
 
 public final class DeathHologramInteractBlocker {
 
@@ -12,19 +12,19 @@ public final class DeathHologramInteractBlocker {
         UseEntityCallback.EVENT.register(
                 (player, world, hand, entity, hitResult) -> {
 
-                    if (world.isClient()) return ActionResult.PASS;
+                    if (world.isClientSide()) return InteractionResult.PASS;
 
                     if (isDeathHologram(entity)) {
-                        return ActionResult.FAIL;
+                        return InteractionResult.FAIL;
                     }
 
-                    return ActionResult.PASS;
+                    return InteractionResult.PASS;
                 }
         );
     }
 
     private static boolean isDeathHologram(Entity entity) {
-        return entity.getCommandTags()
+        return entity.getTags()
                 .contains("eroded_death_hologram");
     }
 }

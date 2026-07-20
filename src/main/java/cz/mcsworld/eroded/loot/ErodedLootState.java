@@ -3,17 +3,16 @@ package cz.mcsworld.eroded.loot;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import cz.mcsworld.eroded.ErodedMod;
-import net.minecraft.block.BarrelBlock;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.ChestBlock;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.PersistentState;
-import net.minecraft.world.PersistentStateType;
-
 import java.util.*;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.block.BarrelBlock;
+import net.minecraft.world.level.block.ChestBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.saveddata.SavedData;
+import net.minecraft.world.level.saveddata.SavedDataType;
 
-public class ErodedLootState extends PersistentState {
+public class ErodedLootState extends SavedData {
 
     private final Map<Long, Set<UUID>> openedByPlayers;
     private final Set<Long> playerPlacedContainers;
@@ -73,15 +72,15 @@ public class ErodedLootState extends PersistentState {
         );
     }));
 
-    public static final PersistentStateType<ErodedLootState> TYPE = new PersistentStateType<>(
+    public static final SavedDataType<ErodedLootState> TYPE = new SavedDataType<>(
             ErodedMod.MOD_ID + "_loot_state",
             ErodedLootState::new,
             CODEC,
             null
     );
 
-    public static ErodedLootState get(ServerWorld world) {
-        return world.getPersistentStateManager().getOrCreate(TYPE);
+    public static ErodedLootState get(ServerLevel world) {
+        return world.getDataStorage().computeIfAbsent(TYPE);
     }
 
 
@@ -91,7 +90,7 @@ public class ErodedLootState extends PersistentState {
     }
 
     public void markOpened(long pos, UUID player) {
-        if (openedByPlayers.computeIfAbsent(pos, k -> new HashSet<>()).add(player)) markDirty();
+        if (openedByPlayers.computeIfAbsent(pos, k -> new HashSet<>()).add(player)) setDirty();
     }
 
     public boolean hasAnyPlayerOpened(long pos) {
@@ -101,7 +100,7 @@ public class ErodedLootState extends PersistentState {
 
     public void clearOpenedHistory(long pos) {
         if (openedByPlayers.remove(pos) != null) {
-            markDirty();
+            setDirty();
         }
     }
 
@@ -111,11 +110,11 @@ public class ErodedLootState extends PersistentState {
     }
 
     public void markPlayerPlaced(long pos) {
-        if (playerPlacedContainers.add(pos)) markDirty();
+        if (playerPlacedContainers.add(pos)) setDirty();
     }
 
     public void unmarkPlayerPlaced(long pos) {
-        if (playerPlacedContainers.remove(pos)) markDirty();
+        if (playerPlacedContainers.remove(pos)) setDirty();
     }
 
     public boolean isAdminPlaced(long pos) {
@@ -123,11 +122,11 @@ public class ErodedLootState extends PersistentState {
     }
 
     public void markAdminPlaced(long pos) {
-        if (adminPlacedContainers.add(pos)) markDirty();
+        if (adminPlacedContainers.add(pos)) setDirty();
     }
 
     public void unmarkAdminPlaced(long pos) {
-        if (adminPlacedContainers.remove(pos)) markDirty();
+        if (adminPlacedContainers.remove(pos)) setDirty();
     }
 
     public boolean isErodedGenerated(long pos) {
@@ -135,15 +134,15 @@ public class ErodedLootState extends PersistentState {
     }
 
     public void markErodedGenerated(long pos) {
-        if (erodedGeneratedContainers.add(pos)) markDirty();
+        if (erodedGeneratedContainers.add(pos)) setDirty();
     }
 
     public void unmarkErodedGenerated(long pos) {
-        if (erodedGeneratedContainers.remove(pos)) markDirty();
+        if (erodedGeneratedContainers.remove(pos)) setDirty();
     }
 
 
-    public static boolean isProtected(ServerWorld world, BlockPos pos) {
+    public static boolean isProtected(ServerLevel world, BlockPos pos) {
         BlockState state = world.getBlockState(pos);
         if (!(state.getBlock() instanceof ChestBlock || state.getBlock() instanceof BarrelBlock)) {
             return false;

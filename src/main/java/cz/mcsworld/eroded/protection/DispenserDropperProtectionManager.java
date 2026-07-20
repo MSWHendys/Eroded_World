@@ -2,11 +2,11 @@ package cz.mcsworld.eroded.protection;
 
 import cz.mcsworld.eroded.config.territory.TerritoryConfig;
 import cz.mcsworld.eroded.world.spawn.ExplosionProtectionManager;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.DispenserBlock;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.block.DispenserBlock;
+import net.minecraft.world.level.block.state.BlockState;
 
 public final class DispenserDropperProtectionManager {
 
@@ -24,7 +24,7 @@ public final class DispenserDropperProtectionManager {
     }
 
     public static boolean canDispense(
-            ServerWorld world,
+            ServerLevel world,
             BlockPos sourcePos,
             BlockState state
     ) {
@@ -32,12 +32,12 @@ public final class DispenserDropperProtectionManager {
             return true;
         }
 
-        if (!state.contains(DispenserBlock.FACING)) {
+        if (!state.hasProperty(DispenserBlock.FACING)) {
             return true;
         }
 
-        Direction direction = state.get(DispenserBlock.FACING);
-        BlockPos targetPos = sourcePos.offset(direction);
+        Direction direction = state.getValue(DispenserBlock.FACING);
+        BlockPos targetPos = sourcePos.relative(direction);
 
         if (crossesSpawnBoundary(world, sourcePos, targetPos)) {
             return !ExplosionProtectionManager.preventDispenserDropperBoundaryActions();
@@ -55,7 +55,7 @@ public final class DispenserDropperProtectionManager {
     }
 
     private static boolean crossesSpawnBoundary(
-            ServerWorld world,
+            ServerLevel world,
             BlockPos fromPos,
             BlockPos toPos
     ) {

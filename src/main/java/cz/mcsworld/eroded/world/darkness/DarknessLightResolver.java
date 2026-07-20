@@ -1,10 +1,10 @@
 package cz.mcsworld.eroded.world.darkness;
 
 import cz.mcsworld.eroded.config.darkness.DarknessConfigs;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.LightType;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.LightLayer;
+import net.minecraft.world.phys.Vec3;
 
 public final class DarknessLightResolver {
 
@@ -12,11 +12,11 @@ public final class DarknessLightResolver {
 
     public static final int FEAR_LIGHT_THRESHOLD = 4;
 
-    public static BlockPos findNearbyBlockLight(ServerWorld world, BlockPos origin) {
+    public static BlockPos findNearbyBlockLight(ServerLevel world, BlockPos origin) {
         var cfg = DarknessConfigs.get().server;
 
 
-        BlockPos.Mutable pos = new BlockPos.Mutable();
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
         BlockPos best = null;
         double bestDist = Double.MAX_VALUE;
 
@@ -30,13 +30,13 @@ public final class DarknessLightResolver {
                             origin.getZ() + dz
                     );
 
-                    int block = world.getLightLevel(LightType.BLOCK, pos);
+                    int block = world.getBrightness(LightLayer.BLOCK, pos);
                     if (block < cfg.fearLightThreshold) continue;
 
-                    double d = pos.getSquaredDistance(origin);
+                    double d = pos.distSqr(origin);
                     if (d < bestDist) {
                         bestDist = d;
-                        best = pos.toImmutable();
+                        best = pos.immutable();
                     }
                 }
             }
@@ -45,27 +45,27 @@ public final class DarknessLightResolver {
         return best;
     }
 
-    public static Vec3d escapeFrom(BlockPos mobPos, BlockPos lightPos) {
+    public static Vec3 escapeFrom(BlockPos mobPos, BlockPos lightPos) {
 
-        Vec3d dir = Vec3d.ofCenter(mobPos)
-                .subtract(Vec3d.ofCenter(lightPos));
+        Vec3 dir = Vec3.atCenterOf(mobPos)
+                .subtract(Vec3.atCenterOf(lightPos));
 
-        Vec3d flat = new Vec3d(dir.x, 0, dir.z);
+        Vec3 flat = new Vec3(dir.x, 0, dir.z);
 
-        if (flat.lengthSquared() < 0.0001) {
-            return Vec3d.ZERO;
+        if (flat.lengthSqr() < 0.0001) {
+            return Vec3.ZERO;
         }
 
         return flat.normalize();
     }
 
-    public static boolean isMobFearing(ServerWorld world, BlockPos pos) {
+    public static boolean isMobFearing(ServerLevel world, BlockPos pos) {
         var cfg = DarknessConfigs.get().server;
-        return world.getLightLevel(LightType.BLOCK, pos) >= cfg.fearLightThreshold;
+        return world.getBrightness(LightLayer.BLOCK, pos) >= cfg.fearLightThreshold;
     }
 
-    public static boolean isMobSuppressed(ServerWorld world, BlockPos pos) {
+    public static boolean isMobSuppressed(ServerLevel world, BlockPos pos) {
         var cfg = DarknessConfigs.get().server;
-        return world.getLightLevel(LightType.BLOCK, pos) >= cfg.suppressLightThreshold;
+        return world.getBrightness(LightLayer.BLOCK, pos) >= cfg.suppressLightThreshold;
     }
 }

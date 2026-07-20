@@ -1,15 +1,15 @@
 package cz.mcsworld.eroded.death;
 
 import cz.mcsworld.eroded.config.death.DeathConfig;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 
 public final class DeathProtectionCalculator {
 
     private DeathProtectionCalculator() {}
 
-    public static long calculateProtectionMillis(ServerPlayerEntity player, BlockPos deathPos) {
+    public static long calculateProtectionMillis(ServerPlayer player, BlockPos deathPos) {
 
         var cfg = DeathConfig.get().protection;
 
@@ -17,26 +17,26 @@ public final class DeathProtectionCalculator {
             return DeathConfig.get().chest.protectionTicks * 50L;
         }
 
-        ServerWorld world = (ServerWorld) player.getWorld();
+        ServerLevel world = (ServerLevel) player.level();
 
         BlockPos respawnPos = null;
 
-        var respawn = player.getRespawn();
+        var respawn = player.getRespawnConfig();
         if (respawn != null) {
-            if (respawn.dimension().equals(world.getRegistryKey())) {
+            if (respawn.dimension().equals(world.dimension())) {
                 respawnPos = respawn.pos();
             }
         }
 
         if (respawnPos == null && cfg.useSpawnIfNoBed) {
-            respawnPos = world.getSpawnPos();
+            respawnPos = world.getSharedSpawnPos();
         }
 
         if (respawnPos == null) {
             return cfg.minMinutes * 60L * 1000L;
         }
 
-        double distance = Math.sqrt(deathPos.getSquaredDistance(respawnPos));
+        double distance = Math.sqrt(deathPos.distSqr(respawnPos));
 
         double minutes = cfg.minMinutes + (distance * cfg.minutesPerBlock);
         minutes = Math.min(minutes, cfg.maxMinutes);

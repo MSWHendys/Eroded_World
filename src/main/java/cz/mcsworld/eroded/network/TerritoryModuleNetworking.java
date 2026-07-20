@@ -5,10 +5,9 @@ import cz.mcsworld.eroded.protection.TerritoryPermission;
 import cz.mcsworld.eroded.protection.TerritoryProtectionManager;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import java.util.UUID;
 
 public final class TerritoryModuleNetworking {
@@ -57,9 +56,9 @@ public final class TerritoryModuleNetworking {
         ServerPlayNetworking.registerGlobalReceiver(
                 TerritoryModuleRequestPayload.ID,
                 (payload, context) -> context.server().execute(() -> {
-                    ServerPlayerEntity player = context.player();
+                    ServerPlayer player = context.player();
 
-                    if (!(player.getWorld() instanceof ServerWorld world)) {
+                    if (!(player.level() instanceof ServerLevel world)) {
                         return;
                     }
 
@@ -70,19 +69,19 @@ public final class TerritoryModuleNetworking {
         ServerPlayNetworking.registerGlobalReceiver(
                 TerritoryTrustAddPayload.ID,
                 (payload, context) -> context.server().execute(() -> {
-                    ServerPlayerEntity manager = context.player();
+                    ServerPlayer manager = context.player();
 
-                    if (!(manager.getWorld() instanceof ServerWorld world)) {
+                    if (!(manager.level() instanceof ServerLevel world)) {
                         return;
                     }
 
-                    ServerPlayerEntity target = world.getServer()
-                            .getPlayerManager()
-                            .getPlayer(payload.playerName());
+                    ServerPlayer target = world.getServer()
+                            .getPlayerList()
+                            .getPlayerByName(payload.playerName());
 
                     if (target == null) {
-                        manager.sendMessage(
-                                net.minecraft.text.Text.translatable(
+                        manager.displayClientMessage(
+                                net.minecraft.network.chat.Component.translatable(
                                         "eroded.territory.trust.player_not_found",
                                         payload.playerName()
                                 ),
@@ -108,9 +107,9 @@ public final class TerritoryModuleNetworking {
         ServerPlayNetworking.registerGlobalReceiver(
                 TerritoryTrustRemovePayload.ID,
                 (payload, context) -> context.server().execute(() -> {
-                    ServerPlayerEntity manager = context.player();
+                    ServerPlayer manager = context.player();
 
-                    if (!(manager.getWorld() instanceof ServerWorld world)) {
+                    if (!(manager.level() instanceof ServerLevel world)) {
                         return;
                     }
 
@@ -140,9 +139,9 @@ public final class TerritoryModuleNetworking {
         ServerPlayNetworking.registerGlobalReceiver(
                 TerritoryPermissionUpdatePayload.ID,
                 (payload, context) -> context.server().execute(() -> {
-                    ServerPlayerEntity manager = context.player();
+                    ServerPlayer manager = context.player();
 
-                    if (!(manager.getWorld() instanceof ServerWorld world)) {
+                    if (!(manager.level() instanceof ServerLevel world)) {
                         return;
                     }
 
@@ -181,9 +180,9 @@ public final class TerritoryModuleNetworking {
         ServerPlayNetworking.registerGlobalReceiver(
                 TerritoryScopeUpdatePayload.ID,
                 (payload, context) -> context.server().execute(() -> {
-                    ServerPlayerEntity manager = context.player();
+                    ServerPlayer manager = context.player();
 
-                    if (!(manager.getWorld() instanceof ServerWorld world)) {
+                    if (!(manager.level() instanceof ServerLevel world)) {
                         return;
                     }
 
@@ -212,9 +211,9 @@ public final class TerritoryModuleNetworking {
         ServerPlayNetworking.registerGlobalReceiver(
                 TerritorySuggestionRequestPayload.ID,
                 (payload, context) -> context.server().execute(() -> {
-                    ServerPlayerEntity player = context.player();
+                    ServerPlayer player = context.player();
 
-                    if (!(player.getWorld() instanceof ServerWorld world)) {
+                    if (!(player.level() instanceof ServerLevel world)) {
                         return;
                     }
 
@@ -228,14 +227,14 @@ public final class TerritoryModuleNetworking {
         );
     }
 
-    public static void sendSync(ServerWorld world, BlockPos anchorPos, ServerPlayerEntity viewer) {
+    public static void sendSync(ServerLevel world, BlockPos anchorPos, ServerPlayer viewer) {
         sendSync(world, anchorPos, viewer, "");
     }
 
     public static void sendSync(
-            ServerWorld world,
+            ServerLevel world,
             BlockPos anchorPos,
-            ServerPlayerEntity viewer,
+            ServerPlayer viewer,
             String suggestionQuery
     ) {
         TerritoryClaim claim = TerritoryProtectionManager.getAnchorClaim(world, anchorPos);
@@ -270,7 +269,7 @@ public final class TerritoryModuleNetworking {
         );
     }
 
-    private static String buildTrustedData(ServerWorld world, TerritoryClaim claim) {
+    private static String buildTrustedData(ServerLevel world, TerritoryClaim claim) {
         StringBuilder builder = new StringBuilder();
 
         TerritoryProtectionManager.refreshTrustedNamesFromOnlinePlayers(world, claim);
@@ -292,15 +291,15 @@ public final class TerritoryModuleNetworking {
         return builder.toString();
     }
 
-    private static String buildSuggestionData(ServerWorld world, TerritoryClaim claim, String query) {
+    private static String buildSuggestionData(ServerLevel world, TerritoryClaim claim, String query) {
         StringBuilder builder = new StringBuilder();
 
-        for (ServerPlayerEntity player : TerritoryProtectionManager.getOnlinePlayerSuggestions(world, claim, query, 8)) {
+        for (ServerPlayer player : TerritoryProtectionManager.getOnlinePlayerSuggestions(world, claim, query, 8)) {
             if (!builder.isEmpty()) {
                 builder.append("\n");
             }
 
-            builder.append(player.getUuid())
+            builder.append(player.getUUID())
                     .append("|")
                     .append(player.getName().getString());
         }

@@ -2,14 +2,14 @@ package cz.mcsworld.eroded.death;
 
 import cz.mcsworld.eroded.death.block.ErodedBlocks;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.Text;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
 public final class DeathChestBreakHandler {
@@ -23,18 +23,18 @@ public final class DeathChestBreakHandler {
     }
 
     private static boolean beforeBreak(
-            World world,
-            PlayerEntity player,
+            Level world,
+            Player player,
             BlockPos pos,
             BlockState state,
             @Nullable BlockEntity blockEntity
     ) {
 
-        if (world.isClient) return true;
-        if (!(world instanceof ServerWorld sw)) return true;
-        if (!(player instanceof ServerPlayerEntity sp)) return true;
+        if (world.isClientSide) return true;
+        if (!(world instanceof ServerLevel sw)) return true;
+        if (!(player instanceof ServerPlayer sp)) return true;
 
-        if (!state.isOf(ErodedBlocks.DEATH_ENDER_CHEST)) {
+        if (!state.is(ErodedBlocks.DEATH_ENDER_CHEST)) {
             return true;
         }
 
@@ -45,14 +45,14 @@ public final class DeathChestBreakHandler {
             return true;
         }
 
-        if (e.owner().equals(sp.getUuid())) {
+        if (e.owner().equals(sp.getUUID())) {
             return true;
         }
 
         if (e.isProtected(System.currentTimeMillis())) {
 
-            sp.sendMessage(
-                    Text.translatable("eroded.death.chest.protected"),
+            sp.displayClientMessage(
+                    Component.translatable("eroded.death.chest.protected"),
                     true
             );
             return false;

@@ -3,19 +3,18 @@ package cz.mcsworld.eroded.world.darkness;
 import cz.mcsworld.eroded.config.darkness.DarknessConfigs;
 import cz.mcsworld.eroded.death.block.ErodedBlocks;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
-import net.minecraft.block.Block;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.LightBlock;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.item.ItemStack;
-import net.minecraft.registry.RegistryKey;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.LightType;
-import net.minecraft.world.World;
-
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LightLayer;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LightBlock;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -27,20 +26,20 @@ public final class ErodedLampHandler {
     private ErodedLampHandler() {
     }
 
-    private record LastLight(RegistryKey<World> worldKey, BlockPos pos) {
+    private record LastLight(ResourceKey<Level> worldKey, BlockPos pos) {
     }
 
     public static void register() {
         ServerTickEvents.END_SERVER_TICK.register(server -> {
-            for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
+            for (ServerPlayer player : server.getPlayerList().getPlayers()) {
                 tickPlayer(server, player);
             }
         });
     }
 
-    private static void tickPlayer(MinecraftServer server, ServerPlayerEntity player) {
-        ServerWorld world = player.getWorld();
-        UUID uuid = player.getUuid();
+    private static void tickPlayer(MinecraftServer server, ServerPlayer player) {
+        ServerLevel world = player.level();
+        UUID uuid = player.getUUID();
 
         ItemStack lamp = getHeldLamp(player);
 
@@ -53,10 +52,10 @@ public final class ErodedLampHandler {
 
         ensureLampMaxDamage(lamp, lampCfg.durationSeconds);
 
-        BlockPos playerPos = player.getBlockPos();
-        int skyLight = world.getLightLevel(LightType.SKY, playerPos);
+        BlockPos playerPos = player.blockPosition();
+        int skyLight = world.getBrightness(LightLayer.SKY, playerPos);
 
-        boolean isUnderground = playerPos.getY() < lampCfg.undergroundY || !world.isSkyVisible(playerPos);
+        boolean isUnderground = playerPos.getY() < lampCfg.undergroundY || !world.canSeeSky(playerPos);
         boolean isDarkEnough = skyLight <= lampCfg.skyLightMax && isUnderground;
 
         if (!isDarkEnough) {
@@ -64,9 +63,9 @@ public final class ErodedLampHandler {
             return;
         }
 
-        if (server.getTicks() % 20 == 0) {
-            int newDamage = lamp.getDamage() + 1;
-            lamp.setDamage(newDamage);
+        if (server.getTickCount() % 20 == 0) {
+            int newDamage = lamp.getDamageValue() + 1;
+            lamp.setDamageValue(newDamage);
 
             if (newDamage >= lamp.getMaxDamage()) {
                 lamp.setCount(0);
@@ -84,12 +83,12 @@ public final class ErodedLampHandler {
         LastLight oldLight = LAST_LIGHT.get(uuid);
 
         if (oldLight != null) {
-            if (oldLight.worldKey().equals(world.getRegistryKey())) {
+            if (oldLight.worldKey().equals(world.dimension())) {
                 BlockPos oldPos = oldLight.pos();
 
-                if (player.squaredDistanceTo(oldPos.getX() + 0.5, oldPos.getY() + 0.5, oldPos.getZ() + 0.5) < 2.25) {
-                    if (world.getBlockState(oldPos).isOf(Blocks.LIGHT)) return;
-                    if (world.isAir(oldPos)) {
+                if (player.distanceToSqr(oldPos.getX() + 0.5, oldPos.getY() + 0.5, oldPos.getZ() + 0.5) < 2.25) {
+                    if (world.getBlockState(oldPos).is(Blocks.LIGHT)) return;
+                    if (world.isEmptyBlock(oldPos)) {
                         placeLightAt(world, oldPos);
                         return;
                     }
@@ -100,7 +99,7 @@ public final class ErodedLampHandler {
 
         if (canPlaceLightAt(world, wantedPos)) {
             placeLightAt(world, wantedPos);
-            LAST_LIGHT.put(uuid, new LastLight(world.getRegistryKey(), wantedPos));
+            LAST_LIGHT.put(uuid, new LastLight(world.dimension(), wantedPos));
         }
     }
 
@@ -108,62 +107,62 @@ public final class ErodedLampHandler {
         int targetMax = Math.max(2, durationSeconds);
 
         if (lamp.getMaxDamage() != targetMax) {
-            lamp.set(DataComponentTypes.MAX_DAMAGE, targetMax);
+            lamp.set(DataComponents.MAX_DAMAGE, targetMax);
 
-            if (lamp.getDamage() >= targetMax) {
-                lamp.setDamage(targetMax - 1);
+            if (lamp.getDamageValue() >= targetMax) {
+                lamp.setDamageValue(targetMax - 1);
             }
         }
     }
 
-    private static BlockPos findLightPos(ServerWorld world, BlockPos playerPos) {
-        if (canPlaceLightAt(world, playerPos.up())) return playerPos.up();
+    private static BlockPos findLightPos(ServerLevel world, BlockPos playerPos) {
+        if (canPlaceLightAt(world, playerPos.above())) return playerPos.above();
         if (canPlaceLightAt(world, playerPos)) return playerPos;
         return null;
     }
 
-    private static boolean canPlaceLightAt(ServerWorld world, BlockPos pos) {
-        return world.isAir(pos) || world.getBlockState(pos).isOf(Blocks.LIGHT);
+    private static boolean canPlaceLightAt(ServerLevel world, BlockPos pos) {
+        return world.isEmptyBlock(pos) || world.getBlockState(pos).is(Blocks.LIGHT);
     }
 
-    private static void placeLightAt(ServerWorld world, BlockPos pos) {
+    private static void placeLightAt(ServerLevel world, BlockPos pos) {
         if (!canPlaceLightAt(world, pos)) {
             return;
         }
 
         int lightLevel = Math.min(15, Math.max(1, DarknessConfigs.get().server.wardingLamp.lightLevel));
 
-        world.setBlockState(
+        world.setBlock(
                 pos,
-                Blocks.LIGHT.getDefaultState().with(LightBlock.LEVEL_15, lightLevel),
-                Block.NOTIFY_ALL
+                Blocks.LIGHT.defaultBlockState().setValue(LightBlock.LEVEL, lightLevel),
+                Block.UPDATE_ALL
         );
     }
 
-    private static void removeLightAt(ServerWorld world, BlockPos pos) {
-        if (world != null && world.getBlockState(pos).isOf(Blocks.LIGHT)) {
-            world.setBlockState(pos, Blocks.AIR.getDefaultState(), Block.NOTIFY_ALL);
+    private static void removeLightAt(ServerLevel world, BlockPos pos) {
+        if (world != null && world.getBlockState(pos).is(Blocks.LIGHT)) {
+            world.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
         }
     }
 
     public static void cleanup(UUID uuid, MinecraftServer server) {
         LastLight lastLight = LAST_LIGHT.remove(uuid);
         if (lastLight != null) {
-            ServerWorld world = server.getWorld(lastLight.worldKey());
+            ServerLevel world = server.getLevel(lastLight.worldKey());
             if (world != null) removeLightAt(world, lastLight.pos());
         }
     }
 
-    public static void cleanup(UUID uuid, ServerWorld fallbackWorld) {
+    public static void cleanup(UUID uuid, ServerLevel fallbackWorld) {
         LastLight lastLight = LAST_LIGHT.remove(uuid);
-        if (lastLight != null && fallbackWorld.getRegistryKey().equals(lastLight.worldKey())) {
+        if (lastLight != null && fallbackWorld.dimension().equals(lastLight.worldKey())) {
             removeLightAt(fallbackWorld, lastLight.pos());
         }
     }
 
-    private static ItemStack getHeldLamp(ServerPlayerEntity player) {
-        if (player.getMainHandStack().isOf(ErodedBlocks.WARDING_LANTERN.asItem())) return player.getMainHandStack();
-        if (player.getOffHandStack().isOf(ErodedBlocks.WARDING_LANTERN.asItem())) return player.getOffHandStack();
+    private static ItemStack getHeldLamp(ServerPlayer player) {
+        if (player.getMainHandItem().is(ErodedBlocks.WARDING_LANTERN.asItem())) return player.getMainHandItem();
+        if (player.getOffhandItem().is(ErodedBlocks.WARDING_LANTERN.asItem())) return player.getOffhandItem();
         return ItemStack.EMPTY;
     }
 }

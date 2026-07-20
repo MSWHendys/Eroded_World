@@ -2,11 +2,11 @@ package cz.mcsworld.eroded.client.audio;
 
 import cz.mcsworld.eroded.client.data.DarknessClientData;
 import cz.mcsworld.eroded.config.darkness.DarknessConfigs;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.sound.PositionedSoundInstance;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.random.Random;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.util.Mth;
+import net.minecraft.util.RandomSource;
 
 public final class CalmDownEffect {
 
@@ -31,14 +31,14 @@ public final class CalmDownEffect {
         totalFadeTicks = calm.fadeTicks;
         active = true;
 
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) return;
 
         mc.getSoundManager().play(
-                PositionedSoundInstance.master(
-                        SoundEvents.ENTITY_PLAYER_BREATH,
+                SimpleSoundInstance.forUI(
+                        SoundEvents.PLAYER_BREATH,
                         calm.volume,
-                        calm.pitchMin + Random.create().nextFloat() * calm.pitchRand
+                        calm.pitchMin + RandomSource.create().nextFloat() * calm.pitchRand
                 )
         );
     }
@@ -56,7 +56,7 @@ public final class CalmDownEffect {
 
         float t = fadeTicksLeft / (float) totalFadeTicks;
 
-        float factor = MathHelper.clamp(t * t, 0.0f, 1.0f);
+        float factor = Mth.clamp(t * t, 0.0f, 1.0f);
 
         return baseAlpha * factor;
     }

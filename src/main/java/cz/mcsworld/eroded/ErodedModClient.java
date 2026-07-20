@@ -25,13 +25,13 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import cz.mcsworld.eroded.gui.ErodedSpecialItemTooltip;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
-import net.minecraft.client.gui.screen.ingame.HandledScreens;
-import net.minecraft.client.render.entity.ZombieEntityRenderer;
-import net.minecraft.text.Text;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.client.gui.screens.MenuScreens;
+import net.minecraft.client.renderer.entity.SkeletonRenderer;
+import net.minecraft.client.renderer.entity.ZombieRenderer;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import cz.mcsworld.eroded.core.ErodedEntities;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
-import net.minecraft.client.render.entity.SkeletonEntityRenderer;
 
 
 public class ErodedModClient implements ClientModInitializer {
@@ -44,18 +44,18 @@ public class ErodedModClient implements ClientModInitializer {
         HudRenderCallback.EVENT.register(new EnergyHud());
         HudRenderCallback.EVENT.register(new DarknessDebugOverlay());
         EnergyScreenOverlay.register();
-        HandledScreens.register(
+        MenuScreens.register(
                 ErodedScreenHandlers.TERRITORY_MODULE,
                 TerritoryModuleScreen::new
         );
 
         EntityRendererRegistry.register(
                 ErodedEntities.ERODED_SPECIAL_SKELETON,
-                SkeletonEntityRenderer::new
+                SkeletonRenderer::new
         );
         EntityRendererRegistry.register(
                 ErodedEntities.ERODED_SPECIAL_ZOMBIE,
-                ZombieEntityRenderer::new
+                ZombieRenderer::new
         );
 
         ClientPlayNetworking.registerGlobalReceiver(
@@ -97,7 +97,7 @@ public class ErodedModClient implements ClientModInitializer {
                 (payload, context) -> ErodedCompassClientData.updateTarget(
                         payload.active(),
                         payload.active()
-                                ? BlockPos.fromLong(payload.deathPosLong())
+                                ? BlockPos.of(payload.deathPosLong())
                                 : null,
                         payload.remainingTicks()
                 )
@@ -114,9 +114,9 @@ public class ErodedModClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(
                 AnvilFeedbackPacket.ID,
                 (payload, context) -> context.client().execute(() -> EnergyScreenOverlay.showAnvilMessage(
-                        Text.translatable(
+                        Component.translatable(
                                 payload.key(),
-                                Text.translatable("eroded.crafting.quality." + payload.quality().toLowerCase())
+                                Component.translatable("eroded.crafting.quality." + payload.quality().toLowerCase())
                         ),
                         payload.quality()
                 ))
@@ -142,7 +142,7 @@ public class ErodedModClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(
                 CraftingRequirementPacket.ID,
                 (payload, context) -> context.client().execute(() -> EnergyScreenOverlay.showCustomMessage(
-                        Text.translatable(payload.key()),
+                        Component.translatable(payload.key()),
                         EnergyHudLogic.RED
                 ))
         );
@@ -179,7 +179,7 @@ public class ErodedModClient implements ClientModInitializer {
         );
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            if (client.player != null && client.world != null) {
+            if (client.player != null && client.level != null) {
                 cz.mcsworld.eroded.client.data.DarknessClientData.updateLightLevel(client);
             }
         });

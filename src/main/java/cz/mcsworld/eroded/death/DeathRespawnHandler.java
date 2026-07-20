@@ -3,8 +3,8 @@ package cz.mcsworld.eroded.death;
 import cz.mcsworld.eroded.skills.SkillData;
 import cz.mcsworld.eroded.skills.SkillManager;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
-import net.minecraft.entity.effect.StatusEffects;
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.effect.MobEffects;
 
 public final class DeathRespawnHandler {
 
@@ -18,8 +18,8 @@ public final class DeathRespawnHandler {
         ServerPlayerEvents.AFTER_RESPAWN.register(DeathRespawnHandler::onRespawn);
     }
 
-    private static void onRespawn(ServerPlayerEntity oldPlayer, ServerPlayerEntity newPlayer, boolean alive) {
-        newPlayer.removeStatusEffect(StatusEffects.SLOWNESS);
+    private static void onRespawn(ServerPlayer oldPlayer, ServerPlayer newPlayer, boolean alive) {
+        newPlayer.removeEffect(MobEffects.SLOWNESS);
 
         if (alive) {
             return;
@@ -29,7 +29,7 @@ public final class DeathRespawnHandler {
         RespawnProtectionManager.start(newPlayer);
     }
 
-    private static void applyDeathEnergyPenalty(ServerPlayerEntity player) {
+    private static void applyDeathEnergyPenalty(ServerPlayer player) {
         SkillData data = SkillManager.get(player);
 
         data.setEnergyAfterDeath(ENERGY_AFTER_DEATH_RATIO);

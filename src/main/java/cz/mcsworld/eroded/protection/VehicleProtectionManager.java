@@ -2,13 +2,13 @@ package cz.mcsworld.eroded.protection;
 
 import cz.mcsworld.eroded.config.territory.TerritoryConfig;
 import cz.mcsworld.eroded.world.spawn.ExplosionProtectionManager;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.entity.vehicle.VehicleEntity;
-import net.minecraft.inventory.Inventory;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.Container;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.vehicle.VehicleEntity;
 
 public final class VehicleProtectionManager {
 
@@ -35,24 +35,24 @@ public final class VehicleProtectionManager {
 
     public static boolean isStorageVehicle(Entity entity) {
         return entity instanceof VehicleEntity
-                && entity instanceof Inventory;
+                && entity instanceof Container;
     }
 
-    private static boolean isInClaim(ServerWorld world, BlockPos pos) {
+    private static boolean isInClaim(ServerLevel world, BlockPos pos) {
         return TerritoryProtectionManager.getAnchorClaim(world, pos) != null
                 || TerritoryProtectionManager.getActiveClaimAt(world, pos) != null;
     }
 
     public static boolean canUseVehicle(
-            ServerPlayerEntity player,
-            ServerWorld world,
+            ServerPlayer player,
+            ServerLevel world,
             Entity vehicle
     ) {
         if (!isProtectedVehicle(vehicle)) {
             return true;
         }
 
-        BlockPos pos = vehicle.getBlockPos();
+        BlockPos pos = vehicle.blockPosition();
 
         if (ExplosionProtectionManager.isProtected(world, pos)) {
             if (isStorageVehicle(vehicle)
@@ -91,15 +91,15 @@ public final class VehicleProtectionManager {
     }
 
     public static boolean canAttackVehicle(
-            ServerPlayerEntity player,
-            ServerWorld world,
+            ServerPlayer player,
+            ServerLevel world,
             Entity vehicle
     ) {
         if (!isProtectedVehicle(vehicle)) {
             return true;
         }
 
-        BlockPos pos = vehicle.getBlockPos();
+        BlockPos pos = vehicle.blockPosition();
 
         if (ExplosionProtectionManager.isProtected(world, pos)) {
             if (isStorageVehicle(vehicle)
@@ -136,16 +136,16 @@ public final class VehicleProtectionManager {
 
     public static boolean canDamageVehicle(
             Entity vehicle,
-            ServerWorld world,
+            ServerLevel world,
             DamageSource source
     ) {
         if (!isProtectedVehicle(vehicle)) {
             return true;
         }
 
-        BlockPos pos = vehicle.getBlockPos();
+        BlockPos pos = vehicle.blockPosition();
 
-        if (source.getAttacker() instanceof ServerPlayerEntity player) {
+        if (source.getEntity() instanceof ServerPlayer player) {
             return canAttackVehicle(player, world, vehicle);
         }
 

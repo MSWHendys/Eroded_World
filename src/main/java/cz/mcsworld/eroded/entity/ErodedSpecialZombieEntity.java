@@ -1,28 +1,28 @@
 package cz.mcsworld.eroded.entity;
 
-import net.minecraft.entity.EntityData;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.SpawnReason;
-import net.minecraft.entity.mob.ZombieEntity;
-import net.minecraft.world.LocalDifficulty;
-import net.minecraft.world.ServerWorldAccess;
-import net.minecraft.world.World;
+import net.minecraft.world.DifficultyInstance;
+import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.SpawnGroupData;
+import net.minecraft.world.entity.monster.Zombie;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.ServerLevelAccessor;
 import org.jetbrains.annotations.Nullable;
 
-public class ErodedSpecialZombieEntity extends ZombieEntity {
+public class ErodedSpecialZombieEntity extends Zombie {
 
-    public ErodedSpecialZombieEntity(EntityType<? extends ZombieEntity> type, World world) {
+    public ErodedSpecialZombieEntity(EntityType<? extends Zombie> type, Level world) {
         super(type, world);
     }
 
     @Override
-    public EntityData initialize(
-            ServerWorldAccess world,
-            LocalDifficulty difficulty,
-            SpawnReason spawnReason,
-            @Nullable EntityData entityData
+    public SpawnGroupData finalizeSpawn(
+            ServerLevelAccessor world,
+            DifficultyInstance difficulty,
+            EntitySpawnReason spawnReason,
+            @Nullable SpawnGroupData entityData
     ) {
-        EntityData data = super.initialize(world, difficulty, spawnReason, entityData);
+        SpawnGroupData data = super.finalizeSpawn(world, difficulty, spawnReason, entityData);
         ErodedMobSunBehaviour.applyRandomSunBehaviour(this, getRandom());
 
         return data;
@@ -32,7 +32,7 @@ public class ErodedSpecialZombieEntity extends ZombieEntity {
     public void tick() {
         super.tick();
 
-        if (getWorld().isClient()) {
+        if (level().isClientSide()) {
             return;
         }
 

@@ -1,8 +1,8 @@
 package cz.mcsworld.eroded.client.compass;
 
 import cz.mcsworld.eroded.client.data.ErodedCompassClientData;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
 
 public final class ErodedCompassDistanceResolver {
 
@@ -13,7 +13,7 @@ public final class ErodedCompassDistanceResolver {
         if (!ErodedCompassClientData.isActive())
             return -1;
 
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client.player == null)
             return -1;
 
@@ -22,7 +22,7 @@ public final class ErodedCompassDistanceResolver {
         if (deathPos == null)
             return -1;
 
-        return client.player.getPos()
-                .distanceTo(deathPos.toCenterPos());
+        return client.player.position()
+                .distanceTo(deathPos.getCenter());
     }
 }

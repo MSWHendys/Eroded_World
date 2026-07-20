@@ -4,14 +4,13 @@ import cz.mcsworld.eroded.core.ErodedItems;
 import cz.mcsworld.eroded.skills.SkillData;
 import cz.mcsworld.eroded.skills.SkillManager;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.LodestoneTrackerComponent;
-import net.minecraft.entity.effect.StatusEffectInstance;
-import net.minecraft.entity.effect.StatusEffects;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.GlobalPos;
-
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.GlobalPos;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.LodestoneTracker;
 import java.util.Optional;
 
 public final class TraumaEffectHandler {
@@ -29,9 +28,9 @@ public final class TraumaEffectHandler {
                     data.setEnergyAfterDeath(0.35f);
                     SkillManager.save(newPlayer);
 
-                    newPlayer.addStatusEffect(
-                            new StatusEffectInstance(
-                                    StatusEffects.SLOWNESS,
+                    newPlayer.addEffect(
+                            new MobEffectInstance(
+                                    MobEffects.SLOWNESS,
                                     20 * 60,
                                     0,
                                     true,
@@ -40,13 +39,13 @@ public final class TraumaEffectHandler {
                     );
 
                     ErodedDeathMemory mem =
-                            ErodedDeathStorage.get(newPlayer.getUuid());
+                            ErodedDeathStorage.get(newPlayer.getUUID());
 
                     if (mem == null) return;
 
-                    for (int i = 0; i < newPlayer.getInventory().size(); i++) {
-                        ItemStack s = newPlayer.getInventory().getStack(i);
-                        if (!s.isEmpty() && s.isOf(ErodedItems.DEATH_COMPASS)) {
+                    for (int i = 0; i < newPlayer.getInventory().getContainerSize(); i++) {
+                        ItemStack s = newPlayer.getInventory().getItem(i);
+                        if (!s.isEmpty() && s.is(ErodedItems.DEATH_COMPASS)) {
                             return;
                         }
                     }
@@ -56,11 +55,11 @@ public final class TraumaEffectHandler {
                     BlockPos pos = mem.getDeathPos();
 
                     compass.set(
-                            DataComponentTypes.LODESTONE_TRACKER,
-                            new LodestoneTrackerComponent(
+                            DataComponents.LODESTONE_TRACKER,
+                            new LodestoneTracker(
                                     Optional.of(
-                                            GlobalPos.create(
-                                                    newPlayer.getWorld().getRegistryKey(),
+                                            GlobalPos.of(
+                                                    newPlayer.level().dimension(),
                                                     pos
                                             )
                                     ),
@@ -68,7 +67,7 @@ public final class TraumaEffectHandler {
                             )
                     );
 
-                    newPlayer.getInventory().insertStack(compass);
+                    newPlayer.getInventory().add(compass);
                 }
         );
     }

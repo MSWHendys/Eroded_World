@@ -1,8 +1,7 @@
 package cz.mcsworld.eroded.crafting;
 
-import net.minecraft.item.ItemStack;
-
 import java.util.List;
+import net.minecraft.world.item.ItemStack;
 
 public final class InputQualityResolver {
 

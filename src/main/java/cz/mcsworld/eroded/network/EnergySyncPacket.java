@@ -1,26 +1,26 @@
 package cz.mcsworld.eroded.network;
 
-import net.minecraft.network.RegistryByteBuf;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.codec.PacketCodecs;
-import net.minecraft.network.packet.CustomPayload;
-import net.minecraft.util.Identifier;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 
-public record EnergySyncPacket(int energy, int maxEnergy, int immunitySeconds) implements CustomPayload {
+public record EnergySyncPacket(int energy, int maxEnergy, int immunitySeconds) implements CustomPacketPayload {
 
-    public static final Id<EnergySyncPacket> ID =
-            new Id<>(Identifier.of("eroded", "energy_sync"));
+    public static final Type<EnergySyncPacket> ID =
+            new Type<>(ResourceLocation.fromNamespaceAndPath("eroded", "energy_sync"));
 
-    public static final PacketCodec<RegistryByteBuf, EnergySyncPacket> CODEC =
-            PacketCodec.tuple(
-                    PacketCodecs.VAR_INT, EnergySyncPacket::energy,
-                    PacketCodecs.VAR_INT, EnergySyncPacket::maxEnergy,
-                    PacketCodecs.VAR_INT, EnergySyncPacket::immunitySeconds,
+    public static final StreamCodec<RegistryFriendlyByteBuf, EnergySyncPacket> CODEC =
+            StreamCodec.composite(
+                    ByteBufCodecs.VAR_INT, EnergySyncPacket::energy,
+                    ByteBufCodecs.VAR_INT, EnergySyncPacket::maxEnergy,
+                    ByteBufCodecs.VAR_INT, EnergySyncPacket::immunitySeconds,
                     EnergySyncPacket::new
             );
 
     @Override
-    public Id<? extends CustomPayload> getId() {
+    public Type<? extends CustomPacketPayload> type() {
         return ID;
     }
 }

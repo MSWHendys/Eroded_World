@@ -1,20 +1,20 @@
 package cz.mcsworld.eroded.network;
 
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.minecraft.network.RegistryByteBuf;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.packet.CustomPayload;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.util.Identifier;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
 
 public record SoundTuningSyncPacket(Float volumeMul, Float delayMul)
-        implements CustomPayload {
+        implements CustomPacketPayload {
 
-    public static final CustomPayload.Id<SoundTuningSyncPacket> ID =
-            new CustomPayload.Id<>(Identifier.of("eroded", "sound_tuning"));
+    public static final CustomPacketPayload.Type<SoundTuningSyncPacket> ID =
+            new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath("eroded", "sound_tuning"));
 
-    public static final PacketCodec<RegistryByteBuf, SoundTuningSyncPacket> CODEC =
-            PacketCodec.of(
+    public static final StreamCodec<RegistryFriendlyByteBuf, SoundTuningSyncPacket> CODEC =
+            StreamCodec.ofMember(
                     (packet, buf) -> {
                         buf.writeBoolean(packet.volumeMul() != null);
                         if (packet.volumeMul() != null) {
@@ -42,11 +42,11 @@ public record SoundTuningSyncPacket(Float volumeMul, Float delayMul)
             );
 
     @Override
-    public CustomPayload.Id<? extends CustomPayload> getId() {
+    public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
         return ID;
     }
 
-    public static void sendTo(ServerPlayerEntity player, Float volume, Float delay) {
+    public static void sendTo(ServerPlayer player, Float volume, Float delay) {
         ServerPlayNetworking.send(player,
                 new SoundTuningSyncPacket(volume, delay));
     }

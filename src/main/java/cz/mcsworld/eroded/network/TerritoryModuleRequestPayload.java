@@ -1,33 +1,33 @@
 package cz.mcsworld.eroded.network;
 
 import cz.mcsworld.eroded.ErodedMod;
-import net.minecraft.network.RegistryByteBuf;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.packet.CustomPayload;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 
-public record TerritoryModuleRequestPayload(BlockPos anchorPos) implements CustomPayload {
+public record TerritoryModuleRequestPayload(BlockPos anchorPos) implements CustomPacketPayload {
 
-    public static final Id<TerritoryModuleRequestPayload> ID =
-            new Id<>(Identifier.of(ErodedMod.MOD_ID, "territory_module_request"));
+    public static final Type<TerritoryModuleRequestPayload> ID =
+            new Type<>(ResourceLocation.fromNamespaceAndPath(ErodedMod.MOD_ID, "territory_module_request"));
 
-    public static final PacketCodec<RegistryByteBuf, TerritoryModuleRequestPayload> CODEC =
-            PacketCodec.of(
+    public static final StreamCodec<RegistryFriendlyByteBuf, TerritoryModuleRequestPayload> CODEC =
+            StreamCodec.ofMember(
                     TerritoryModuleRequestPayload::write,
                     TerritoryModuleRequestPayload::read
             );
 
-    private void write(RegistryByteBuf buf) {
-        BlockPos.PACKET_CODEC.encode(buf, anchorPos);
+    private void write(RegistryFriendlyByteBuf buf) {
+        BlockPos.STREAM_CODEC.encode(buf, anchorPos);
     }
 
-    private static TerritoryModuleRequestPayload read(RegistryByteBuf buf) {
-        return new TerritoryModuleRequestPayload(BlockPos.PACKET_CODEC.decode(buf));
+    private static TerritoryModuleRequestPayload read(RegistryFriendlyByteBuf buf) {
+        return new TerritoryModuleRequestPayload(BlockPos.STREAM_CODEC.decode(buf));
     }
 
     @Override
-    public Id<? extends CustomPayload> getId() {
+    public Type<? extends CustomPacketPayload> type() {
         return ID;
     }
 }

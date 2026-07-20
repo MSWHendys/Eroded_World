@@ -3,51 +3,50 @@ package cz.mcsworld.eroded.death.gui;
 import cz.mcsworld.eroded.death.DeathChestState;
 import cz.mcsworld.eroded.death.DeathHologramHandler;
 import cz.mcsworld.eroded.death.ErodedCompassHandler;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.inventory.SimpleInventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.screen.ScreenHandler;
-import net.minecraft.screen.ScreenHandlerType;
-import net.minecraft.screen.slot.Slot;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-
 import java.util.List;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
 
-public class DeathInventoryScreenHandler extends ScreenHandler {
+public class DeathInventoryScreenHandler extends AbstractContainerMenu {
 
     private static final int SIZE = DeathChestState.SIZE;
 
-    private final ServerWorld world;
+    private final ServerLevel world;
     private final BlockPos pos;
-    private final SimpleInventory inventory;
+    private final SimpleContainer inventory;
     private final DeathChestState state;
 
     public DeathInventoryScreenHandler(
             int syncId,
-            PlayerInventory playerInv,
-            ServerWorld world,
+            Inventory playerInv,
+            ServerLevel world,
             BlockPos pos
     ) {
-        super(ScreenHandlerType.GENERIC_9X6, syncId);
+        super(MenuType.GENERIC_9x6, syncId);
 
         this.world = world;
         this.pos = pos;
         this.state = DeathChestState.get(world);
-        this.inventory = new SimpleInventory(SIZE);
+        this.inventory = new SimpleContainer(SIZE);
 
         DeathChestState.Entry entry = state.get(pos);
         if (entry != null) {
             List<ItemStack> items =
                     DeathChestState.toInventory(entry.items());
             for (int i = 0; i < SIZE; i++) {
-                inventory.setStack(i, items.get(i));
+                inventory.setItem(i, items.get(i));
             }
         }
 
-        inventory.onOpen(playerInv.player);
+        inventory.startOpen(playerInv.player);
 
         for (int i = 0; i < SIZE; i++) {
             int x = i % 9;
@@ -72,17 +71,17 @@ public class DeathInventoryScreenHandler extends ScreenHandler {
     }
 
     @Override
-    public void onClosed(PlayerEntity player) {
-        super.onClosed(player);
+    public void removed(Player player) {
+        super.removed(player);
 
-        if (world.isClient) return;
+        if (world.isClientSide) return;
 
         DeathChestState.Entry entry = state.get(pos);
 
-        for (ItemStack stack : inventory.getHeldStacks()) {
+        for (ItemStack stack : inventory.getItems()) {
             if (!stack.isEmpty()) {
-                world.spawnEntity(
-                        new net.minecraft.entity.ItemEntity(
+                world.addFreshEntity(
+                        new net.minecraft.world.entity.item.ItemEntity(
                                 world,
                                 pos.getX() + 0.5,
                                 pos.getY() + 1.0,
@@ -93,12 +92,12 @@ public class DeathInventoryScreenHandler extends ScreenHandler {
             }
         }
 
-        inventory.clear();
+        inventory.clearContent();
 
         state.remove(pos);
 
         boolean hadBlock = !world.getBlockState(pos).isAir();
-        world.breakBlock(pos, false);
+        world.destroyBlock(pos, false);
 
 
         if (entry != null) {
@@ -106,19 +105,19 @@ public class DeathInventoryScreenHandler extends ScreenHandler {
 
         }
 
-        if (player instanceof ServerPlayerEntity sp) {
+        if (player instanceof ServerPlayer sp) {
             ErodedCompassHandler.forceRemove(sp);
 
         }
     }
 
     @Override
-    public boolean canUse(PlayerEntity player) {
+    public boolean stillValid(Player player) {
         return true;
     }
 
     @Override
-    public ItemStack quickMove(PlayerEntity player, int slot) {
+    public ItemStack quickMoveStack(Player player, int slot) {
         return ItemStack.EMPTY;
     }
 }

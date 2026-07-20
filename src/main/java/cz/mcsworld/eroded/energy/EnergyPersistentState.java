@@ -1,15 +1,14 @@
 package cz.mcsworld.eroded.energy;
 
 import com.mojang.serialization.Codec;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.world.PersistentState;
-import net.minecraft.world.PersistentStateType;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.saveddata.SavedData;
+import net.minecraft.world.level.saveddata.SavedDataType;
 
-public final class EnergyPersistentState extends PersistentState {
+public final class EnergyPersistentState extends SavedData {
 
     private static final String ID = "eroded_energy";
 
@@ -28,16 +27,16 @@ public final class EnergyPersistentState extends PersistentState {
                     state -> state.energy
             );
 
-    public static final PersistentStateType<EnergyPersistentState> TYPE =
-            new PersistentStateType<>(
+    public static final SavedDataType<EnergyPersistentState> TYPE =
+            new SavedDataType<>(
                     ID,
                     EnergyPersistentState::new,
                     CODEC,
                     null
             );
 
-    public static EnergyPersistentState get(ServerWorld world) {
-        return world.getPersistentStateManager().getOrCreate(TYPE);
+    public static EnergyPersistentState get(ServerLevel world) {
+        return world.getDataStorage().computeIfAbsent(TYPE);
     }
 
     public int getEnergy(UUID uuid, int fallback) {
@@ -46,6 +45,6 @@ public final class EnergyPersistentState extends PersistentState {
 
     public void setEnergy(UUID uuid, int value) {
         energy.put(uuid, value);
-        markDirty();
+        setDirty();
     }
 }

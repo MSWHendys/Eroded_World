@@ -1,15 +1,15 @@
 package cz.mcsworld.eroded.world.darkness;
 
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 
 public final class DarknessFlickerEffects {
 
     private DarknessFlickerEffects() {}
 
-    public static void play(ServerWorld world, BlockPos pos) {
+    public static void play(ServerLevel world, BlockPos pos) {
 
         double x = pos.getX() + 0.5;
         double y = pos.getY() + 0.5;
@@ -18,8 +18,8 @@ public final class DarknessFlickerEffects {
         world.playSound(
                 null,
                 x, y, z,
-                SoundEvents.BLOCK_REDSTONE_TORCH_BURNOUT,
-                SoundCategory.HOSTILE,
+                SoundEvents.REDSTONE_TORCH_BURNOUT,
+                SoundSource.HOSTILE,
                 0.4f,
                 0.9f + world.getRandom().nextFloat() * 0.2f
         );

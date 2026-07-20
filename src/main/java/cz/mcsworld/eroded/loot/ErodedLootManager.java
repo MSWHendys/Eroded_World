@@ -1,14 +1,14 @@
 package cz.mcsworld.eroded.loot;
 
 import cz.mcsworld.eroded.config.loot.LootConfig;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.inventory.Inventory;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.Container;
+import net.minecraft.world.entity.player.Player;
 
 public class ErodedLootManager {
 
-    public static void handleOpen(PlayerEntity player, ServerWorld world, BlockPos pos, Inventory inv) {
+    public static void handleOpen(Player player, ServerLevel world, BlockPos pos, Container inv) {
         LootConfig config = LootConfig.get();
         if (!config.enabled) return;
 
@@ -16,7 +16,7 @@ public class ErodedLootManager {
         long key = pos.asLong();
 
         if (state.isPlayerPlaced(key)) return;
-        if (state.hasOpened(key, player.getUuid())) return;
+        if (state.hasOpened(key, player.getUUID())) return;
 
         if (state.isAdminPlaced(key)) {
             ErodedLootGenerator.generate(inv);
@@ -34,6 +34,6 @@ public class ErodedLootManager {
             }
         }
 
-        state.markOpened(key, player.getUuid());
+        state.markOpened(key, player.getUUID());
     }
 }

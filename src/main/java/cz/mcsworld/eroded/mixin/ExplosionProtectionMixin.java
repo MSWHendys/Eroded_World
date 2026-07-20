@@ -2,10 +2,6 @@ package cz.mcsworld.eroded.mixin;
 
 import cz.mcsworld.eroded.protection.TerritoryProtectionManager;
 import cz.mcsworld.eroded.world.spawn.ExplosionProtectionManager;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.explosion.ExplosionImpl;
-
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -15,21 +11,24 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.List;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.ServerExplosion;
 
-@Mixin(ExplosionImpl.class)
+@Mixin(ServerExplosion.class)
 public abstract class ExplosionProtectionMixin {
 
     @Shadow
     @Final
-    private ServerWorld world;
+    private ServerLevel level;
 
-    @Inject(method = "destroyBlocks", at = @At("HEAD"))
+    @Inject(method = "interactWithBlocks", at = @At("HEAD"))
     private void eroded$protectBlocks(List<BlockPos> blocks, CallbackInfo ci) {
         blocks.removeIf(pos ->
-                TerritoryProtectionManager.isExplosionProtected(world, pos)
+                TerritoryProtectionManager.isExplosionProtected(level, pos)
                         || (
                         ExplosionProtectionManager.isExplosionProtectionEnabled()
-                                && ExplosionProtectionManager.isProtected(world, pos)
+                                && ExplosionProtectionManager.isProtected(level, pos)
                 )
         );
     }
@@ -37,10 +36,10 @@ public abstract class ExplosionProtectionMixin {
     @Inject(method = "createFire", at = @At("HEAD"))
     private void eroded$protectFire(List<BlockPos> blocks, CallbackInfo ci) {
         blocks.removeIf(pos ->
-                TerritoryProtectionManager.isExplosionProtected(world, pos)
+                TerritoryProtectionManager.isExplosionProtected(level, pos)
                         || (
                         ExplosionProtectionManager.isExplosionProtectionEnabled()
-                                && ExplosionProtectionManager.isProtected(world, pos)
+                                && ExplosionProtectionManager.isProtected(level, pos)
                 )
         );
     }

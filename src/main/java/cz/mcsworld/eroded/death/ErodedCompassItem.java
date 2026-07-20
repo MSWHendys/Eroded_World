@@ -3,16 +3,15 @@ package cz.mcsworld.eroded.death;
 import cz.mcsworld.eroded.config.death.DeathConfig;
 import cz.mcsworld.eroded.network.CompassDarknessBreakPacket;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.Item;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Formatting;
-import net.minecraft.util.Hand;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
-
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.level.Level;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -21,45 +20,45 @@ public class ErodedCompassItem extends Item {
 
     private static final Map<UUID, Long> DARKNESS_BREAK_COOLDOWNS = new ConcurrentHashMap<>();
 
-    public ErodedCompassItem(Settings settings) {
+    public ErodedCompassItem(Properties settings) {
         super(settings);
     }
 
     @Override
-    public ActionResult use(World world, PlayerEntity player, Hand hand) {
-        if (world.isClient) {
-            return ActionResult.SUCCESS;
+    public InteractionResult use(Level world, Player player, InteractionHand hand) {
+        if (world.isClientSide) {
+            return InteractionResult.SUCCESS;
         }
 
-        if (!(player instanceof ServerPlayerEntity sp)) {
-            return ActionResult.PASS;
+        if (!(player instanceof ServerPlayer sp)) {
+            return InteractionResult.PASS;
         }
 
-        ErodedDeathMemory mem = ErodedDeathStorage.get(sp.getUuid());
+        ErodedDeathMemory mem = ErodedDeathStorage.get(sp.getUUID());
 
-        boolean sneaking = player.isSneaking() || player.isInSneakingPose();
+        boolean sneaking = player.isShiftKeyDown() || player.isCrouching();
 
         if (sneaking) {
             return tryBreakDarkness(sp, mem);
         }
 
-        if (mem == null || mem.isExpired(sp.getServer().getTicks())) {
-            sp.sendMessage(
-                    Text.translatable("eroded.compass.empty"),
+        if (mem == null || mem.isExpired(sp.getServer().getTickCount())) {
+            sp.displayClientMessage(
+                    Component.translatable("eroded.compass.empty"),
                     true
             );
-            return ActionResult.CONSUME;
+            return InteractionResult.CONSUME;
         }
 
-        long ticks = mem.getRemainingTicks(sp.getServer().getTicks());
+        long ticks = mem.getRemainingTicks(sp.getServer().getTickCount());
         long seconds = ticks / 20;
         long min = seconds / 60;
         long sec = seconds % 60;
 
         String timeString = String.format("%02d:%02d", min, sec);
 
-        sp.sendMessage(
-                Text.translatable(
+        sp.displayClientMessage(
+                Component.translatable(
                         "eroded.compass.whisper",
                         timeString
                 ),
@@ -68,60 +67,60 @@ public class ErodedCompassItem extends Item {
 
         BlockPos pos = mem.getDeathPos();
 
-        sp.sendMessage(
-                Text.translatable(
+        sp.displayClientMessage(
+                Component.translatable(
                         "eroded.compass.whisper.coords",
                         pos.getX(),
                         pos.getY(),
                         pos.getZ()
-                ).formatted(Formatting.DARK_GRAY),
+                ).withStyle(ChatFormatting.DARK_GRAY),
                 false
         );
 
-        return ActionResult.CONSUME;
+        return InteractionResult.CONSUME;
     }
 
-    private ActionResult tryBreakDarkness(
-            ServerPlayerEntity player,
+    private InteractionResult tryBreakDarkness(
+            ServerPlayer player,
             ErodedDeathMemory memory
     ) {
         DeathConfig.Compass.DarknessBreak cfg =
                 DeathConfig.get().compass.darknessBreak;
 
         if (!cfg.enabled) {
-            player.sendMessage(
-                    Text.translatable("eroded.compass.darkness_break.disabled")
-                            .formatted(Formatting.GRAY),
+            player.displayClientMessage(
+                    Component.translatable("eroded.compass.darkness_break.disabled")
+                            .withStyle(ChatFormatting.GRAY),
                     true
             );
-            return ActionResult.CONSUME;
+            return InteractionResult.CONSUME;
         }
 
         if (cfg.requireValidTarget) {
-            if (memory == null || memory.isExpired(player.getServer().getTicks())) {
-                player.sendMessage(
-                        Text.translatable("eroded.compass.empty"),
+            if (memory == null || memory.isExpired(player.getServer().getTickCount())) {
+                player.displayClientMessage(
+                        Component.translatable("eroded.compass.empty"),
                         true
                 );
-                return ActionResult.CONSUME;
+                return InteractionResult.CONSUME;
             }
         }
 
-        long now = player.getServer().getTicks();
-        long readyAt = DARKNESS_BREAK_COOLDOWNS.getOrDefault(player.getUuid(), 0L);
+        long now = player.getServer().getTickCount();
+        long readyAt = DARKNESS_BREAK_COOLDOWNS.getOrDefault(player.getUUID(), 0L);
 
         if (now < readyAt) {
             long remainingSeconds = Math.max(1L, (readyAt - now + 19L) / 20L);
 
-            player.sendMessage(
-                    Text.translatable(
+            player.displayClientMessage(
+                    Component.translatable(
                             "eroded.compass.darkness_break.cooldown",
                             remainingSeconds
-                    ).formatted(Formatting.GRAY),
+                    ).withStyle(ChatFormatting.GRAY),
                     true
             );
 
-            return ActionResult.CONSUME;
+            return InteractionResult.CONSUME;
         }
 
         int durationTicks = Math.max(1, cfg.durationTicks);
@@ -129,7 +128,7 @@ public class ErodedCompassItem extends Item {
         float maxDarkness = Math.max(0.0F, Math.min(1.0F, cfg.maxDarkness));
 
         DARKNESS_BREAK_COOLDOWNS.put(
-                player.getUuid(),
+                player.getUUID(),
                 now + cooldownTicks
         );
 
@@ -141,12 +140,12 @@ public class ErodedCompassItem extends Item {
                 )
         );
 
-        player.sendMessage(
-                Text.translatable("eroded.compass.darkness_break.use")
-                        .formatted(Formatting.AQUA),
+        player.displayClientMessage(
+                Component.translatable("eroded.compass.darkness_break.use")
+                        .withStyle(ChatFormatting.AQUA),
                 true
         );
 
-        return ActionResult.CONSUME;
+        return InteractionResult.CONSUME;
     }
 }

@@ -1,8 +1,7 @@
 package cz.mcsworld.eroded.protection;
 
-import net.minecraft.nbt.NbtCompound;
-
 import java.util.UUID;
+import net.minecraft.nbt.CompoundTag;
 
 public final class TrustedAccess {
 
@@ -71,8 +70,8 @@ public final class TrustedAccess {
         );
     }
 
-    public NbtCompound toNbt() {
-        NbtCompound nbt = new NbtCompound();
+    public CompoundTag toNbt() {
+        CompoundTag nbt = new CompoundTag();
 
         nbt.putString("uuid", uuid.toString());
         nbt.putString("name", name);
@@ -82,22 +81,22 @@ public final class TrustedAccess {
         return nbt;
     }
 
-    public static TrustedAccess fromNbt(NbtCompound nbt) {
+    public static TrustedAccess fromNbt(CompoundTag nbt) {
         UUID uuid;
 
         try {
-            uuid = UUID.fromString(nbt.getString("uuid", ""));
+            uuid = UUID.fromString(nbt.getStringOr("uuid", ""));
         } catch (IllegalArgumentException ex) {
             uuid = new UUID(0L, 0L);
         }
 
-        String name = nbt.getString("name", "Unknown");
+        String name = nbt.getStringOr("name", "Unknown");
 
         int flags = nbt.contains("flags")
-                ? nbt.getInt("flags", TerritoryPermission.allMask())
+                ? nbt.getIntOr("flags", TerritoryPermission.allMask())
                 : TerritoryPermission.allMask();
 
-        boolean connectedScopeMode = nbt.getBoolean("connectedScopeMode", false);
+        boolean connectedScopeMode = nbt.getBooleanOr("connectedScopeMode", false);
 
         return new TrustedAccess(uuid, name, flags, connectedScopeMode);
     }

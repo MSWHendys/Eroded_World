@@ -1,27 +1,27 @@
 package cz.mcsworld.eroded.network;
 
-import net.minecraft.network.RegistryByteBuf;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.codec.PacketCodecs;
-import net.minecraft.network.packet.CustomPayload;
-import net.minecraft.util.Identifier;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 
-public record SkillSyncPacket(float woodworking, float smelting) implements CustomPayload {
+public record SkillSyncPacket(float woodworking, float smelting) implements CustomPacketPayload {
 
-    public static final Id<SkillSyncPacket> ID =
-            new Id<>(Identifier.of("eroded", "skill_sync"));
+    public static final Type<SkillSyncPacket> ID =
+            new Type<>(ResourceLocation.fromNamespaceAndPath("eroded", "skill_sync"));
 
-    public static final PacketCodec<RegistryByteBuf, SkillSyncPacket> CODEC =
-            PacketCodec.tuple(
-                    PacketCodecs.FLOAT,
+    public static final StreamCodec<RegistryFriendlyByteBuf, SkillSyncPacket> CODEC =
+            StreamCodec.composite(
+                    ByteBufCodecs.FLOAT,
                     SkillSyncPacket::woodworking,
-                    PacketCodecs.FLOAT,
+                    ByteBufCodecs.FLOAT,
                     SkillSyncPacket::smelting,
                     SkillSyncPacket::new
             );
 
     @Override
-    public Id<? extends CustomPayload> getId() {
+    public Type<? extends CustomPacketPayload> type() {
         return ID;
     }
 }

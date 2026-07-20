@@ -7,20 +7,19 @@ import cz.mcsworld.eroded.death.block.ErodedBlocks;
 import cz.mcsworld.eroded.screen.TerritoryModuleScreenData;
 import cz.mcsworld.eroded.screen.TerritoryModuleScreenHandler;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
-import net.minecraft.block.BlockState;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.particle.ParticleTypes;
-import net.minecraft.screen.ScreenHandler;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.text.Text;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.Heightmap;
-
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.levelgen.Heightmap;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -67,11 +66,11 @@ public final class TerritoryProtectionManager {
         return config().maxClaimsPerPlayer;
     }
 
-    public static boolean canBypass(ServerPlayerEntity player) {
+    public static boolean canBypass(ServerPlayer player) {
         return config().claimCreativeBypass && player.isCreative();
     }
 
-    public static void createPendingClaim(ServerWorld world, BlockPos anchorPos, ServerPlayerEntity owner) {
+    public static void createPendingClaim(ServerLevel world, BlockPos anchorPos, ServerPlayer owner) {
         if (!isPlayerClaimProtectionEnabled()) {
             return;
         }
@@ -80,7 +79,7 @@ public final class TerritoryProtectionManager {
 
         TerritoryClaim claim = new TerritoryClaim(
                 anchorPos,
-                owner.getUuid(),
+                owner.getUUID(),
                 owner.getName().getString(),
                 getConfiguredRadius(),
                 false
@@ -89,7 +88,7 @@ public final class TerritoryProtectionManager {
         state.put(claim);
     }
 
-    public static void activateClaim(ServerWorld world, BlockPos anchorPos) {
+    public static void activateClaim(ServerLevel world, BlockPos anchorPos) {
         if (!isPlayerClaimProtectionEnabled()) {
             return;
         }
@@ -102,18 +101,18 @@ public final class TerritoryProtectionManager {
         }
 
         claim.setActive(true);
-        state.markDirty();
+        state.setDirty();
     }
 
-    public static TerritoryClaim removeClaim(ServerWorld world, BlockPos anchorPos) {
+    public static TerritoryClaim removeClaim(ServerLevel world, BlockPos anchorPos) {
         return TerritoryClaimState.get(world).remove(anchorPos);
     }
 
-    public static TerritoryClaim getAnchorClaim(ServerWorld world, BlockPos pos) {
+    public static TerritoryClaim getAnchorClaim(ServerLevel world, BlockPos pos) {
         return TerritoryClaimState.get(world).getByAnchor(pos);
     }
 
-    public static TerritoryClaim getActiveClaimAt(ServerWorld world, BlockPos pos) {
+    public static TerritoryClaim getActiveClaimAt(ServerLevel world, BlockPos pos) {
         TerritoryClaimState state = TerritoryClaimState.get(world);
 
         while (true) {
@@ -123,7 +122,7 @@ public final class TerritoryProtectionManager {
                 return null;
             }
 
-            if (world.getBlockState(claim.anchorPos()).isOf(ErodedBlocks.TERRITORY_ANCHOR)) {
+            if (world.getBlockState(claim.anchorPos()).is(ErodedBlocks.TERRITORY_ANCHOR)) {
                 return claim;
             }
 
@@ -131,11 +130,11 @@ public final class TerritoryProtectionManager {
         }
     }
 
-    public static int getClaimCount(ServerWorld world, ServerPlayerEntity player) {
-        return TerritoryClaimState.get(world).countByOwner(player.getUuid());
+    public static int getClaimCount(ServerLevel world, ServerPlayer player) {
+        return TerritoryClaimState.get(world).countByOwner(player.getUUID());
     }
 
-    public static boolean canCreateMoreClaims(ServerWorld world, ServerPlayerEntity player) {
+    public static boolean canCreateMoreClaims(ServerLevel world, ServerPlayer player) {
         if (canBypass(player)) {
             return true;
         }
@@ -149,7 +148,7 @@ public final class TerritoryProtectionManager {
         return getClaimCount(world, player) < maxClaims;
     }
 
-    public static TerritoryClaim getOverlappingClaim(ServerWorld world, BlockPos anchorPos, int radius) {
+    public static TerritoryClaim getOverlappingClaim(ServerLevel world, BlockPos anchorPos, int radius) {
         if (!config().preventPlayerClaimOverlap) {
             return null;
         }
@@ -157,7 +156,7 @@ public final class TerritoryProtectionManager {
         return TerritoryClaimState.get(world).findOverlappingClaim(anchorPos, radius);
     }
 
-    public static boolean validateNewClaim(ServerWorld world, BlockPos anchorPos, ServerPlayerEntity player) {
+    public static boolean validateNewClaim(ServerLevel world, BlockPos anchorPos, ServerPlayer player) {
         if (!isPlayerClaimProtectionEnabled()) {
             return true;
         }
@@ -185,7 +184,7 @@ public final class TerritoryProtectionManager {
         return true;
     }
 
-    public static boolean canBreakBlock(ServerPlayerEntity player, ServerWorld world, BlockPos pos) {
+    public static boolean canBreakBlock(ServerPlayer player, ServerLevel world, BlockPos pos) {
         if (!isPlayerClaimProtectionEnabled() || !config().protectClaimBlockBreak) {
             return true;
         }
@@ -205,7 +204,7 @@ public final class TerritoryProtectionManager {
         return claim == null || hasClaimPermission(player, claim, TerritoryPermission.BREAK);
     }
 
-    public static boolean canPlaceBlock(ServerPlayerEntity player, ServerWorld world, BlockPos pos) {
+    public static boolean canPlaceBlock(ServerPlayer player, ServerLevel world, BlockPos pos) {
         if (!isPlayerClaimProtectionEnabled() || !config().protectClaimBlockPlace) {
             return true;
         }
@@ -219,7 +218,7 @@ public final class TerritoryProtectionManager {
         return claim == null || hasClaimPermission(player, claim, TerritoryPermission.BUILD);
     }
 
-    public static boolean canOpenContainer(ServerPlayerEntity player, ServerWorld world, BlockPos pos) {
+    public static boolean canOpenContainer(ServerPlayer player, ServerLevel world, BlockPos pos) {
         if (!isPlayerClaimProtectionEnabled() || !config().protectClaimContainers) {
             return true;
         }
@@ -233,7 +232,7 @@ public final class TerritoryProtectionManager {
         return claim == null || hasClaimPermission(player, claim, TerritoryPermission.CONTAINERS);
     }
 
-    public static boolean canUseFire(ServerPlayerEntity player, ServerWorld world, BlockPos pos) {
+    public static boolean canUseFire(ServerPlayer player, ServerLevel world, BlockPos pos) {
         if (!isPlayerClaimProtectionEnabled() || !config().protectClaimFire) {
             return true;
         }
@@ -247,7 +246,7 @@ public final class TerritoryProtectionManager {
         return claim == null || hasClaimPermission(player, claim, TerritoryPermission.FIRE);
     }
 
-    public static boolean canUseRedstone(ServerPlayerEntity player, ServerWorld world, BlockPos pos) {
+    public static boolean canUseRedstone(ServerPlayer player, ServerLevel world, BlockPos pos) {
         if (!isPlayerClaimProtectionEnabled()) {
             return true;
         }
@@ -261,7 +260,7 @@ public final class TerritoryProtectionManager {
         return claim == null || hasClaimPermission(player, claim, TerritoryPermission.REDSTONE);
     }
 
-    public static boolean canModifyEntity(ServerPlayerEntity player, ServerWorld world, BlockPos pos) {
+    public static boolean canModifyEntity(ServerPlayer player, ServerLevel world, BlockPos pos) {
         if (!isPlayerClaimProtectionEnabled()) {
             return true;
         }
@@ -275,7 +274,7 @@ public final class TerritoryProtectionManager {
         return claim == null || hasClaimPermission(player, claim, TerritoryPermission.ENTITIES);
     }
 
-    public static boolean isExplosionProtected(ServerWorld world, BlockPos pos) {
+    public static boolean isExplosionProtected(ServerLevel world, BlockPos pos) {
         if (!isPlayerClaimProtectionEnabled() || !config().protectClaimExplosions) {
             return false;
         }
@@ -292,7 +291,7 @@ public final class TerritoryProtectionManager {
     }
 
     private static boolean hasClaimPermission(
-            ServerPlayerEntity player,
+            ServerPlayer player,
             TerritoryClaim claim,
             TerritoryPermission permission
     ) {
@@ -303,23 +302,23 @@ public final class TerritoryProtectionManager {
         return claim.hasPermission(player, permission);
     }
 
-    public static void giveModuleBack(PlayerEntity player) {
+    public static void giveModuleBack(Player player) {
         ItemStack module = new ItemStack(ErodedItems.TERRITORY_MODULE);
 
-        if (!player.getInventory().insertStack(module)) {
-            player.dropItem(module, false);
+        if (!player.getInventory().add(module)) {
+            player.drop(module, false);
         }
 
-        if (player instanceof ServerPlayerEntity serverPlayer) {
+        if (player instanceof ServerPlayer serverPlayer) {
             syncInventory(serverPlayer);
         }
     }
 
     public static void handleAnchorBroken(
-            ServerWorld world,
+            ServerLevel world,
             BlockPos pos,
             BlockState state,
-            ServerPlayerEntity player
+            ServerPlayer player
     ) {
         TerritoryClaim removed = removeClaim(world, pos);
 
@@ -327,42 +326,42 @@ public final class TerritoryProtectionManager {
             return;
         }
 
-        boolean hadModule = state.contains(TerritoryAnchorBlock.HAS_MODULE)
-                && state.get(TerritoryAnchorBlock.HAS_MODULE);
+        boolean hadModule = state.hasProperty(TerritoryAnchorBlock.HAS_MODULE)
+                && state.getValue(TerritoryAnchorBlock.HAS_MODULE);
 
         if (hadModule && removed.isOwner(player) && !player.isCreative()) {
             giveModuleBack(player);
         }
 
-        player.sendMessage(
-                Text.translatable("eroded.territory.anchor.removed"),
+        player.displayClientMessage(
+                Component.translatable("eroded.territory.anchor.removed"),
                 true
         );
     }
 
-    public static void sendProtectedMessage(ServerPlayerEntity player) {
+    public static void sendProtectedMessage(ServerPlayer player) {
         playActionDeniedSound(player);
 
-        player.sendMessage(
-                Text.translatable("eroded.territory.protected"),
+        player.displayClientMessage(
+                Component.translatable("eroded.territory.protected"),
                 true
         );
     }
 
-    public static void sendAnchorOwnerOnlyMessage(ServerPlayerEntity player) {
+    public static void sendAnchorOwnerOnlyMessage(ServerPlayer player) {
         playActionDeniedSound(player);
 
-        player.sendMessage(
-                Text.translatable("eroded.territory.anchor.owner_only"),
+        player.displayClientMessage(
+                Component.translatable("eroded.territory.anchor.owner_only"),
                 true
         );
     }
 
-    public static void sendMaxClaimsMessage(ServerPlayerEntity player, int current, int max) {
+    public static void sendMaxClaimsMessage(ServerPlayer player, int current, int max) {
         playActionDeniedSound(player);
 
-        player.sendMessage(
-                Text.translatable(
+        player.displayClientMessage(
+                Component.translatable(
                         "eroded.territory.anchor.max_claims",
                         current,
                         max
@@ -371,19 +370,19 @@ public final class TerritoryProtectionManager {
         );
     }
 
-    public static void sendOverlapMessage(ServerPlayerEntity player, TerritoryClaim overlappingClaim) {
+    public static void sendOverlapMessage(ServerPlayer player, TerritoryClaim overlappingClaim) {
         playActionDeniedSound(player);
 
         if (overlappingClaim.isOwner(player)) {
-            player.sendMessage(
-                    Text.translatable("eroded.territory.anchor.overlap_own"),
+            player.displayClientMessage(
+                    Component.translatable("eroded.territory.anchor.overlap_own"),
                     true
             );
             return;
         }
 
-        player.sendMessage(
-                Text.translatable(
+        player.displayClientMessage(
+                Component.translatable(
                         "eroded.territory.anchor.overlap_other",
                         overlappingClaim.ownerName()
                 ),
@@ -391,7 +390,7 @@ public final class TerritoryProtectionManager {
         );
     }
 
-    public static boolean canManageClaim(ServerPlayerEntity player, TerritoryClaim claim) {
+    public static boolean canManageClaim(ServerPlayer player, TerritoryClaim claim) {
         if (claim == null) {
             return false;
         }
@@ -400,23 +399,23 @@ public final class TerritoryProtectionManager {
     }
 
     public static void openTerritoryModule(
-            ServerWorld world,
+            ServerLevel world,
             BlockPos anchorPos,
-            ServerPlayerEntity player
+            ServerPlayer player
     ) {
         TerritoryClaim claim = getAnchorClaim(world, anchorPos);
 
         if (claim == null) {
-            player.sendMessage(
-                    Text.translatable("eroded.territory.trust.no_claim"),
+            player.displayClientMessage(
+                    Component.translatable("eroded.territory.trust.no_claim"),
                     true
             );
             return;
         }
 
         if (!canManageClaim(player, claim)) {
-            player.sendMessage(
-                    Text.translatable("eroded.territory.trust.no_permission"),
+            player.displayClientMessage(
+                    Component.translatable("eroded.territory.trust.no_permission"),
                     true
             );
             return;
@@ -426,22 +425,22 @@ public final class TerritoryProtectionManager {
 
         playTerritoryModuleOpenSound(player);
 
-        player.openHandledScreen(new ExtendedScreenHandlerFactory<TerritoryModuleScreenData>() {
+        player.openMenu(new ExtendedScreenHandlerFactory<TerritoryModuleScreenData>() {
             @Override
-            public TerritoryModuleScreenData getScreenOpeningData(ServerPlayerEntity player) {
+            public TerritoryModuleScreenData getScreenOpeningData(ServerPlayer player) {
                 return data;
             }
 
             @Override
-            public Text getDisplayName() {
-                return Text.translatable("screen.eroded.territory_module");
+            public Component getDisplayName() {
+                return Component.translatable("screen.eroded.territory_module");
             }
 
             @Override
-            public ScreenHandler createMenu(
+            public AbstractContainerMenu createMenu(
                     int syncId,
-                    PlayerInventory playerInventory,
-                    PlayerEntity player
+                    Inventory playerInventory,
+                    Player player
             ) {
                 return new TerritoryModuleScreenHandler(
                         syncId,
@@ -453,10 +452,10 @@ public final class TerritoryProtectionManager {
     }
 
     public static boolean addTrustedPlayer(
-            ServerWorld world,
+            ServerLevel world,
             BlockPos anchorPos,
-            ServerPlayerEntity manager,
-            ServerPlayerEntity target,
+            ServerPlayer manager,
+            ServerPlayer target,
             boolean connectedArea
     ) {
         TerritoryClaim claim = getAnchorClaim(world, anchorPos);
@@ -466,24 +465,24 @@ public final class TerritoryProtectionManager {
         }
 
         if (claim == null) {
-            manager.sendMessage(
-                    Text.translatable("eroded.territory.trust.no_claim"),
+            manager.displayClientMessage(
+                    Component.translatable("eroded.territory.trust.no_claim"),
                     true
             );
             return false;
         }
 
         if (!canManageClaim(manager, claim)) {
-            manager.sendMessage(
-                    Text.translatable("eroded.territory.trust.no_permission"),
+            manager.displayClientMessage(
+                    Component.translatable("eroded.territory.trust.no_permission"),
                     true
             );
             return false;
         }
 
         if (claim.isOwner(target)) {
-            manager.sendMessage(
-                    Text.translatable("eroded.territory.trust.owner"),
+            manager.displayClientMessage(
+                    Component.translatable("eroded.territory.trust.owner"),
                     true
             );
             return false;
@@ -497,7 +496,7 @@ public final class TerritoryProtectionManager {
 
         for (TerritoryClaim targetClaim : targetClaims) {
             if (targetClaim.addTrusted(
-                    target.getUuid(),
+                    target.getUUID(),
                     target.getName().getString()
             )) {
                 changed = true;
@@ -505,8 +504,8 @@ public final class TerritoryProtectionManager {
         }
 
         if (!changed) {
-            manager.sendMessage(
-                    Text.translatable(
+            manager.displayClientMessage(
+                    Component.translatable(
                             "eroded.territory.trust.already",
                             target.getName().getString()
                     ),
@@ -515,10 +514,10 @@ public final class TerritoryProtectionManager {
             return false;
         }
 
-        TerritoryClaimState.get(world).markDirty();
+        TerritoryClaimState.get(world).setDirty();
 
-        manager.sendMessage(
-                Text.translatable(
+        manager.displayClientMessage(
+                Component.translatable(
                         connectedArea
                                 ? "eroded.territory.trust.added.connected"
                                 : "eroded.territory.trust.added",
@@ -527,8 +526,8 @@ public final class TerritoryProtectionManager {
                 true
         );
 
-        target.sendMessage(
-                Text.translatable(
+        target.displayClientMessage(
+                Component.translatable(
                         "eroded.territory.trust.added.target",
                         claim.ownerName()
                 ),
@@ -542,9 +541,9 @@ public final class TerritoryProtectionManager {
     }
 
     public static boolean setTrustedPermission(
-            ServerWorld world,
+            ServerLevel world,
             BlockPos anchorPos,
-            ServerPlayerEntity manager,
+            ServerPlayer manager,
             UUID targetUuid,
             TerritoryPermission permission,
             boolean enabled,
@@ -557,16 +556,16 @@ public final class TerritoryProtectionManager {
         }
 
         if (claim == null) {
-            manager.sendMessage(
-                    Text.translatable("eroded.territory.trust.no_claim"),
+            manager.displayClientMessage(
+                    Component.translatable("eroded.territory.trust.no_claim"),
                     true
             );
             return false;
         }
 
         if (!canManageClaim(manager, claim)) {
-            manager.sendMessage(
-                    Text.translatable("eroded.territory.trust.no_permission"),
+            manager.displayClientMessage(
+                    Component.translatable("eroded.territory.trust.no_permission"),
                     true
             );
             return false;
@@ -597,16 +596,16 @@ public final class TerritoryProtectionManager {
         }
 
         if (changed) {
-            TerritoryClaimState.get(world).markDirty();
+            TerritoryClaimState.get(world).setDirty();
         }
 
         return changed;
     }
 
     public static boolean setTrustedScopeMode(
-            ServerWorld world,
+            ServerLevel world,
             BlockPos anchorPos,
-            ServerPlayerEntity manager,
+            ServerPlayer manager,
             UUID targetUuid,
             boolean connectedScopeMode
     ) {
@@ -617,16 +616,16 @@ public final class TerritoryProtectionManager {
         }
 
         if (claim == null) {
-            manager.sendMessage(
-                    Text.translatable("eroded.territory.trust.no_claim"),
+            manager.displayClientMessage(
+                    Component.translatable("eroded.territory.trust.no_claim"),
                     true
             );
             return false;
         }
 
         if (!canManageClaim(manager, claim)) {
-            manager.sendMessage(
-                    Text.translatable("eroded.territory.trust.no_permission"),
+            manager.displayClientMessage(
+                    Component.translatable("eroded.territory.trust.no_permission"),
                     true
             );
             return false;
@@ -643,25 +642,25 @@ public final class TerritoryProtectionManager {
         boolean changed = claim.setTrustedScopeMode(targetUuid, connectedScopeMode);
 
         if (changed) {
-            TerritoryClaimState.get(world).markDirty();
+            TerritoryClaimState.get(world).setDirty();
         }
 
         return changed;
     }
 
     public static boolean addTrustedPlayer(
-            ServerWorld world,
+            ServerLevel world,
             BlockPos anchorPos,
-            ServerPlayerEntity manager,
-            ServerPlayerEntity target
+            ServerPlayer manager,
+            ServerPlayer target
     ) {
         return addTrustedPlayer(world, anchorPos, manager, target, false);
     }
 
     public static boolean removeTrustedPlayer(
-            ServerWorld world,
+            ServerLevel world,
             BlockPos anchorPos,
-            ServerPlayerEntity manager,
+            ServerPlayer manager,
             UUID targetUuid,
             String targetName,
             boolean connectedArea
@@ -673,16 +672,16 @@ public final class TerritoryProtectionManager {
         }
 
         if (claim == null) {
-            manager.sendMessage(
-                    Text.translatable("eroded.territory.trust.no_claim"),
+            manager.displayClientMessage(
+                    Component.translatable("eroded.territory.trust.no_claim"),
                     true
             );
             return false;
         }
 
         if (!canManageClaim(manager, claim)) {
-            manager.sendMessage(
-                    Text.translatable("eroded.territory.trust.no_permission"),
+            manager.displayClientMessage(
+                    Component.translatable("eroded.territory.trust.no_permission"),
                     true
             );
             return false;
@@ -701,8 +700,8 @@ public final class TerritoryProtectionManager {
         }
 
         if (!removed) {
-            manager.sendMessage(
-                    Text.translatable(
+            manager.displayClientMessage(
+                    Component.translatable(
                             "eroded.territory.trust.not_trusted",
                             targetName
                     ),
@@ -711,10 +710,10 @@ public final class TerritoryProtectionManager {
             return false;
         }
 
-        TerritoryClaimState.get(world).markDirty();
+        TerritoryClaimState.get(world).setDirty();
 
-        manager.sendMessage(
-                Text.translatable(
+        manager.displayClientMessage(
+                Component.translatable(
                         connectedArea
                                 ? "eroded.territory.trust.removed.connected"
                                 : "eroded.territory.trust.removed",
@@ -723,13 +722,13 @@ public final class TerritoryProtectionManager {
                 true
         );
 
-        ServerPlayerEntity target = world.getServer()
-                .getPlayerManager()
+        ServerPlayer target = world.getServer()
+                .getPlayerList()
                 .getPlayer(targetUuid);
 
         if (target != null) {
-            target.sendMessage(
-                    Text.translatable(
+            target.displayClientMessage(
+                    Component.translatable(
                             "eroded.territory.trust.removed.target",
                             claim.ownerName()
                     ),
@@ -745,22 +744,22 @@ public final class TerritoryProtectionManager {
     }
 
     public static boolean removeTrustedPlayer(
-            ServerWorld world,
+            ServerLevel world,
             BlockPos anchorPos,
-            ServerPlayerEntity manager,
+            ServerPlayer manager,
             UUID targetUuid,
             String targetName
     ) {
         return removeTrustedPlayer(world, anchorPos, manager, targetUuid, targetName, false);
     }
 
-    public static List<ServerPlayerEntity> getOnlinePlayerSuggestions(
-            ServerWorld world,
+    public static List<ServerPlayer> getOnlinePlayerSuggestions(
+            ServerLevel world,
             TerritoryClaim claim,
             String query,
             int maxSuggestions
     ) {
-        List<ServerPlayerEntity> suggestions = new ArrayList<>();
+        List<ServerPlayer> suggestions = new ArrayList<>();
 
         if (claim == null || maxSuggestions <= 0) {
             return suggestions;
@@ -770,7 +769,7 @@ public final class TerritoryProtectionManager {
                 ? ""
                 : query.trim().toLowerCase(Locale.ROOT);
 
-        for (ServerPlayerEntity player : world.getServer().getPlayerManager().getPlayerList()) {
+        for (ServerPlayer player : world.getServer().getPlayerList().getPlayers()) {
             if (claim.isOwner(player)) {
                 continue;
             }
@@ -804,17 +803,17 @@ public final class TerritoryProtectionManager {
         return claim.trustedPlayerEntries();
     }
 
-    public static void refreshTrustedNamesFromOnlinePlayers(ServerWorld world, TerritoryClaim claim) {
+    public static void refreshTrustedNamesFromOnlinePlayers(ServerLevel world, TerritoryClaim claim) {
         if (claim == null) {
             return;
         }
 
         boolean changed = false;
 
-        for (ServerPlayerEntity player : world.getServer().getPlayerManager().getPlayerList()) {
+        for (ServerPlayer player : world.getServer().getPlayerList().getPlayers()) {
             if (claim.isTrusted(player)) {
                 if (claim.updateTrustedName(
-                        player.getUuid(),
+                        player.getUUID(),
                         player.getName().getString()
                 )) {
                     changed = true;
@@ -823,16 +822,16 @@ public final class TerritoryProtectionManager {
         }
 
         if (changed) {
-            TerritoryClaimState.get(world).markDirty();
+            TerritoryClaimState.get(world).setDirty();
         }
     }
 
-    public static void playAnchorActivatedSound(ServerWorld world, BlockPos pos) {
+    public static void playAnchorActivatedSound(ServerLevel world, BlockPos pos) {
         world.playSound(
                 null,
                 pos,
-                SoundEvents.BLOCK_BEACON_ACTIVATE,
-                SoundCategory.BLOCKS,
+                SoundEvents.BEACON_ACTIVATE,
+                SoundSource.BLOCKS,
                 0.8F,
                 1.15F
         );
@@ -840,19 +839,19 @@ public final class TerritoryProtectionManager {
         world.playSound(
                 null,
                 pos,
-                SoundEvents.BLOCK_AMETHYST_BLOCK_CHIME,
-                SoundCategory.BLOCKS,
+                SoundEvents.AMETHYST_BLOCK_CHIME,
+                SoundSource.BLOCKS,
                 0.7F,
                 1.35F
         );
     }
 
-    public static void playModuleInsertedSound(ServerWorld world, BlockPos pos) {
+    public static void playModuleInsertedSound(ServerLevel world, BlockPos pos) {
         world.playSound(
                 null,
                 pos,
-                SoundEvents.BLOCK_RESPAWN_ANCHOR_CHARGE,
-                SoundCategory.BLOCKS,
+                SoundEvents.RESPAWN_ANCHOR_CHARGE,
+                SoundSource.BLOCKS,
                 0.8F,
                 1.15F
         );
@@ -860,90 +859,90 @@ public final class TerritoryProtectionManager {
         world.playSound(
                 null,
                 pos,
-                SoundEvents.BLOCK_AMETHYST_BLOCK_CHIME,
-                SoundCategory.BLOCKS,
+                SoundEvents.AMETHYST_BLOCK_CHIME,
+                SoundSource.BLOCKS,
                 0.45F,
                 1.65F
         );
     }
 
-    private static void playTrustAddedSound(ServerPlayerEntity player) {
-        player.getWorld().playSound(
+    private static void playTrustAddedSound(ServerPlayer player) {
+        player.level().playSound(
                 null,
-                player.getBlockPos(),
-                SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP,
-                SoundCategory.PLAYERS,
+                player.blockPosition(),
+                SoundEvents.EXPERIENCE_ORB_PICKUP,
+                SoundSource.PLAYERS,
                 0.55F,
                 1.25F
         );
     }
 
-    private static void playTrustRemovedSound(ServerPlayerEntity player) {
-        player.getWorld().playSound(
+    private static void playTrustRemovedSound(ServerPlayer player) {
+        player.level().playSound(
                 null,
-                player.getBlockPos(),
-                SoundEvents.BLOCK_ANVIL_LAND,
-                SoundCategory.PLAYERS,
+                player.blockPosition(),
+                SoundEvents.ANVIL_LAND,
+                SoundSource.PLAYERS,
                 0.35F,
                 1.65F
         );
     }
 
-    private static void playActionDeniedSound(ServerPlayerEntity player) {
-        player.getWorld().playSound(
+    private static void playActionDeniedSound(ServerPlayer player) {
+        player.level().playSound(
                 null,
-                player.getBlockPos(),
-                SoundEvents.BLOCK_NOTE_BLOCK_BASS.value(),
-                SoundCategory.PLAYERS,
+                player.blockPosition(),
+                SoundEvents.NOTE_BLOCK_BASS.value(),
+                SoundSource.PLAYERS,
                 0.45F,
                 0.7F
         );
     }
 
-    private static void playTerritoryModuleOpenSound(ServerPlayerEntity player) {
-        player.playSoundToPlayer(
-                SoundEvents.BLOCK_BEACON_POWER_SELECT,
-                SoundCategory.PLAYERS,
+    private static void playTerritoryModuleOpenSound(ServerPlayer player) {
+        player.playNotifySound(
+                SoundEvents.BEACON_POWER_SELECT,
+                SoundSource.PLAYERS,
                 0.8F,
                 1.25F
         );
 
-        player.playSoundToPlayer(
-                SoundEvents.BLOCK_AMETHYST_BLOCK_CHIME,
-                SoundCategory.PLAYERS,
+        player.playNotifySound(
+                SoundEvents.AMETHYST_BLOCK_CHIME,
+                SoundSource.PLAYERS,
                 0.55F,
                 1.45F
         );
     }
 
-    private static void playPlacementHintActivatedSound(ServerPlayerEntity player) {
-        player.getWorld().playSound(
+    private static void playPlacementHintActivatedSound(ServerPlayer player) {
+        player.level().playSound(
                 null,
-                player.getBlockPos(),
-                SoundEvents.BLOCK_BEACON_POWER_SELECT,
-                SoundCategory.PLAYERS,
+                player.blockPosition(),
+                SoundEvents.BEACON_POWER_SELECT,
+                SoundSource.PLAYERS,
                 0.55F,
                 1.35F
         );
 
-        player.getWorld().playSound(
+        player.level().playSound(
                 null,
-                player.getBlockPos(),
-                SoundEvents.BLOCK_AMETHYST_BLOCK_CHIME,
-                SoundCategory.PLAYERS,
+                player.blockPosition(),
+                SoundEvents.AMETHYST_BLOCK_CHIME,
+                SoundSource.PLAYERS,
                 0.35F,
                 1.75F
         );
     }
 
-    public static void syncInventory(ServerPlayerEntity player) {
-        player.getInventory().markDirty();
-        player.currentScreenHandler.syncState();
+    public static void syncInventory(ServerPlayer player) {
+        player.getInventory().setChanged();
+        player.containerMenu.sendAllDataToRemote();
     }
 
     private static TerritoryClaim findNearestActiveClaimOwnedBy(
-            ServerWorld world,
-            ServerPlayerEntity player
+            ServerLevel world,
+            ServerPlayer player
     ) {
         TerritoryClaimState state = TerritoryClaimState.get(world);
 
@@ -955,11 +954,11 @@ public final class TerritoryProtectionManager {
                 continue;
             }
 
-            if (!claim.ownerUuid().equals(player.getUuid())) {
+            if (!claim.ownerUuid().equals(player.getUUID())) {
                 continue;
             }
 
-            if (!world.getBlockState(claim.anchorPos()).isOf(ErodedBlocks.TERRITORY_ANCHOR)) {
+            if (!world.getBlockState(claim.anchorPos()).is(ErodedBlocks.TERRITORY_ANCHOR)) {
                 state.remove(claim.anchorPos());
                 continue;
             }
@@ -980,7 +979,7 @@ public final class TerritoryProtectionManager {
     }
 
     public static ConnectedTerritoryInfo getConnectedTerritoryInfo(
-            ServerWorld world,
+            ServerLevel world,
             TerritoryClaim startClaim
     ) {
         List<TerritoryClaim> connectedClaims = findConnectedClaims(world, startClaim);
@@ -1009,7 +1008,7 @@ public final class TerritoryProtectionManager {
     }
 
     public static List<TerritoryClaim> findConnectedClaims(
-            ServerWorld world,
+            ServerLevel world,
             TerritoryClaim startClaim
     ) {
         List<TerritoryClaim> result = new ArrayList<>();
@@ -1070,8 +1069,8 @@ public final class TerritoryProtectionManager {
         return result;
     }
 
-    private static boolean isClaimStillValid(ServerWorld world, TerritoryClaim claim) {
-        return world.getBlockState(claim.anchorPos()).isOf(ErodedBlocks.TERRITORY_ANCHOR);
+    private static boolean isClaimStillValid(ServerLevel world, TerritoryClaim claim) {
+        return world.getBlockState(claim.anchorPos()).is(ErodedBlocks.TERRITORY_ANCHOR);
     }
 
     private static boolean areClaimsConnectedBySide(TerritoryClaim a, TerritoryClaim b) {
@@ -1127,16 +1126,16 @@ public final class TerritoryProtectionManager {
     }
 
     public static void showNextAnchorSuggestions(
-            ServerWorld world,
-            ServerPlayerEntity player,
+            ServerLevel world,
+            ServerPlayer player,
             boolean showMessage
     ) {
         TerritoryClaim claim = findNearestActiveClaimOwnedBy(world, player);
 
         if (claim == null) {
             if (showMessage) {
-                player.sendMessage(
-                        Text.translatable("eroded.territory.hint.no_active_claim"),
+                player.displayClientMessage(
+                        Component.translatable("eroded.territory.hint.no_active_claim"),
                         true
                 );
             }
@@ -1148,10 +1147,10 @@ public final class TerritoryProtectionManager {
         BlockPos anchor = claim.anchorPos();
 
         BlockPos[] suggestedPositions = new BlockPos[]{
-                anchor.add(spacing, 0, 0),
-                anchor.add(-spacing, 0, 0),
-                anchor.add(0, 0, spacing),
-                anchor.add(0, 0, -spacing)
+                anchor.offset(spacing, 0, 0),
+                anchor.offset(-spacing, 0, 0),
+                anchor.offset(0, 0, spacing),
+                anchor.offset(0, 0, -spacing)
         };
 
         for (BlockPos suggestedPos : suggestedPositions) {
@@ -1161,8 +1160,8 @@ public final class TerritoryProtectionManager {
         if (showMessage) {
             playPlacementHintActivatedSound(player);
 
-            player.sendMessage(
-                    Text.translatable(
+            player.displayClientMessage(
+                    Component.translatable(
                             "eroded.territory.hint.shown",
                             spacing
                     ),
@@ -1172,12 +1171,12 @@ public final class TerritoryProtectionManager {
     }
 
     private static void spawnSuggestionMarker(
-            ServerWorld world,
-            ServerPlayerEntity player,
+            ServerLevel world,
+            ServerPlayer player,
             BlockPos pos
     ) {
-        int surfaceY = world.getTopY(
-                Heightmap.Type.MOTION_BLOCKING_NO_LEAVES,
+        int surfaceY = world.getHeight(
+                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
                 pos.getX(),
                 pos.getZ()
         );
@@ -1188,7 +1187,7 @@ public final class TerritoryProtectionManager {
         for (int i = 0; i < 8; i++) {
             double y = surfaceY + 0.15 + (i * 0.3);
 
-            world.spawnParticles(
+            world.sendParticles(
                     player,
                     ParticleTypes.END_ROD,
                     true,
@@ -1204,7 +1203,7 @@ public final class TerritoryProtectionManager {
             );
         }
 
-        world.spawnParticles(
+        world.sendParticles(
                 player,
                 ParticleTypes.HAPPY_VILLAGER,
                 true,

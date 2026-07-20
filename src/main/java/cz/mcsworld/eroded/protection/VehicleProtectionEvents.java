@@ -3,9 +3,9 @@ package cz.mcsworld.eroded.protection;
 import cz.mcsworld.eroded.world.spawn.ExplosionProtectionManager;
 import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.ActionResult;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionResult;
 
 public final class VehicleProtectionEvents {
 
@@ -19,20 +19,20 @@ public final class VehicleProtectionEvents {
 
     private static void registerUseVehicleProtection() {
         UseEntityCallback.EVENT.register((player, world, hand, entity, hitResult) -> {
-            if (world.isClient()) {
-                return ActionResult.PASS;
+            if (world.isClientSide()) {
+                return InteractionResult.PASS;
             }
 
-            if (!(world instanceof ServerWorld serverWorld)) {
-                return ActionResult.PASS;
+            if (!(world instanceof ServerLevel serverWorld)) {
+                return InteractionResult.PASS;
             }
 
-            if (!(player instanceof ServerPlayerEntity serverPlayer)) {
-                return ActionResult.PASS;
+            if (!(player instanceof ServerPlayer serverPlayer)) {
+                return InteractionResult.PASS;
             }
 
             if (!VehicleProtectionManager.isProtectedVehicle(entity)) {
-                return ActionResult.PASS;
+                return InteractionResult.PASS;
             }
 
             if (!VehicleProtectionManager.canUseVehicle(
@@ -40,30 +40,30 @@ public final class VehicleProtectionEvents {
                     serverWorld,
                     entity
             )) {
-                sendMessageOnlyOutsideSpawn(serverPlayer, serverWorld, entity.getBlockPos());
-                return ActionResult.FAIL;
+                sendMessageOnlyOutsideSpawn(serverPlayer, serverWorld, entity.blockPosition());
+                return InteractionResult.FAIL;
             }
 
-            return ActionResult.PASS;
+            return InteractionResult.PASS;
         });
     }
 
     private static void registerAttackVehicleProtection() {
         AttackEntityCallback.EVENT.register((player, world, hand, entity, hitResult) -> {
-            if (world.isClient()) {
-                return ActionResult.PASS;
+            if (world.isClientSide()) {
+                return InteractionResult.PASS;
             }
 
-            if (!(world instanceof ServerWorld serverWorld)) {
-                return ActionResult.PASS;
+            if (!(world instanceof ServerLevel serverWorld)) {
+                return InteractionResult.PASS;
             }
 
-            if (!(player instanceof ServerPlayerEntity serverPlayer)) {
-                return ActionResult.PASS;
+            if (!(player instanceof ServerPlayer serverPlayer)) {
+                return InteractionResult.PASS;
             }
 
             if (!VehicleProtectionManager.isProtectedVehicle(entity)) {
-                return ActionResult.PASS;
+                return InteractionResult.PASS;
             }
 
             if (!VehicleProtectionManager.canAttackVehicle(
@@ -71,18 +71,18 @@ public final class VehicleProtectionEvents {
                     serverWorld,
                     entity
             )) {
-                sendMessageOnlyOutsideSpawn(serverPlayer, serverWorld, entity.getBlockPos());
-                return ActionResult.FAIL;
+                sendMessageOnlyOutsideSpawn(serverPlayer, serverWorld, entity.blockPosition());
+                return InteractionResult.FAIL;
             }
 
-            return ActionResult.PASS;
+            return InteractionResult.PASS;
         });
     }
 
     private static void sendMessageOnlyOutsideSpawn(
-            ServerPlayerEntity player,
-            ServerWorld world,
-            net.minecraft.util.math.BlockPos pos
+            ServerPlayer player,
+            ServerLevel world,
+            net.minecraft.core.BlockPos pos
     ) {
         if (ExplosionProtectionManager.isProtected(world, pos)) {
             return;

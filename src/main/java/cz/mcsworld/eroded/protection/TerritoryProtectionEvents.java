@@ -5,23 +5,23 @@ import cz.mcsworld.eroded.world.spawn.ExplosionProtectionManager;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseItemCallback;
-import net.minecraft.block.AbstractSignBlock;
-import net.minecraft.block.BedBlock;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.LecternBlock;
-import net.minecraft.block.RespawnAnchorBlock;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.inventory.Inventory;
-import net.minecraft.item.BlockItem;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.Container;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.BedBlock;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.LecternBlock;
+import net.minecraft.world.level.block.RespawnAnchorBlock;
+import net.minecraft.world.level.block.SignBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 
 public final class TerritoryProtectionEvents {
 
@@ -36,11 +36,11 @@ public final class TerritoryProtectionEvents {
 
     private static void registerBlockBreakProtection() {
         PlayerBlockBreakEvents.BEFORE.register((world, player, pos, state, blockEntity) -> {
-            if (!(world instanceof ServerWorld serverWorld)) {
+            if (!(world instanceof ServerLevel serverWorld)) {
                 return true;
             }
 
-            if (!(player instanceof ServerPlayerEntity serverPlayer)) {
+            if (!(player instanceof ServerPlayer serverPlayer)) {
                 return true;
             }
 
@@ -62,22 +62,22 @@ public final class TerritoryProtectionEvents {
 
     private static void registerUseBlockProtection() {
         UseBlockCallback.EVENT.register((player, world, hand, hitResult) -> {
-            if (world.isClient()) {
-                return ActionResult.PASS;
+            if (world.isClientSide()) {
+                return InteractionResult.PASS;
             }
 
-            if (!(world instanceof ServerWorld serverWorld)) {
-                return ActionResult.PASS;
+            if (!(world instanceof ServerLevel serverWorld)) {
+                return InteractionResult.PASS;
             }
 
-            if (!(player instanceof ServerPlayerEntity serverPlayer)) {
-                return ActionResult.PASS;
+            if (!(player instanceof ServerPlayer serverPlayer)) {
+                return InteractionResult.PASS;
             }
 
             BlockPos clickedPos = hitResult.getBlockPos();
-            BlockPos targetPos = clickedPos.offset(hitResult.getSide());
+            BlockPos targetPos = clickedPos.relative(hitResult.getDirection());
             BlockState clickedState = serverWorld.getBlockState(clickedPos);
-            ItemStack stack = player.getStackInHand(hand);
+            ItemStack stack = player.getItemInHand(hand);
 
             if (isProtectedInteractionBlock(clickedState)) {
                 if (!canUseProtectedInteractionBlock(
@@ -93,24 +93,24 @@ public final class TerritoryProtectionEvents {
                     );
 
                     TerritoryProtectionManager.syncInventory(serverPlayer);
-                    return ActionResult.FAIL;
+                    return InteractionResult.FAIL;
                 }
             }
 
             if (isFireOrFluidItem(stack)) {
                 if (!canUseFireOrFluid(serverPlayer, serverWorld, clickedPos, targetPos)) {
                     TerritoryProtectionManager.syncInventory(serverPlayer);
-                    return ActionResult.FAIL;
+                    return InteractionResult.FAIL;
                 }
 
-                return ActionResult.PASS;
+                return InteractionResult.PASS;
             }
 
             if (stack.getItem() instanceof BlockItem blockItem
                     && !shouldSkipBlockItemPlacementProtection(clickedState, stack)) {
                 if (!ExplosionProtectionManager.canPlace(serverPlayer, targetPos)) {
                     TerritoryProtectionManager.syncInventory(serverPlayer);
-                    return ActionResult.FAIL;
+                    return InteractionResult.FAIL;
                 }
 
                 if (blockItem.getBlock() == ErodedBlocks.TERRITORY_ANCHOR) {
@@ -120,7 +120,7 @@ public final class TerritoryProtectionEvents {
                             serverPlayer
                     )) {
                         TerritoryProtectionManager.syncInventory(serverPlayer);
-                        return ActionResult.FAIL;
+                        return InteractionResult.FAIL;
                     }
                 }
 
@@ -128,78 +128,78 @@ public final class TerritoryProtectionEvents {
                         || !TerritoryProtectionManager.canPlaceBlock(serverPlayer, serverWorld, targetPos)) {
                     TerritoryProtectionManager.sendProtectedMessage(serverPlayer);
                     TerritoryProtectionManager.syncInventory(serverPlayer);
-                    return ActionResult.FAIL;
+                    return InteractionResult.FAIL;
                 }
 
-                return ActionResult.PASS;
+                return InteractionResult.PASS;
             }
 
             BlockEntity blockEntity = world.getBlockEntity(clickedPos);
 
-            if (blockEntity instanceof Inventory) {
+            if (blockEntity instanceof Container) {
                 if (!ExplosionProtectionManager.canUseContainer(serverPlayer, clickedPos)) {
-                    return ActionResult.FAIL;
+                    return InteractionResult.FAIL;
                 }
 
                 if (!TerritoryProtectionManager.canOpenContainer(serverPlayer, serverWorld, clickedPos)) {
                     TerritoryProtectionManager.sendProtectedMessage(serverPlayer);
-                    return ActionResult.FAIL;
+                    return InteractionResult.FAIL;
                 }
             }
 
-            return ActionResult.PASS;
+            return InteractionResult.PASS;
         });
     }
 
     private static void registerUseItemProtection() {
         UseItemCallback.EVENT.register((player, world, hand) -> {
-            if (world.isClient()) {
-                return ActionResult.PASS;
+            if (world.isClientSide()) {
+                return InteractionResult.PASS;
             }
 
-            if (!(world instanceof ServerWorld serverWorld)) {
-                return ActionResult.PASS;
+            if (!(world instanceof ServerLevel serverWorld)) {
+                return InteractionResult.PASS;
             }
 
-            if (!(player instanceof ServerPlayerEntity serverPlayer)) {
-                return ActionResult.PASS;
+            if (!(player instanceof ServerPlayer serverPlayer)) {
+                return InteractionResult.PASS;
             }
 
-            ItemStack stack = player.getStackInHand(hand);
+            ItemStack stack = player.getItemInHand(hand);
 
             if (!isBucketItem(stack)) {
-                return ActionResult.PASS;
+                return InteractionResult.PASS;
             }
 
-            HitResult hitResult = player.raycast(
+            HitResult hitResult = player.pick(
                     5.0D,
                     0.0F,
-                    stack.isOf(Items.BUCKET)
+                    stack.is(Items.BUCKET)
             );
 
             if (!(hitResult instanceof BlockHitResult blockHitResult)) {
-                return ActionResult.PASS;
+                return InteractionResult.PASS;
             }
 
             if (blockHitResult.getType() == HitResult.Type.MISS) {
-                return ActionResult.PASS;
+                return InteractionResult.PASS;
             }
 
             BlockPos clickedPos = blockHitResult.getBlockPos();
-            BlockPos targetPos = clickedPos.offset(blockHitResult.getSide());
+            BlockPos targetPos = clickedPos.relative(blockHitResult.getDirection());
 
             if (!canUseFireOrFluid(serverPlayer, serverWorld, clickedPos, targetPos)) {
                 TerritoryProtectionManager.syncInventory(serverPlayer);
-                return ActionResult.FAIL;
+                return InteractionResult.FAIL;
             }
 
-            return ActionResult.PASS;
+            return InteractionResult.PASS;
         });
     }
 
     private static boolean canUseFireOrFluid(
-            ServerPlayerEntity player,
-            ServerWorld world,
+            ServerPlayer player,
+            ServerLevel world,
             BlockPos clickedPos,
             BlockPos targetPos
     ) {
@@ -223,13 +223,13 @@ public final class TerritoryProtectionEvents {
 
         return block instanceof BedBlock
                 || block instanceof RespawnAnchorBlock
-                || block instanceof AbstractSignBlock
+                || block instanceof SignBlock
                 || block instanceof LecternBlock;
     }
 
     private static boolean canUseProtectedInteractionBlock(
-            ServerPlayerEntity player,
-            ServerWorld world,
+            ServerPlayer player,
+            ServerLevel world,
             BlockPos pos,
             BlockState state
     ) {
@@ -244,7 +244,7 @@ public final class TerritoryProtectionEvents {
             return TerritoryProtectionManager.canUseRedstone(player, world, pos);
         }
 
-        if (block instanceof AbstractSignBlock) {
+        if (block instanceof SignBlock) {
             return TerritoryProtectionManager.canPlaceBlock(player, world, pos);
         }
 
@@ -256,8 +256,8 @@ public final class TerritoryProtectionEvents {
     }
 
     private static void sendProtectedMessageOnlyOutsideSpawn(
-            ServerPlayerEntity player,
-            ServerWorld world,
+            ServerPlayer player,
+            ServerLevel world,
             BlockPos pos
     ) {
         if (ExplosionProtectionManager.isProtected(world, pos)) {
@@ -273,18 +273,18 @@ public final class TerritoryProtectionEvents {
     ) {
 
         return clickedState.getBlock() instanceof RespawnAnchorBlock
-                && stack.isOf(Items.GLOWSTONE);
+                && stack.is(Items.GLOWSTONE);
     }
 
     private static boolean isFireOrFluidItem(ItemStack stack) {
-        return stack.isOf(Items.FLINT_AND_STEEL)
-                || stack.isOf(Items.FIRE_CHARGE)
+        return stack.is(Items.FLINT_AND_STEEL)
+                || stack.is(Items.FIRE_CHARGE)
                 || isBucketItem(stack);
     }
 
     private static boolean isBucketItem(ItemStack stack) {
-        return stack.isOf(Items.LAVA_BUCKET)
-                || stack.isOf(Items.WATER_BUCKET)
-                || stack.isOf(Items.BUCKET);
+        return stack.is(Items.LAVA_BUCKET)
+                || stack.is(Items.WATER_BUCKET)
+                || stack.is(Items.BUCKET);
     }
 }

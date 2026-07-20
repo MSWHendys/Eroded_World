@@ -2,10 +2,10 @@ package cz.mcsworld.eroded.death;
 
 import cz.mcsworld.eroded.death.block.ErodedBlocks;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
-import net.minecraft.particle.ParticleTypes;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.server.level.ServerLevel;
 
 public final class DeathChestParticles {
 
@@ -20,7 +20,7 @@ public final class DeathChestParticles {
     private static void onTick(MinecraftServer server) {
         tick++;
 
-        for (ServerWorld world : server.getWorlds()) {
+        for (ServerLevel world : server.getAllLevels()) {
             DeathChestState state = DeathChestState.get(world);
 
             var it = state.all().iterator();
@@ -28,7 +28,7 @@ public final class DeathChestParticles {
                 DeathChestState.Entry e = it.next();
                 BlockPos pos = e.pos();
 
-                if (!world.getBlockState(pos).isOf(ErodedBlocks.DEATH_ENDER_CHEST)) {
+                if (!world.getBlockState(pos).is(ErodedBlocks.DEATH_ENDER_CHEST)) {
 
                     DeathHologramHandler.removeById(
                             world,
@@ -36,15 +36,15 @@ public final class DeathChestParticles {
                     );
 
                     it.remove();
-                    state.markDirty();
+                    state.setDirty();
 
                     continue;
                 }
 
-                if (!world.isChunkLoaded(pos)) continue;
+                if (!world.hasChunkAt(pos)) continue;
 
                 if (tick % 10 == 0 && state.isProtected(pos)) {
-                    world.spawnParticles(
+                    world.sendParticles(
                             ParticleTypes.SMOKE,
                             pos.getX() + 0.5,
                             pos.getY() + 1.05,

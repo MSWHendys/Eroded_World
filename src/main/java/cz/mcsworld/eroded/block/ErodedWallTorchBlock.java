@@ -1,40 +1,40 @@
 package cz.mcsworld.eroded.block;
 
-import net.minecraft.block.AbstractBlock;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.WallTorchBlock;
-import net.minecraft.particle.ParticleTypes;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.random.Random;
-import net.minecraft.world.World;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.WallTorchBlock;
+import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.state.BlockState;
 
 public final class ErodedWallTorchBlock extends WallTorchBlock {
 
     private static final float SMOKE_CHANCE = 0.08F;
 
-    public ErodedWallTorchBlock(AbstractBlock.Settings settings) {
+    public ErodedWallTorchBlock(BlockBehaviour.Properties settings) {
         super(ParticleTypes.SMOKE, settings);
     }
 
     @Override
-    public void randomDisplayTick(
+    public void animateTick(
             BlockState state,
-            World world,
+            Level world,
             BlockPos pos,
-            Random random
+            RandomSource random
     ) {
         if (random.nextFloat() > SMOKE_CHANCE) {
             return;
         }
 
-        Direction direction = state.get(FACING);
+        Direction direction = state.getValue(FACING);
 
-        double x = pos.getX() + 0.5D - direction.getOffsetX() * 0.27D;
+        double x = pos.getX() + 0.5D - direction.getStepX() * 0.27D;
         double y = pos.getY() + 0.72D;
-        double z = pos.getZ() + 0.5D - direction.getOffsetZ() * 0.27D;
+        double z = pos.getZ() + 0.5D - direction.getStepZ() * 0.27D;
 
-        world.addParticleClient(
+        world.addParticle(
                 ParticleTypes.SMOKE,
                 x,
                 y,

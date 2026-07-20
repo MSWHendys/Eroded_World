@@ -1,21 +1,21 @@
 package cz.mcsworld.eroded.network;
 
-import net.minecraft.network.RegistryByteBuf;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.packet.CustomPayload;
-import net.minecraft.util.Identifier;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 
 public record ErodedCompassSyncPacket(
         boolean active,
         long remainingTicks,
         long deathPosLong
-) implements CustomPayload {
+) implements CustomPacketPayload {
 
-    public static final Id<ErodedCompassSyncPacket> ID =
-            new Id<>(Identifier.of("eroded", "compass_sync"));
+    public static final Type<ErodedCompassSyncPacket> ID =
+            new Type<>(ResourceLocation.fromNamespaceAndPath("eroded", "compass_sync"));
 
-    public static final PacketCodec<RegistryByteBuf, ErodedCompassSyncPacket> CODEC =
-            PacketCodec.of(
+    public static final StreamCodec<RegistryFriendlyByteBuf, ErodedCompassSyncPacket> CODEC =
+            StreamCodec.ofMember(
                     (p, buf) -> {
                         buf.writeBoolean(p.active());
                         buf.writeLong(p.remainingTicks());
@@ -30,7 +30,7 @@ public record ErodedCompassSyncPacket(
 
 
     @Override
-    public Id<? extends CustomPayload> getId() {
+    public Type<? extends CustomPacketPayload> type() {
         return ID;
     }
 }
