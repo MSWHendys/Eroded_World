@@ -1,7 +1,7 @@
 package cz.mcsworld.eroded.crafting;
 
-import net.minecraft.item.BlockItem;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ItemStack;
 
 public class QualityApplicable {
 
@@ -11,6 +11,6 @@ public class QualityApplicable {
 
         if (stack.getItem() instanceof BlockItem) return false;
 
-        return stack.isDamageable();
+        return stack.isDamageableItem();
     }
 }

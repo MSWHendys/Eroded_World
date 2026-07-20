@@ -4,22 +4,20 @@ import com.mojang.authlib.GameProfile;
 import cz.mcsworld.eroded.config.death.DeathConfig;
 import cz.mcsworld.eroded.death.block.ErodedBlocks;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.ProfileComponent;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.EquipmentSlot;
-import net.minecraft.entity.decoration.ArmorStandEntity;
-import net.minecraft.entity.decoration.DisplayEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
-
-
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.Display;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.decoration.ArmorStand;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.ResolvableProfile;
+import net.minecraft.world.phys.AABB;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -40,7 +38,7 @@ public final class DeathHologramHandler {
         ServerTickEvents.END_WORLD_TICK.register(DeathHologramHandler::tick);
     }
 
-    public static void spawn(ServerWorld world, BlockPos pos, GameProfile profile, int protectionSeconds, UUID hologramId) {
+    public static void spawn(ServerLevel world, BlockPos pos, GameProfile profile, int protectionSeconds, UUID hologramId) {
         long expiryEpochMs = System.currentTimeMillis() + (protectionSeconds * 1000L);
         String name = profile.getName();
         String hidTag = TAG_HOLOGRAM_ID + hologramId;
@@ -51,41 +49,41 @@ public final class DeathHologramHandler {
 
 
         double standBaseY = baseY + 0.3;
-        ArmorStandEntity stand = new ArmorStandEntity(world, baseX, standBaseY, baseZ);
+        ArmorStand stand = new ArmorStand(world, baseX, standBaseY, baseZ);
         stand.setInvisible(true);
         stand.setNoGravity(true);
         stand.setSilent(true);
         stand.setInvulnerable(true);
 
         ItemStack head = new ItemStack(Items.PLAYER_HEAD);
-        head.set(DataComponentTypes.PROFILE, new ProfileComponent(profile));
-        stand.equipStack(EquipmentSlot.HEAD, head);
+        head.set(DataComponents.PROFILE, new ResolvableProfile(profile));
+        stand.setItemSlot(EquipmentSlot.HEAD, head);
 
-        stand.addCommandTag(TAG);
-        stand.addCommandTag(TAG_HEAD);
-        stand.addCommandTag(hidTag);
-        stand.addCommandTag(TAG_EXPIRY + expiryEpochMs);
-        stand.addCommandTag(TAG_BASE_Y + standBaseY);
+        stand.addTag(TAG);
+        stand.addTag(TAG_HEAD);
+        stand.addTag(hidTag);
+        stand.addTag(TAG_EXPIRY + expiryEpochMs);
+        stand.addTag(TAG_BASE_Y + standBaseY);
 
-        world.spawnEntity(stand);
+        world.addFreshEntity(stand);
 
         double textY = baseY + 2.6;
-        DisplayEntity.TextDisplayEntity text = new DisplayEntity.TextDisplayEntity(EntityType.TEXT_DISPLAY, world);
-        text.setPosition(baseX, textY, baseZ);
-        text.setBillboardMode(DisplayEntity.BillboardMode.CENTER);
-        text.setBackground(0x60000000);
+        Display.TextDisplay text = new Display.TextDisplay(EntityType.TEXT_DISPLAY, world);
+        text.setPos(baseX, textY, baseZ);
+        text.setBillboardConstraints(Display.BillboardConstraints.CENTER);
+        text.setBackgroundColor(0x60000000);
         text.setText(buildText(name, protectionSeconds));
 
-        text.addCommandTag(TAG);
-        text.addCommandTag(hidTag);
-        text.addCommandTag(TAG_EXPIRY + expiryEpochMs);
-        text.addCommandTag(TAG_NAME + name);
+        text.addTag(TAG);
+        text.addTag(hidTag);
+        text.addTag(TAG_EXPIRY + expiryEpochMs);
+        text.addTag(TAG_NAME + name);
 
-        world.spawnEntity(text);
+        world.addFreshEntity(text);
     }
 
-    public static void tick(ServerWorld world) {
-        boolean eachSecond = world.getServer().getTicks() % 20 == 0;
+    public static void tick(ServerLevel world) {
+        boolean eachSecond = world.getServer().getTickCount() % 20 == 0;
         var cfg = DeathConfig.get().hologram;
         DeathChestState state = DeathChestState.get(world);
 
@@ -94,10 +92,10 @@ public final class DeathHologramHandler {
                     .map(DeathChestState.Entry::hologramId)
                     .collect(Collectors.toSet());
 
-            for (Entity e : world.iterateEntities()) {
+            for (Entity e : world.getAllEntities()) {
                 if (e == null || e.isRemoved()) continue;
 
-                Set<String> tags = e.getCommandTags();
+                Set<String> tags = e.getTags();
                 if (tags.contains(TAG)) {
                     UUID hid = getHologramIdFromTags(e);
                     if (hid != null && !activeHids.contains(hid)) {
@@ -113,30 +111,30 @@ public final class DeathHologramHandler {
             String hidTag = TAG_HOLOGRAM_ID + hid;
 
 
-            if (!world.getBlockState(pos).isOf(ErodedBlocks.DEATH_ENDER_CHEST)) {
+            if (!world.getBlockState(pos).is(ErodedBlocks.DEATH_ENDER_CHEST)) {
                 removeById(world, hid);
                 continue;
             }
 
-            if (!world.isChunkLoaded(pos)) continue;
+            if (!world.hasChunkAt(pos)) continue;
 
-            Box box = new Box(pos).expand(1.0, 4.0, 1.0);
-            for (Entity e : world.getOtherEntities(null, box)) {
+            AABB box = new AABB(pos).inflate(1.0, 4.0, 1.0);
+            for (Entity e : world.getEntities(null, box)) {
                 if (e == null || e.isRemoved()) continue;
 
-                Set<String> tags = e.getCommandTags();
+                Set<String> tags = e.getTags();
                 if (!tags.contains(hidTag)) continue;
 
-                if (e instanceof ArmorStandEntity stand && e.getCommandTags().contains(TAG_HEAD)) {
-                    float yaw = (world.getServer().getTicks() * cfg.rotationSpeed) % 360f;
-                    stand.setYaw(yaw);
+                if (e instanceof ArmorStand stand && e.getTags().contains(TAG_HEAD)) {
+                    float yaw = (world.getServer().getTickCount() * cfg.rotationSpeed) % 360f;
+                    stand.setYRot(yaw);
 
                     double baseY = getBaseY(stand);
-                    double bob = Math.sin(world.getServer().getTicks() * cfg.bobbingSpeed) * cfg.bobbingAmplitude;
-                    stand.setPosition(stand.getX(), baseY + bob, stand.getZ());
+                    double bob = Math.sin(world.getServer().getTickCount() * cfg.bobbingSpeed) * cfg.bobbingAmplitude;
+                    stand.setPos(stand.getX(), baseY + bob, stand.getZ());
                 }
 
-                if (eachSecond && e instanceof DisplayEntity.TextDisplayEntity text) {
+                if (eachSecond && e instanceof Display.TextDisplay text) {
                     long expiry = getExpiry(e);
                     if (expiry <= 0 || System.currentTimeMillis() >= expiry) {
                         continue;
@@ -149,35 +147,35 @@ public final class DeathHologramHandler {
         }
     }
 
-    public static void removeById(ServerWorld world, UUID hologramId) {
+    public static void removeById(ServerLevel world, UUID hologramId) {
         String hidTag = TAG_HOLOGRAM_ID + hologramId;
-        for (Entity e : world.iterateEntities()) {
+        for (Entity e : world.getAllEntities()) {
             if (e == null || e.isRemoved()) continue;
 
-            if (e.getCommandTags().contains(hidTag)) {
+            if (e.getTags().contains(hidTag)) {
                 e.discard();
             }
         }
     }
 
-    public static Text buildText(String name, int seconds) {
+    public static Component buildText(String name, int seconds) {
         int safeSeconds = Math.max(0, seconds);
         int min = safeSeconds / 60;
         int sec = safeSeconds % 60;
 
-        Formatting timeColor = safeSeconds >= 60 ? Formatting.GREEN :
-                safeSeconds >= 30 ? Formatting.YELLOW : Formatting.RED;
+        ChatFormatting timeColor = safeSeconds >= 60 ? ChatFormatting.GREEN :
+                safeSeconds >= 30 ? ChatFormatting.YELLOW : ChatFormatting.RED;
 
-        return Text.literal("\n ")
-                .append(Text.literal(name).formatted(Formatting.AQUA, Formatting.BOLD))
-                .append(Text.translatable("eroded.death.hologram.line.protection"))
-                .append(Text.literal(String.format(" %d:%02d", min, sec)).formatted(timeColor, Formatting.BOLD))
-                .append(Text.translatable("eroded.death.hologram.line.hint"))
-                .append(Text.literal("\n "));
+        return Component.literal("\n ")
+                .append(Component.literal(name).withStyle(ChatFormatting.AQUA, ChatFormatting.BOLD))
+                .append(Component.translatable("eroded.death.hologram.line.protection"))
+                .append(Component.literal(String.format(" %d:%02d", min, sec)).withStyle(timeColor, ChatFormatting.BOLD))
+                .append(Component.translatable("eroded.death.hologram.line.hint"))
+                .append(Component.literal("\n "));
     }
 
     private static UUID getHologramIdFromTags(Entity e) {
-        for (String tag : e.getCommandTags()) {
+        for (String tag : e.getTags()) {
             if (tag.startsWith(TAG_HOLOGRAM_ID)) {
                 try {
                     return UUID.fromString(tag.substring(TAG_HOLOGRAM_ID.length()));
@@ -188,7 +186,7 @@ public final class DeathHologramHandler {
     }
 
     private static double getBaseY(Entity e) {
-        for (String tag : e.getCommandTags()) {
+        for (String tag : e.getTags()) {
             if (tag.startsWith(TAG_BASE_Y)) {
                 try { return Double.parseDouble(tag.substring(TAG_BASE_Y.length())); } catch (Exception ignored) {}
             }
@@ -197,7 +195,7 @@ public final class DeathHologramHandler {
     }
 
     private static long getExpiry(Entity e) {
-        for (String tag : e.getCommandTags()) {
+        for (String tag : e.getTags()) {
             if (tag.startsWith(TAG_EXPIRY)) {
                 try { return Long.parseLong(tag.substring(TAG_EXPIRY.length())); } catch (Exception ignored) {}
             }
@@ -206,7 +204,7 @@ public final class DeathHologramHandler {
     }
 
     private static String getName(Entity e) {
-        for (String tag : e.getCommandTags()) {
+        for (String tag : e.getTags()) {
             if (tag.startsWith(TAG_NAME)) {
                 return tag.substring(TAG_NAME.length());
             }

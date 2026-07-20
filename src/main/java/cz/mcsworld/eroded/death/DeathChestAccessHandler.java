@@ -2,15 +2,15 @@ package cz.mcsworld.eroded.death;
 
 import cz.mcsworld.eroded.death.block.ErodedBlocks;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.Text;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.BlockHitResult;
 
 public final class DeathChestAccessHandler {
 
@@ -20,41 +20,41 @@ public final class DeathChestAccessHandler {
         UseBlockCallback.EVENT.register(DeathChestAccessHandler::onUse);
     }
 
-    private static ActionResult onUse(
-            PlayerEntity player,
-            World world,
-            Hand hand,
+    private static InteractionResult onUse(
+            Player player,
+            Level world,
+            InteractionHand hand,
             BlockHitResult hit
     ) {
-        if (world.isClient()) return ActionResult.PASS;
-        if (!(player instanceof ServerPlayerEntity serverPlayer)) {
-            return ActionResult.PASS;
+        if (world.isClientSide()) return InteractionResult.PASS;
+        if (!(player instanceof ServerPlayer serverPlayer)) {
+            return InteractionResult.PASS;
         }
 
         BlockPos pos = hit.getBlockPos();
 
-        if (!world.getBlockState(pos).isOf(ErodedBlocks.DEATH_ENDER_CHEST)) {
-            return ActionResult.PASS;
+        if (!world.getBlockState(pos).is(ErodedBlocks.DEATH_ENDER_CHEST)) {
+            return InteractionResult.PASS;
         }
 
-        DeathChestState state = DeathChestState.get((ServerWorld) world);
+        DeathChestState state = DeathChestState.get((ServerLevel) world);
         DeathChestState.Entry entry = state.get(pos);
 
-        if (entry == null) return ActionResult.PASS;
+        if (entry == null) return InteractionResult.PASS;
 
         if (!state.isProtected(pos)) {
-            return ActionResult.PASS;
+            return InteractionResult.PASS;
         }
 
-        if (serverPlayer.getUuid().equals(entry.owner())) {
-            return ActionResult.PASS;
+        if (serverPlayer.getUUID().equals(entry.owner())) {
+            return InteractionResult.PASS;
         }
 
-        serverPlayer.sendMessage(
-                Text.translatable("eroded.death.chest.protected"),
+        serverPlayer.displayClientMessage(
+                Component.translatable("eroded.death.chest.protected"),
                 true
         );
 
-        return ActionResult.FAIL;
+        return InteractionResult.FAIL;
     }
 }

@@ -4,15 +4,16 @@ import cz.mcsworld.eroded.config.darkness.DarknessConfigs;
 import cz.mcsworld.eroded.death.block.ErodedBlocks;
 import cz.mcsworld.eroded.world.territory.*;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.entity.mob.HostileEntity;
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.*;
-
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -41,17 +42,17 @@ public final class DarknessLightEater {
 
         actions = 0;
 
-        for (ServerWorld world : server.getWorlds()) {
-            long tick = world.getServer().getTicks();
+        for (ServerLevel world : server.getAllLevels()) {
+            long tick = world.getServer().getTickCount();
             Map<ChunkPos, Float> threatCache = new HashMap<>();
 
-            for (ServerPlayerEntity player : world.getPlayers()) {
-                Box playerZone = new Box(player.getBlockPos()).expand(48);
+            for (ServerPlayer player : world.players()) {
+                AABB playerZone = new AABB(player.blockPosition()).inflate(48);
 
-                for (HostileEntity mob : world.getEntitiesByClass(
-                        HostileEntity.class,
+                for (Monster mob : world.getEntitiesOfClass(
+                        Monster.class,
                         playerZone,
-                        e -> e.getCommandTags().contains(MutatedMobResolver.MUTATED_TAG)
+                        e -> e.getTags().contains(MutatedMobResolver.MUTATED_TAG)
                 )) {
                     if (actions >= cfg.maxLightActionsPerTick) return;
                     tryExtinguish(world, mob, threatCache, tick, cfg);
@@ -61,15 +62,15 @@ public final class DarknessLightEater {
     }
 
     private static void tryExtinguish(
-            ServerWorld world,
-            HostileEntity mob,
+            ServerLevel world,
+            Monster mob,
             Map<ChunkPos, Float> threatCache,
             long tick, DarknessConfigs.Server cfg
     ) {
-        BlockPos center = mob.getBlockPos();
+        BlockPos center = mob.blockPosition();
 
-        for (ServerPlayerEntity player : world.getPlayers()) {
-            if (player.getBlockPos().isWithinDistance(center, 6) && isHoldingLantern(player)) {
+        for (ServerPlayer player : world.players()) {
+            if (player.blockPosition().closerThan(center, 6) && isHoldingLantern(player)) {
                 return;
             }
         }
@@ -84,7 +85,7 @@ public final class DarknessLightEater {
 
         if (threat < cfg.threatRequired) return;
 
-        BlockPos.Mutable pos = new BlockPos.Mutable();
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
 
         for (int dx = -cfg.lightEaterRadius; dx <= cfg.lightEaterRadius; dx++) {
             for (int dy = -1; dy <= 1; dy++) {
@@ -107,11 +108,11 @@ public final class DarknessLightEater {
 
                     if (destroy) {
                         DarknessLightConsumeEffects.play(world, pos);
-                        world.breakBlock(pos, false);
+                        world.destroyBlock(pos, false);
 
-                        for (HostileEntity nearby : world.getEntitiesByClass(
-                                HostileEntity.class,
-                                new Box(pos).expand(6),
+                        for (Monster nearby : world.getEntitiesOfClass(
+                                Monster.class,
+                                new AABB(pos).inflate(6),
                                 e -> true
                         )) {
                             DarknessMobLightMemory.markLightExtinguished(nearby);
@@ -130,23 +131,23 @@ public final class DarknessLightEater {
     }
 
 
-    private static boolean isHoldingLantern(ServerPlayerEntity player) {
-        return player.getMainHandStack().isOf(ErodedBlocks.WARDING_LANTERN.asItem()) ||
-                player.getOffHandStack().isOf(ErodedBlocks.WARDING_LANTERN.asItem());
+    private static boolean isHoldingLantern(ServerPlayer player) {
+        return player.getMainHandItem().is(ErodedBlocks.WARDING_LANTERN.asItem()) ||
+                player.getOffhandItem().is(ErodedBlocks.WARDING_LANTERN.asItem());
     }
 
-    private static void applyDimVariant(ServerWorld world, BlockPos pos, BlockState state) {
+    private static void applyDimVariant(ServerLevel world, BlockPos pos, BlockState state) {
         Block block = state.getBlock();
 
         if (block == Blocks.TORCH || block == Blocks.WALL_TORCH) {
-            world.setBlockState(pos, Blocks.AIR.getDefaultState(), Block.NOTIFY_ALL);
+            world.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
         }
 
         if (block == Blocks.CAMPFIRE) {
-            world.setBlockState(
+            world.setBlock(
                     pos,
-                    state.with(net.minecraft.block.CampfireBlock.LIT, false),
-                    Block.NOTIFY_ALL
+                    state.setValue(net.minecraft.world.level.block.CampfireBlock.LIT, false),
+                    Block.UPDATE_ALL
             );
         }
     }

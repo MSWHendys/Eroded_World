@@ -1,23 +1,22 @@
 package cz.mcsworld.eroded.world.darkness;
 
 import cz.mcsworld.eroded.config.darkness.DarknessConfigs;
-import net.minecraft.entity.mob.HostileEntity;
-
 import java.util.Map;
 import java.util.WeakHashMap;
+import net.minecraft.world.entity.monster.Monster;
 
 public final class DarknessMobLightMemory {
 
-    private static final Map<HostileEntity, Integer> MEMORY = new WeakHashMap<>();
+    private static final Map<Monster, Integer> MEMORY = new WeakHashMap<>();
 
     private DarknessMobLightMemory() {}
 
-    public static void markLightExtinguished(HostileEntity mob) {
+    public static void markLightExtinguished(Monster mob) {
         var cfg = DarknessConfigs.get().server;
         MEMORY.put(mob, cfg.postLightCooldownTicks);
     }
 
-    public static boolean isInPostLightPause(HostileEntity mob) {
+    public static boolean isInPostLightPause(Monster mob) {
         Integer ticks = MEMORY.get(mob);
         if (ticks == null) return false;
 

@@ -1,12 +1,12 @@
 package cz.mcsworld.eroded.mixin;
 
 import cz.mcsworld.eroded.protection.MobGriefingProtectionManager;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.TurtleEggBlock;
-import net.minecraft.entity.Entity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.TurtleEggBlock;
+import net.minecraft.world.level.block.state.BlockState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -16,19 +16,19 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class TurtleEggProtectionMixin {
 
     @Inject(
-            method = "tryBreakEgg",
+            method = "destroyEgg",
             at = @At("HEAD"),
             cancellable = true
     )
     private void eroded$preventTurtleEggBreakingInClaim(
-            World world,
+            Level world,
             BlockState state,
             BlockPos pos,
             Entity entity,
             int inverseChance,
             CallbackInfo ci
     ) {
-        if (world instanceof ServerWorld serverWorld
+        if (world instanceof ServerLevel serverWorld
                 && !MobGriefingProtectionManager.canMobModifyAt(serverWorld, pos)) {
             ci.cancel();
         }

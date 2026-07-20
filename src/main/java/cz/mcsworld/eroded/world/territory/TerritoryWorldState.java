@@ -2,16 +2,15 @@ package cz.mcsworld.eroded.world.territory;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.world.PersistentState;
-import net.minecraft.world.PersistentStateType;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.saveddata.SavedData;
+import net.minecraft.world.level.saveddata.SavedDataType;
 
-public final class TerritoryWorldState extends PersistentState {
+public final class TerritoryWorldState extends SavedData {
 
     private static final String ID = "eroded_territory";
     private final Map<TerritoryCellKey, TerritoryCell> cells = new HashMap<>();
@@ -76,16 +75,16 @@ public final class TerritoryWorldState extends PersistentState {
                     }
             );
 
-    public static final PersistentStateType<TerritoryWorldState> TYPE =
-            new PersistentStateType<>(
+    public static final SavedDataType<TerritoryWorldState> TYPE =
+            new SavedDataType<>(
                     ID,
                     TerritoryWorldState::new,
                     CODEC,
                     null
             );
 
-    public static TerritoryWorldState get(ServerWorld world) {
-        return world.getPersistentStateManager().getOrCreate(TYPE);
+    public static TerritoryWorldState get(ServerLevel world) {
+        return world.getDataStorage().computeIfAbsent(TYPE);
     }
 
     public TerritoryCell getOrCreateCell(TerritoryCellKey key) {

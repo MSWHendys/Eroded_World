@@ -1,43 +1,43 @@
 package cz.mcsworld.eroded.network;
 
 import cz.mcsworld.eroded.ErodedMod;
-import net.minecraft.network.RegistryByteBuf;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.packet.CustomPayload;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 
 public record TerritoryScopeUpdatePayload(
         BlockPos anchorPos,
         String targetUuid,
         boolean connectedScopeMode
-) implements CustomPayload {
+) implements CustomPacketPayload {
 
-    public static final Id<TerritoryScopeUpdatePayload> ID =
-            new Id<>(Identifier.of(ErodedMod.MOD_ID, "territory_scope_update"));
+    public static final Type<TerritoryScopeUpdatePayload> ID =
+            new Type<>(ResourceLocation.fromNamespaceAndPath(ErodedMod.MOD_ID, "territory_scope_update"));
 
-    public static final PacketCodec<RegistryByteBuf, TerritoryScopeUpdatePayload> CODEC =
-            PacketCodec.of(
+    public static final StreamCodec<RegistryFriendlyByteBuf, TerritoryScopeUpdatePayload> CODEC =
+            StreamCodec.ofMember(
                     TerritoryScopeUpdatePayload::write,
                     TerritoryScopeUpdatePayload::read
             );
 
-    private void write(RegistryByteBuf buf) {
-        BlockPos.PACKET_CODEC.encode(buf, anchorPos);
-        buf.writeString(targetUuid);
+    private void write(RegistryFriendlyByteBuf buf) {
+        BlockPos.STREAM_CODEC.encode(buf, anchorPos);
+        buf.writeUtf(targetUuid);
         buf.writeBoolean(connectedScopeMode);
     }
 
-    private static TerritoryScopeUpdatePayload read(RegistryByteBuf buf) {
+    private static TerritoryScopeUpdatePayload read(RegistryFriendlyByteBuf buf) {
         return new TerritoryScopeUpdatePayload(
-                BlockPos.PACKET_CODEC.decode(buf),
-                buf.readString(),
+                BlockPos.STREAM_CODEC.decode(buf),
+                buf.readUtf(),
                 buf.readBoolean()
         );
     }
 
     @Override
-    public Id<? extends CustomPayload> getId() {
+    public Type<? extends CustomPacketPayload> type() {
         return ID;
     }
 }

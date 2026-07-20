@@ -1,23 +1,23 @@
 package cz.mcsworld.eroded.death;
 
-import net.minecraft.registry.RegistryKey;
+import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.Level;
 
 public final class ErodedCompassTargetResolver {
 
     private ErodedCompassTargetResolver() {}
 
     public static BlockPos resolveTarget(
-            ServerPlayerEntity player,
+            ServerPlayer player,
             ErodedDeathMemory memory
     ) {
-        ServerWorld playerWorld = player.getWorld();
-        RegistryKey<World> playerDim = playerWorld.getRegistryKey();
-        RegistryKey<World> deathDim  = memory.getDeathDimension();
+        ServerLevel playerWorld = player.level();
+        ResourceKey<Level> playerDim = playerWorld.dimension();
+        ResourceKey<Level> deathDim  = memory.getDeathDimension();
 
         if (playerDim.equals(deathDim)) {
             return memory.getDeathPos();
@@ -26,16 +26,16 @@ public final class ErodedCompassTargetResolver {
         MinecraftServer server = player.getServer();
         if (server == null) return memory.getDeathPos();
 
-        ServerWorld overworld = server.getWorld(World.OVERWORLD);
+        ServerLevel overworld = server.getLevel(Level.OVERWORLD);
         if (overworld == null) return memory.getDeathPos();
 
-        if (deathDim.equals(World.NETHER) && !playerDim.equals(World.NETHER)) {
-            BlockPos portal = ErodedPortalMemoryState.get(overworld).getOverworldPortal(player.getUuid());
-            return portal != null ? portal : overworld.getSpawnPos();
+        if (deathDim.equals(Level.NETHER) && !playerDim.equals(Level.NETHER)) {
+            BlockPos portal = ErodedPortalMemoryState.get(overworld).getOverworldPortal(player.getUUID());
+            return portal != null ? portal : overworld.getSharedSpawnPos();
         }
 
-        if (deathDim.equals(World.END) && !playerDim.equals(World.END)) {
-            return overworld.getSpawnPos();
+        if (deathDim.equals(Level.END) && !playerDim.equals(Level.END)) {
+            return overworld.getSharedSpawnPos();
         }
 
         return memory.getDeathPos();

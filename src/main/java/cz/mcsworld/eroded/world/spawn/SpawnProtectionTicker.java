@@ -2,7 +2,7 @@ package cz.mcsworld.eroded.world.spawn;
 
 import cz.mcsworld.eroded.server.spawn.SpawnProtectionSystem;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
-import net.minecraft.world.World;
+import net.minecraft.world.level.Level;
 
 public final class SpawnProtectionTicker {
 
@@ -12,7 +12,7 @@ public final class SpawnProtectionTicker {
 
         ServerTickEvents.END_WORLD_TICK.register(world -> {
 
-            if (world.getRegistryKey() != World.OVERWORLD) return;
+            if (world.dimension() != Level.OVERWORLD) return;
 
             SpawnProtectionSystem.tick(world);
         });

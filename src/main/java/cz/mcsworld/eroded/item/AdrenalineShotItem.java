@@ -3,27 +3,27 @@ package cz.mcsworld.eroded.item;
 import cz.mcsworld.eroded.config.energy.EnergyConfig;
 import cz.mcsworld.eroded.skills.SkillData;
 import cz.mcsworld.eroded.skills.SkillManager;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.ItemUsage;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
-import net.minecraft.item.consume.UseAction;
-import net.minecraft.world.World;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ItemUseAnimation;
+import net.minecraft.world.item.ItemUtils;
+import net.minecraft.world.level.Level;
 
 public class AdrenalineShotItem extends Item {
-    public AdrenalineShotItem(Settings settings) {
+    public AdrenalineShotItem(Properties settings) {
         super(settings);
     }
 
     @Override
-    public ItemStack finishUsing(ItemStack stack, World world, LivingEntity user) {
-        if (user instanceof ServerPlayerEntity player) {
+    public ItemStack finishUsingItem(ItemStack stack, Level world, LivingEntity user) {
+        if (user instanceof ServerPlayer player) {
             SkillData data = SkillManager.get(player);
 
             int immunitySeconds = Math.max(
@@ -34,27 +34,27 @@ public class AdrenalineShotItem extends Item {
             data.setImmunity(immunitySeconds);
             SkillManager.save(player);
 
-            player.sendMessage(Text.translatable("eroded.adrenaline.active").formatted(Formatting.GOLD), true);
+            player.displayClientMessage(Component.translatable("eroded.adrenaline.active").withStyle(ChatFormatting.GOLD), true);
         }
 
-        if (user instanceof PlayerEntity player && !player.getAbilities().creativeMode) {
-            stack.decrement(1);
+        if (user instanceof Player player && !player.getAbilities().instabuild) {
+            stack.shrink(1);
         }
         return stack;
     }
 
     @Override
-    public int getMaxUseTime(ItemStack stack, LivingEntity user) {
+    public int getUseDuration(ItemStack stack, LivingEntity user) {
         return 16;
     }
 
     @Override
-    public UseAction getUseAction(ItemStack stack) {
-        return UseAction.DRINK;
+    public ItemUseAnimation getUseAnimation(ItemStack stack) {
+        return ItemUseAnimation.DRINK;
     }
 
     @Override
-    public ActionResult use(World world, PlayerEntity user, Hand hand) {
-        return ItemUsage.consumeHeldItem(world, user, hand);
+    public InteractionResult use(Level world, Player user, InteractionHand hand) {
+        return ItemUtils.startUsingInstantly(world, user, hand);
     }
 }

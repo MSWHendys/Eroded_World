@@ -12,20 +12,20 @@ import com.mojang.serialization.MapCodec;
 import cz.mcsworld.eroded.client.death.ErodedDeathCompassAngle;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.client.render.item.property.numeric.NumericProperties;
-import net.minecraft.client.render.item.property.numeric.NumericProperty;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.dynamic.Codecs;
+import net.minecraft.client.renderer.item.properties.numeric.RangeSelectItemModelProperties;
+import net.minecraft.client.renderer.item.properties.numeric.RangeSelectItemModelProperty;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.ExtraCodecs;
 
 @Environment(EnvType.CLIENT)
-@Mixin(NumericProperties.class)
+@Mixin(RangeSelectItemModelProperties.class)
 public class NumericPropertiesMixin {
 
     @Shadow @Final
-    public static Codecs.IdMapper<Identifier, MapCodec<? extends NumericProperty>> ID_MAPPER;
+    public static ExtraCodecs.LateBoundIdMapper<ResourceLocation, MapCodec<? extends RangeSelectItemModelProperty>> ID_MAPPER;
 
     @Inject(method = "bootstrap()V", at = @At("TAIL"))
     private static void eroded$registerAngle(CallbackInfo info) {
-        ID_MAPPER.put(Identifier.of("eroded", "angle"), ErodedDeathCompassAngle.MAP_CODEC);
+        ID_MAPPER.put(ResourceLocation.fromNamespaceAndPath("eroded", "angle"), ErodedDeathCompassAngle.MAP_CODEC);
     }
 }

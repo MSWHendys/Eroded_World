@@ -1,18 +1,18 @@
 package cz.mcsworld.eroded.world.territory;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.registry.tag.BlockTags;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
 
 public final class TerritoryTracker {
 
     private TerritoryTracker() {}
 
-    public static void onBlockPlaced(ServerWorld world, BlockPos pos, BlockState blockState) {
-        long tick = world.getServer().getTicks();
+    public static void onBlockPlaced(ServerLevel world, BlockPos pos, BlockState blockState) {
+        long tick = world.getServer().getTickCount();
         Block block = blockState.getBlock();
 
         int forest = resolveForestationValue(blockState);
@@ -26,8 +26,8 @@ public final class TerritoryTracker {
         }
     }
 
-    public static void onBlockBroken(ServerWorld world, BlockPos pos, BlockState blockState) {
-        long tick = world.getServer().getTicks();
+    public static void onBlockBroken(ServerLevel world, BlockPos pos, BlockState blockState) {
+        long tick = world.getServer().getTickCount();
         int mining = resolveMiningValue(blockState, pos);
 
         if (mining > 0) {
@@ -35,26 +35,26 @@ public final class TerritoryTracker {
         }
     }
 
-    private static void updateCell(ServerWorld world, BlockPos pos, long tick, java.util.function.Consumer<TerritoryCell> action) {
+    private static void updateCell(ServerLevel world, BlockPos pos, long tick, java.util.function.Consumer<TerritoryCell> action) {
         ChunkPos chunk = new ChunkPos(pos);
         TerritoryCellKey key = TerritoryCellKey.fromChunk(chunk.x, chunk.z);
         TerritoryWorldState worldState = TerritoryWorldState.get(world);
         TerritoryCell cell = worldState.getOrCreateCell(key);
 
         action.accept(cell);
-        worldState.markDirty();
+        worldState.setDirty();
     }
 
     private static int resolveMiningValue(BlockState state, BlockPos pos) {
 
-        if (state.isIn(BlockTags.GOLD_ORES) || state.isIn(BlockTags.IRON_ORES) ||
-                state.isIn(BlockTags.DIAMOND_ORES) || state.isIn(BlockTags.COAL_ORES) ||
-                state.isIn(BlockTags.COPPER_ORES) || state.isIn(BlockTags.REDSTONE_ORES) ||
-                state.isIn(BlockTags.LAPIS_ORES) || state.isIn(BlockTags.EMERALD_ORES)) {
+        if (state.is(BlockTags.GOLD_ORES) || state.is(BlockTags.IRON_ORES) ||
+                state.is(BlockTags.DIAMOND_ORES) || state.is(BlockTags.COAL_ORES) ||
+                state.is(BlockTags.COPPER_ORES) || state.is(BlockTags.REDSTONE_ORES) ||
+                state.is(BlockTags.LAPIS_ORES) || state.is(BlockTags.EMERALD_ORES)) {
             return 3;
         }
 
-        if (state.isIn(BlockTags.BASE_STONE_OVERWORLD) || state.isIn(BlockTags.BASE_STONE_NETHER)) {
+        if (state.is(BlockTags.BASE_STONE_OVERWORLD) || state.is(BlockTags.BASE_STONE_NETHER)) {
             return pos.getY() < 0 ? 2 : 1;
         }
 
@@ -62,11 +62,11 @@ public final class TerritoryTracker {
     }
 
     private static int resolveForestationValue(BlockState state) {
-        if (state.isIn(BlockTags.LOGS)) {
+        if (state.is(BlockTags.LOGS)) {
             return 2;
         }
 
-        if (state.isIn(BlockTags.SAPLINGS)) {
+        if (state.is(BlockTags.SAPLINGS)) {
             return 1;
         }
 
@@ -75,16 +75,16 @@ public final class TerritoryTracker {
 
     private static int resolvePollutionValue(BlockState state) {
 
-        if (state.isIn(BlockTags.CAMPFIRES) || state.isIn(BlockTags.FIRE)) {
+        if (state.is(BlockTags.CAMPFIRES) || state.is(BlockTags.FIRE)) {
             return 2;
         }
 
         Block block = state.getBlock();
-        if (block == net.minecraft.block.Blocks.FURNACE ||
-                block == net.minecraft.block.Blocks.BLAST_FURNACE ||
-                block == net.minecraft.block.Blocks.SMOKER ||
-                block == net.minecraft.block.Blocks.LAVA ||
-                block == net.minecraft.block.Blocks.MAGMA_BLOCK) {
+        if (block == net.minecraft.world.level.block.Blocks.FURNACE ||
+                block == net.minecraft.world.level.block.Blocks.BLAST_FURNACE ||
+                block == net.minecraft.world.level.block.Blocks.SMOKER ||
+                block == net.minecraft.world.level.block.Blocks.LAVA ||
+                block == net.minecraft.world.level.block.Blocks.MAGMA_BLOCK) {
             return 2;
         }
 

@@ -1,32 +1,31 @@
 package cz.mcsworld.eroded.item;
 
-import net.minecraft.component.type.TooltipDisplayComponent;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.tooltip.TooltipType;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
-
 import java.util.function.Consumer;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.TooltipDisplay;
 
 public class TerritoryModuleItem extends Item {
 
-    public TerritoryModuleItem(Settings settings) {
+    public TerritoryModuleItem(Properties settings) {
         super(settings);
     }
 
     @Override
-    public void appendTooltip(
+    public void appendHoverText(
             ItemStack stack,
             Item.TooltipContext context,
-            TooltipDisplayComponent displayComponent,
-            Consumer<Text> textConsumer,
-            TooltipType type
+            TooltipDisplay displayComponent,
+            Consumer<Component> textConsumer,
+            TooltipFlag type
     ) {
-        textConsumer.accept(Text.translatable("tooltip.eroded.territory_module.1").formatted(Formatting.GRAY));
-        textConsumer.accept(Text.translatable("tooltip.eroded.territory_module.2").formatted(Formatting.DARK_GRAY));
-        textConsumer.accept(Text.translatable("tooltip.eroded.territory_module.3").formatted(Formatting.AQUA));
+        textConsumer.accept(Component.translatable("tooltip.eroded.territory_module.1").withStyle(ChatFormatting.GRAY));
+        textConsumer.accept(Component.translatable("tooltip.eroded.territory_module.2").withStyle(ChatFormatting.DARK_GRAY));
+        textConsumer.accept(Component.translatable("tooltip.eroded.territory_module.3").withStyle(ChatFormatting.AQUA));
 
-        super.appendTooltip(stack, context, displayComponent, textConsumer, type);
+        super.appendHoverText(stack, context, displayComponent, textConsumer, type);
     }
 }

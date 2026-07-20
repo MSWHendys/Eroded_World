@@ -1,7 +1,7 @@
 package cz.mcsworld.eroded.crafting;
 
 import cz.mcsworld.eroded.config.crafting.CraftingConfig;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.item.ItemStack;
 
 public class CraftingCgResolver {
 
@@ -10,7 +10,7 @@ public class CraftingCgResolver {
         var root = CraftingConfig.get();
         var cfg = root.cg;
 
-        if (stack.isDamageable()) {
+        if (stack.isDamageableItem()) {
             return cfg.baseCgDamageable;
         }
 

@@ -12,11 +12,11 @@ import cz.mcsworld.eroded.network.SkillSyncPacket;
 import cz.mcsworld.eroded.skills.SkillData;
 import cz.mcsworld.eroded.skills.SkillManager;
 import cz.mcsworld.eroded.skills.SkillType;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 
 public final class CraftingService {
 
@@ -26,7 +26,7 @@ public final class CraftingService {
         CraftingConfig cfg = CraftingConfig.get();
         if (!cfg.enabled) return true;
 
-        ServerPlayerEntity player = context.getPlayer();
+        ServerPlayer player = context.getPlayer();
         SkillData data = SkillManager.get(player);
 
         if (!checkVanillaLevelRequirement(player, result)) {
@@ -39,9 +39,9 @@ public final class CraftingService {
 
         if (cfg.energy.enabled && energyCfg.blockWorkAtZero) {
             if (!data.canAffordEnergy(energyCost)) {
-                player.sendMessage(
-                        Text.translatable("eroded.crafting.not_enough_energy")
-                                .formatted(Formatting.RED),
+                player.displayClientMessage(
+                        Component.translatable("eroded.crafting.not_enough_energy")
+                                .withStyle(ChatFormatting.RED),
                         true
                 );
 
@@ -72,7 +72,7 @@ public final class CraftingService {
         return true;
     }
 
-    private static boolean checkVanillaLevelRequirement(ServerPlayerEntity player, ItemStack result) {
+    private static boolean checkVanillaLevelRequirement(ServerPlayer player, ItemStack result) {
         Item item = result.getItem();
 
         boolean requiresLevel10 =
@@ -81,9 +81,9 @@ public final class CraftingService {
                         || item == ErodedItems.ADRENALINE_SHOT;
 
         if (requiresLevel10 && player.experienceLevel < 10) {
-            player.sendMessage(
-                    Text.translatable("eroded.crafting.requires_level_10")
-                            .formatted(Formatting.RED),
+            player.displayClientMessage(
+                    Component.translatable("eroded.crafting.requires_level_10")
+                            .withStyle(ChatFormatting.RED),
                     true
             );
             return false;
@@ -130,7 +130,7 @@ public final class CraftingService {
         data.addCg(skill, baseCg * diffCgMult);
     }
 
-    private static void syncSkillsToClient(ServerPlayerEntity player, SkillData data) {
+    private static void syncSkillsToClient(ServerPlayer player, SkillData data) {
         SafeNetworkUtil.safeSend(player, new SkillSyncPacket(
                 data.getCg(SkillType.WOODWORKING),
                 data.getCg(SkillType.SMELTING)

@@ -1,30 +1,30 @@
 package cz.mcsworld.eroded.network;
 
-import net.minecraft.network.RegistryByteBuf;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.packet.CustomPayload;
-import net.minecraft.util.Identifier;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 
 public record AnvilFeedbackPacket(String key, String quality)
-        implements CustomPayload {
+        implements CustomPacketPayload {
 
-    public static final Id<AnvilFeedbackPacket> ID =
-            new Id<>(Identifier.of("eroded", "anvil_feedback"));
+    public static final Type<AnvilFeedbackPacket> ID =
+            new Type<>(ResourceLocation.fromNamespaceAndPath("eroded", "anvil_feedback"));
 
-    public static final PacketCodec<RegistryByteBuf, AnvilFeedbackPacket> CODEC =
-            PacketCodec.of(
+    public static final StreamCodec<RegistryFriendlyByteBuf, AnvilFeedbackPacket> CODEC =
+            StreamCodec.ofMember(
                     (p, buf) -> {
-                        buf.writeString(p.key());
-                        buf.writeString(p.quality());
+                        buf.writeUtf(p.key());
+                        buf.writeUtf(p.quality());
                     },
                     buf -> new AnvilFeedbackPacket(
-                            buf.readString(),
-                            buf.readString()
+                            buf.readUtf(),
+                            buf.readUtf()
                     )
             );
 
     @Override
-    public Id<? extends CustomPayload> getId() {
+    public Type<? extends CustomPacketPayload> type() {
         return ID;
     }
 }

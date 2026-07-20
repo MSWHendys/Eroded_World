@@ -3,19 +3,19 @@ package cz.mcsworld.eroded.core;
 import com.mojang.serialization.Codec;
 import cz.mcsworld.eroded.ErodedMod;
 import cz.mcsworld.eroded.crafting.Quality;
-import net.minecraft.component.ComponentType;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.Registry;
-import net.minecraft.util.Identifier;
+import net.minecraft.core.Registry;
+import net.minecraft.core.component.DataComponentType;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 
 public final class ErodedComponents {
 
-    public static final ComponentType<Quality> QUALITY =
+    public static final DataComponentType<Quality> QUALITY =
             Registry.register(
-                    Registries.DATA_COMPONENT_TYPE,
-                    Identifier.of(ErodedMod.MOD_ID, "quality"),
-                    ComponentType.<Quality>builder()
-                            .codec(Codec.STRING.xmap(
+                    BuiltInRegistries.DATA_COMPONENT_TYPE,
+                    ResourceLocation.fromNamespaceAndPath(ErodedMod.MOD_ID, "quality"),
+                    DataComponentType.<Quality>builder()
+                            .persistent(Codec.STRING.xmap(
                                     value -> {
                                         try {
                                             return Quality.valueOf(value);

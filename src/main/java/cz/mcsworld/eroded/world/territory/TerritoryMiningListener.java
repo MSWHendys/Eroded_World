@@ -1,8 +1,8 @@
 package cz.mcsworld.eroded.world.territory;
 
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.ChunkPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.ChunkPos;
 
 public final class TerritoryMiningListener {
 
@@ -11,9 +11,9 @@ public final class TerritoryMiningListener {
     public static void register() {
 
         PlayerBlockBreakEvents.AFTER.register((world, player, pos, blockState, blockEntity) -> {
-            if (!(world instanceof ServerWorld serverWorld)) return;
+            if (!(world instanceof ServerLevel serverWorld)) return;
 
-            long tick = serverWorld.getServer().getTicks();
+            long tick = serverWorld.getServer().getTickCount();
             TerritoryTracker.onBlockBroken(serverWorld, pos, blockState);
             ChunkPos chunk = new ChunkPos(pos);
             TerritoryCellKey key = TerritoryCellKey.fromChunk(chunk.x, chunk.z);
@@ -23,7 +23,7 @@ public final class TerritoryMiningListener {
 
             cell.incrementMiningScore();
             cell.addMining(1, tick);
-            stateData.markDirty();
+            stateData.setDirty();
             cell.setLastMiningActivityTick(tick);
         });
     }

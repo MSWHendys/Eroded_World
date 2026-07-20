@@ -1,9 +1,9 @@
 package cz.mcsworld.eroded.world.darkness;
 
 import cz.mcsworld.eroded.world.territory.*;
-import net.minecraft.entity.mob.HostileEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.ChunkPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.level.ChunkPos;
 
 
 public final class MutatedMobResolver {
@@ -12,9 +12,9 @@ public final class MutatedMobResolver {
 
     private MutatedMobResolver() {}
 
-    public static boolean shouldBeMutated(ServerWorld world, HostileEntity mob) {
+    public static boolean shouldBeMutated(ServerLevel world, Monster mob) {
 
-        ChunkPos cp = new ChunkPos(mob.getBlockPos());
+        ChunkPos cp = new ChunkPos(mob.blockPosition());
 
         TerritoryWorldState worldState =
                 TerritoryWorldState.get(world);
@@ -25,7 +25,7 @@ public final class MutatedMobResolver {
         TerritoryCell cell =
                 worldState.getOrCreateCell(key);
 
-        long tick = world.getServer().getTicks();
+        long tick = world.getServer().getTickCount();
 
         float threat =
                 TerritoryThreatResolver.computeThreat(cell, tick);

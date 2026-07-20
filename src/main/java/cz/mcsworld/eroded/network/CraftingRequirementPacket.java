@@ -1,23 +1,23 @@
 package cz.mcsworld.eroded.network;
 
-import net.minecraft.network.RegistryByteBuf;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.packet.CustomPayload;
-import net.minecraft.util.Identifier;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 
-public record CraftingRequirementPacket(String key) implements CustomPayload {
+public record CraftingRequirementPacket(String key) implements CustomPacketPayload {
 
-    public static final Id<CraftingRequirementPacket> ID =
-            new Id<>(Identifier.of("eroded", "crafting_requirement"));
+    public static final Type<CraftingRequirementPacket> ID =
+            new Type<>(ResourceLocation.fromNamespaceAndPath("eroded", "crafting_requirement"));
 
-    public static final PacketCodec<RegistryByteBuf, CraftingRequirementPacket> CODEC =
-            PacketCodec.of(
-                    (packet, buf) -> buf.writeString(packet.key()),
-                    buf -> new CraftingRequirementPacket(buf.readString())
+    public static final StreamCodec<RegistryFriendlyByteBuf, CraftingRequirementPacket> CODEC =
+            StreamCodec.ofMember(
+                    (packet, buf) -> buf.writeUtf(packet.key()),
+                    buf -> new CraftingRequirementPacket(buf.readUtf())
             );
 
     @Override
-    public Id<? extends CustomPayload> getId() {
+    public Type<? extends CustomPacketPayload> type() {
         return ID;
     }
 }

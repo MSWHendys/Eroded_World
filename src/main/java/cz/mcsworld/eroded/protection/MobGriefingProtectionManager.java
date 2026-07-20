@@ -2,9 +2,9 @@ package cz.mcsworld.eroded.protection;
 
 import cz.mcsworld.eroded.config.territory.TerritoryConfig;
 import cz.mcsworld.eroded.world.spawn.ExplosionProtectionManager;
-import net.minecraft.entity.Entity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.Entity;
 
 public final class MobGriefingProtectionManager {
 
@@ -25,7 +25,7 @@ public final class MobGriefingProtectionManager {
         return ExplosionProtectionManager.preventMobGriefing();
     }
 
-    public static boolean isProtected(ServerWorld world, BlockPos pos) {
+    public static boolean isProtected(ServerLevel world, BlockPos pos) {
 
         if (isSpawnMobGriefingProtectionEnabled()
                 && ExplosionProtectionManager.isProtected(world, pos)) {
@@ -41,17 +41,17 @@ public final class MobGriefingProtectionManager {
     }
 
     public static boolean isProtectedAround(Entity entity, int radius) {
-        if (!(entity.getWorld() instanceof ServerWorld world)) {
+        if (!(entity.level() instanceof ServerLevel world)) {
             return false;
         }
 
-        BlockPos center = entity.getBlockPos();
+        BlockPos center = entity.blockPosition();
         int r = Math.max(0, radius);
 
         for (int x = -r; x <= r; x++) {
             for (int y = -1; y <= 1; y++) {
                 for (int z = -r; z <= r; z++) {
-                    BlockPos pos = center.add(x, y, z);
+                    BlockPos pos = center.offset(x, y, z);
 
                     if (isProtected(world, pos)) {
                         return true;
@@ -63,7 +63,7 @@ public final class MobGriefingProtectionManager {
         return false;
     }
 
-    public static boolean canMobModifyAt(ServerWorld world, BlockPos pos) {
+    public static boolean canMobModifyAt(ServerLevel world, BlockPos pos) {
         return !isProtected(world, pos);
     }
 }

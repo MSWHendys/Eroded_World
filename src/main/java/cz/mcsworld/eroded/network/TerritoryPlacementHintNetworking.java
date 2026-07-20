@@ -3,8 +3,8 @@ package cz.mcsworld.eroded.network;
 import cz.mcsworld.eroded.protection.TerritoryProtectionManager;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 
 public final class TerritoryPlacementHintNetworking {
 
@@ -22,9 +22,9 @@ public final class TerritoryPlacementHintNetworking {
         ServerPlayNetworking.registerGlobalReceiver(
                 TerritoryPlacementHintPayload.ID,
                 (payload, context) -> context.server().execute(() -> {
-                    ServerPlayerEntity player = context.player();
+                    ServerPlayer player = context.player();
 
-                    if (!(player.getWorld() instanceof ServerWorld world)) {
+                    if (!(player.level() instanceof ServerLevel world)) {
                         return;
                     }
 

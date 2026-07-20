@@ -22,9 +22,10 @@
     "eroded.mixins.json"
   ],
   "depends": {
-    "fabricloader": ">=${loader_version}",
-    "fabric": ">=${fabric_version}",
+    "fabricloader": "${loader_range}",
     "minecraft": "${minecraft_range}",
-    "cloth-config": "*"
+    "java": ">=21",
+    "fabric-api": "${fabric_api_range}",
+    "cloth-config": "${cloth_config_range}"
   }
 }

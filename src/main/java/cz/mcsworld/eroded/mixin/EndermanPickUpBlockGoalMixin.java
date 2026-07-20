@@ -1,7 +1,7 @@
 package cz.mcsworld.eroded.mixin;
 
 import cz.mcsworld.eroded.protection.MobGriefingProtectionManager;
-import net.minecraft.entity.mob.EndermanEntity;
+import net.minecraft.world.entity.monster.EnderMan;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -9,15 +9,15 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(targets = "net.minecraft.entity.mob.EndermanEntity$PickUpBlockGoal")
+@Mixin(targets = "net.minecraft.world.entity.monster.EnderMan$EndermanTakeBlockGoal")
 public abstract class EndermanPickUpBlockGoalMixin {
 
     @Shadow
     @Final
-    private EndermanEntity enderman;
+    private EnderMan enderman;
 
     @Inject(
-            method = "canStart",
+            method = "canUse",
             at = @At("HEAD"),
             cancellable = true
     )

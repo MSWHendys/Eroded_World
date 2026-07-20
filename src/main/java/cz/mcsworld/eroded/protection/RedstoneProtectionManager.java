@@ -1,10 +1,10 @@
 package cz.mcsworld.eroded.protection;
 
 import cz.mcsworld.eroded.world.spawn.ExplosionProtectionManager;
-import net.minecraft.entity.Entity;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
 
 public final class RedstoneProtectionManager {
 
@@ -12,8 +12,8 @@ public final class RedstoneProtectionManager {
     }
 
     public static boolean canPlayerUseControl(
-            ServerPlayerEntity player,
-            ServerWorld world,
+            ServerPlayer player,
+            ServerLevel world,
             BlockPos pos
     ) {
 
@@ -28,13 +28,13 @@ public final class RedstoneProtectionManager {
 
     public static boolean canEntityTriggerPressurePlate(
             Entity entity,
-            ServerWorld world,
+            ServerLevel world,
             BlockPos pos
     ) {
 
         if (ExplosionProtectionManager.isProtected(world, pos)
                 && ExplosionProtectionManager.preventPressurePlates()) {
-            if (!(entity instanceof ServerPlayerEntity player)) {
+            if (!(entity instanceof ServerPlayer player)) {
                 return false;
             }
 
@@ -44,7 +44,7 @@ public final class RedstoneProtectionManager {
         }
 
         if (TerritoryProtectionManager.getActiveClaimAt(world, pos) != null) {
-            if (!(entity instanceof ServerPlayerEntity player)) {
+            if (!(entity instanceof ServerPlayer player)) {
                 return false;
             }
 

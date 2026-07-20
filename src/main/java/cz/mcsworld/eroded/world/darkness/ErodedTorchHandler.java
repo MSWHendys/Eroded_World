@@ -4,19 +4,19 @@ import cz.mcsworld.eroded.config.darkness.DarknessConfigs;
 import cz.mcsworld.eroded.death.block.ErodedBlocks;
 import cz.mcsworld.eroded.item.ErodedTorchItem;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
-import net.minecraft.block.Block;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.LightBlock;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.item.ItemStack;
-import net.minecraft.registry.RegistryKey;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.world.World;
-import net.minecraft.world.LightType;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LightLayer;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LightBlock;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -30,7 +30,7 @@ public final class ErodedTorchHandler {
     }
 
     private record LastLight(
-            RegistryKey<World> worldKey,
+            ResourceKey<Level> worldKey,
             BlockPos pos
     ) {
     }
@@ -51,13 +51,13 @@ public final class ErodedTorchHandler {
         );
 
         boolean rechargeTick =
-                server.getTicks() % rechargeInterval == 0;
+                server.getTickCount() % rechargeInterval == 0;
 
         boolean secondTick =
-                server.getTicks() % 20 == 0;
+                server.getTickCount() % 20 == 0;
 
-        for (ServerPlayerEntity player :
-                server.getPlayerManager().getPlayerList()) {
+        for (ServerPlayer player :
+                server.getPlayerList().getPlayers()) {
 
             tickPlayer(
                     server,
@@ -71,15 +71,15 @@ public final class ErodedTorchHandler {
 
     private static void tickPlayer(
             MinecraftServer server,
-            ServerPlayerEntity player,
+            ServerPlayer player,
             boolean systemEnabled,
             boolean rechargeTick,
             boolean secondTick
     ) {
         var cfg = DarknessConfigs.get().server.erodedTorch;
 
-        ServerWorld world = player.getWorld();
-        UUID uuid = player.getUuid();
+        ServerLevel world = player.level();
+        UUID uuid = player.getUUID();
 
         ItemStack torch = getHeldTorch(player);
         boolean held = !torch.isEmpty();
@@ -99,7 +99,7 @@ public final class ErodedTorchHandler {
                 !cfg.drainOnlyInDarkness
                         || isTorchEnvironmentActive(
                         world,
-                        player.getBlockPos()
+                        player.blockPosition()
                 );
 
         if (!environmentActive) {
@@ -109,7 +109,7 @@ public final class ErodedTorchHandler {
                 boolean recharged = rechargeStack(torch);
 
                 if (recharged) {
-                    player.getInventory().markDirty();
+                    player.getInventory().setChanged();
                 }
             }
 
@@ -132,7 +132,7 @@ public final class ErodedTorchHandler {
             }
         }
 
-        BlockPos playerPos = player.getBlockPos();
+        BlockPos playerPos = player.blockPosition();
         BlockPos wantedPos = findLightPos(world, playerPos);
 
         if (wantedPos == null) {
@@ -143,20 +143,20 @@ public final class ErodedTorchHandler {
         LastLight oldLight = LAST_LIGHT.get(uuid);
 
         if (oldLight != null) {
-            if (oldLight.worldKey().equals(world.getRegistryKey())) {
+            if (oldLight.worldKey().equals(world.dimension())) {
                 BlockPos oldPos = oldLight.pos();
 
-                if (player.squaredDistanceTo(
+                if (player.distanceToSqr(
                         oldPos.getX() + 0.5D,
                         oldPos.getY() + 0.5D,
                         oldPos.getZ() + 0.5D
                 ) < 2.25D) {
 
-                    if (world.getBlockState(oldPos).isOf(Blocks.LIGHT)) {
+                    if (world.getBlockState(oldPos).is(Blocks.LIGHT)) {
                         return;
                     }
 
-                    if (world.isAir(oldPos)) {
+                    if (world.isEmptyBlock(oldPos)) {
                         placeLightAt(world, oldPos);
                         return;
                     }
@@ -172,19 +172,19 @@ public final class ErodedTorchHandler {
             LAST_LIGHT.put(
                     uuid,
                     new LastLight(
-                            world.getRegistryKey(),
-                            wantedPos.toImmutable()
+                            world.dimension(),
+                            wantedPos.immutable()
                     )
             );
         }
     }
     private static boolean isTorchEnvironmentActive(
-            ServerWorld world,
+            ServerLevel world,
             BlockPos pos
     ) {
         var cfg = DarknessConfigs.get().server.erodedTorch;
 
-        long time = world.getTimeOfDay() % 24000L;
+        long time = world.getDayTime() % 24000L;
 
         boolean eveningOrNight = isTimeInside(
                 time,
@@ -192,13 +192,13 @@ public final class ErodedTorchHandler {
                 cfg.activeNightEndTime
         );
 
-        int skyLight = world.getLightLevel(
-                LightType.SKY,
+        int skyLight = world.getBrightness(
+                LightLayer.SKY,
                 pos
         );
 
         boolean shadowOrCover =
-                !world.isSkyVisible(pos)
+                !world.canSeeSky(pos)
                         || skyLight <= cfg.activeSkyLightMax;
 
         return eveningOrNight || shadowOrCover;
@@ -209,13 +209,13 @@ public final class ErodedTorchHandler {
             int start,
             int end
     ) {
-        int safeStart = MathHelper.clamp(
+        int safeStart = Mth.clamp(
                 start,
                 0,
                 23999
         );
 
-        int safeEnd = MathHelper.clamp(
+        int safeEnd = Mth.clamp(
                 end,
                 0,
                 23999
@@ -263,21 +263,21 @@ public final class ErodedTorchHandler {
         int targetMax = ErodedTorchItem.getTargetMaxDamage();
 
         if (torch.getMaxDamage() != targetMax) {
-            torch.set(DataComponentTypes.MAX_DAMAGE, targetMax);
+            torch.set(DataComponents.MAX_DAMAGE, targetMax);
 
-            if (torch.getDamage() >= targetMax) {
-                torch.setDamage(targetMax);
+            if (torch.getDamageValue() >= targetMax) {
+                torch.setDamageValue(targetMax);
             }
         }
     }
 
-    private static ItemStack getHeldTorch(ServerPlayerEntity player) {
-        if (isErodedTorch(player.getMainHandStack())) {
-            return player.getMainHandStack();
+    private static ItemStack getHeldTorch(ServerPlayer player) {
+        if (isErodedTorch(player.getMainHandItem())) {
+            return player.getMainHandItem();
         }
 
-        if (isErodedTorch(player.getOffHandStack())) {
-            return player.getOffHandStack();
+        if (isErodedTorch(player.getOffhandItem())) {
+            return player.getOffhandItem();
         }
 
         return ItemStack.EMPTY;
@@ -285,10 +285,10 @@ public final class ErodedTorchHandler {
 
     private static boolean isErodedTorch(ItemStack stack) {
         return !stack.isEmpty()
-                && stack.isOf(ErodedBlocks.ERODED_TORCH_ITEM);
+                && stack.is(ErodedBlocks.ERODED_TORCH_ITEM);
     }
 
-    private static void rechargeInventory(ServerPlayerEntity player) {
+    private static void rechargeInventory(ServerPlayer player) {
         var cfg = DarknessConfigs.get().server.erodedTorch;
 
         int rechargeAmount = Math.max(
@@ -300,8 +300,8 @@ public final class ErodedTorchHandler {
             return;
         }
 
-        for (int slot = 0; slot < player.getInventory().size(); slot++) {
-            ItemStack stack = player.getInventory().getStack(slot);
+        for (int slot = 0; slot < player.getInventory().getContainerSize(); slot++) {
+            ItemStack stack = player.getInventory().getItem(slot);
 
             if (!isErodedTorch(stack)) {
                 continue;
@@ -325,45 +325,45 @@ public final class ErodedTorchHandler {
     }
 
     private static boolean isHeldStack(
-            ServerPlayerEntity player,
+            ServerPlayer player,
             ItemStack stack
     ) {
-        return stack == player.getMainHandStack()
-                || stack == player.getOffHandStack();
+        return stack == player.getMainHandItem()
+                || stack == player.getOffhandItem();
     }
 
     private static BlockPos findLightPos(
-            ServerWorld world,
+            ServerLevel world,
             BlockPos playerPos
     ) {
-        if (canPlaceLightAt(world, playerPos.up())) {
-            return playerPos.up().toImmutable();
+        if (canPlaceLightAt(world, playerPos.above())) {
+            return playerPos.above().immutable();
         }
 
         if (canPlaceLightAt(world, playerPos)) {
-            return playerPos.toImmutable();
+            return playerPos.immutable();
         }
 
         return null;
     }
 
     private static boolean canPlaceLightAt(
-            ServerWorld world,
+            ServerLevel world,
             BlockPos pos
     ) {
-        return world.isAir(pos)
-                || world.getBlockState(pos).isOf(Blocks.LIGHT);
+        return world.isEmptyBlock(pos)
+                || world.getBlockState(pos).is(Blocks.LIGHT);
     }
 
     private static void placeLightAt(
-            ServerWorld world,
+            ServerLevel world,
             BlockPos pos
     ) {
         if (!canPlaceLightAt(world, pos)) {
             return;
         }
 
-        int lightLevel = MathHelper.clamp(
+        int lightLevel = Mth.clamp(
                 DarknessConfigs.get()
                         .server
                         .erodedTorch
@@ -372,26 +372,26 @@ public final class ErodedTorchHandler {
                 15
         );
 
-        world.setBlockState(
+        world.setBlock(
                 pos,
                 Blocks.LIGHT
-                        .getDefaultState()
-                        .with(LightBlock.LEVEL_15, lightLevel),
-                Block.NOTIFY_ALL
+                        .defaultBlockState()
+                        .setValue(LightBlock.LEVEL, lightLevel),
+                Block.UPDATE_ALL
         );
     }
 
     private static void removeLightAt(
-            ServerWorld world,
+            ServerLevel world,
             BlockPos pos
     ) {
         if (world != null
-                && world.getBlockState(pos).isOf(Blocks.LIGHT)) {
+                && world.getBlockState(pos).is(Blocks.LIGHT)) {
 
-            world.setBlockState(
+            world.setBlock(
                     pos,
-                    Blocks.AIR.getDefaultState(),
-                    Block.NOTIFY_ALL
+                    Blocks.AIR.defaultBlockState(),
+                    Block.UPDATE_ALL
             );
         }
     }
@@ -406,7 +406,7 @@ public final class ErodedTorchHandler {
             return;
         }
 
-        ServerWorld world = server.getWorld(lastLight.worldKey());
+        ServerLevel world = server.getLevel(lastLight.worldKey());
 
         if (world != null) {
             removeLightAt(
@@ -418,12 +418,12 @@ public final class ErodedTorchHandler {
 
     public static void cleanup(
             UUID uuid,
-            ServerWorld fallbackWorld
+            ServerLevel fallbackWorld
     ) {
         LastLight lastLight = LAST_LIGHT.remove(uuid);
 
         if (lastLight != null
-                && fallbackWorld.getRegistryKey().equals(lastLight.worldKey())) {
+                && fallbackWorld.dimension().equals(lastLight.worldKey())) {
 
             removeLightAt(
                     fallbackWorld,

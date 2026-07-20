@@ -1,15 +1,14 @@
 package cz.mcsworld.eroded.skills;
 
 import com.mojang.serialization.Codec;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.world.PersistentState;
-import net.minecraft.world.PersistentStateType;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.saveddata.SavedData;
+import net.minecraft.world.level.saveddata.SavedDataType;
 
-public final class SkillPersistentState extends PersistentState {
+public final class SkillPersistentState extends SavedData {
 
     private static final String ID = "eroded_skills";
 
@@ -28,16 +27,16 @@ public final class SkillPersistentState extends PersistentState {
                     state -> state.players
             );
 
-    public static final PersistentStateType<SkillPersistentState> TYPE =
-            new PersistentStateType<>(
+    public static final SavedDataType<SkillPersistentState> TYPE =
+            new SavedDataType<>(
                     ID,
                     SkillPersistentState::new,
                     CODEC,
                     null
             );
 
-    public static SkillPersistentState get(ServerWorld world) {
-        return world.getPersistentStateManager().getOrCreate(TYPE);
+    public static SkillPersistentState get(ServerLevel world) {
+        return world.getDataStorage().computeIfAbsent(TYPE);
     }
 
 
@@ -56,6 +55,6 @@ public final class SkillPersistentState extends PersistentState {
 
     public void save(UUID uuid, SkillData data) {
         players.put(uuid, SkillDataRecord.fromSkillData(data));
-        markDirty();
+        setDirty();
     }
 }

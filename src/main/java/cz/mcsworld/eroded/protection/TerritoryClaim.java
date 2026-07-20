@@ -1,17 +1,16 @@
 package cz.mcsworld.eroded.protection;
 
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtElement;
-import net.minecraft.nbt.NbtList;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.util.math.BlockPos;
-
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.server.level.ServerPlayer;
 
 public final class TerritoryClaim {
 
@@ -29,7 +28,7 @@ public final class TerritoryClaim {
     private boolean active;
 
     public TerritoryClaim(BlockPos anchorPos, UUID ownerUuid, String ownerName, int radius, boolean active) {
-        this.anchorPos = anchorPos.toImmutable();
+        this.anchorPos = anchorPos.immutable();
         this.ownerUuid = ownerUuid;
         this.ownerName = ownerName;
         this.radius = clampRadius(radius);
@@ -77,25 +76,25 @@ public final class TerritoryClaim {
                 && dz <= radius + otherRadius;
     }
 
-    public boolean isOwner(ServerPlayerEntity player) {
-        return ownerUuid.equals(player.getUuid());
+    public boolean isOwner(ServerPlayer player) {
+        return ownerUuid.equals(player.getUUID());
     }
 
-    public boolean isTrusted(ServerPlayerEntity player) {
-        return trustedAccess.containsKey(player.getUuid());
+    public boolean isTrusted(ServerPlayer player) {
+        return trustedAccess.containsKey(player.getUUID());
     }
 
-    public boolean hasPermission(ServerPlayerEntity player, TerritoryPermission permission) {
+    public boolean hasPermission(ServerPlayer player, TerritoryPermission permission) {
         if (isAdmin(player) || isOwner(player)) {
             return true;
         }
 
-        TrustedAccess access = trustedAccess.get(player.getUuid());
+        TrustedAccess access = trustedAccess.get(player.getUUID());
 
         return access != null && access.has(permission);
     }
 
-    private boolean isAdmin(ServerPlayerEntity player) {
+    private boolean isAdmin(ServerPlayer player) {
         return player.isCreative();
     }
 
@@ -211,8 +210,8 @@ public final class TerritoryClaim {
         return true;
     }
 
-    public NbtCompound toNbt() {
-        NbtCompound nbt = new NbtCompound();
+    public CompoundTag toNbt() {
+        CompoundTag nbt = new CompoundTag();
 
         nbt.putInt("x", anchorPos.getX());
         nbt.putInt("y", anchorPos.getY());
@@ -224,7 +223,7 @@ public final class TerritoryClaim {
         nbt.putInt("radius", radius);
         nbt.putBoolean("active", active);
 
-        NbtList trusted = new NbtList();
+        ListTag trusted = new ListTag();
 
         for (TrustedAccess access : trustedAccess.values()) {
             trusted.add(access.toNbt());
@@ -235,24 +234,24 @@ public final class TerritoryClaim {
         return nbt;
     }
 
-    public static TerritoryClaim fromNbt(NbtCompound nbt) {
+    public static TerritoryClaim fromNbt(CompoundTag nbt) {
         BlockPos pos = new BlockPos(
-                nbt.getInt("x", 0),
-                nbt.getInt("y", 0),
-                nbt.getInt("z", 0)
+                nbt.getIntOr("x", 0),
+                nbt.getIntOr("y", 0),
+                nbt.getIntOr("z", 0)
         );
 
         UUID ownerUuid;
 
         try {
-            ownerUuid = UUID.fromString(nbt.getString("ownerUuid", ""));
+            ownerUuid = UUID.fromString(nbt.getStringOr("ownerUuid", ""));
         } catch (IllegalArgumentException ex) {
             ownerUuid = new UUID(0L, 0L);
         }
 
-        String ownerName = nbt.getString("ownerName", "Unknown");
-        int radius = nbt.getInt("radius", DEFAULT_RADIUS);
-        boolean active = nbt.getBoolean("active", false);
+        String ownerName = nbt.getStringOr("ownerName", "Unknown");
+        int radius = nbt.getIntOr("radius", DEFAULT_RADIUS);
+        boolean active = nbt.getBooleanOr("active", false);
 
         TerritoryClaim claim = new TerritoryClaim(
                 pos,
@@ -262,10 +261,10 @@ public final class TerritoryClaim {
                 active
         );
 
-        NbtList trusted = nbt.getListOrEmpty("trusted");
+        ListTag trusted = nbt.getListOrEmpty("trusted");
 
-        for (NbtElement element : trusted) {
-            if (!(element instanceof NbtCompound entry)) {
+        for (Tag element : trusted) {
+            if (!(element instanceof CompoundTag entry)) {
                 continue;
             }
 

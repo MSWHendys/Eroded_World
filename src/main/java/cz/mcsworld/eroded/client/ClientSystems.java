@@ -5,14 +5,14 @@ import cz.mcsworld.eroded.client.compass.ErodedCompassHeartbeat;
 import cz.mcsworld.eroded.client.data.ClientEnergyData;
 import cz.mcsworld.eroded.client.util.DarknessHudGuard;
 import cz.mcsworld.eroded.config.energy.EnergyConfig;
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Minecraft;
 
 public final class ClientSystems {
 
     private ClientSystems() {}
 
     public static void clientTick() {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client == null || client.player == null) return;
         HeartbeatClient.tick();
         EnergyConfig cfg = EnergyConfig.get();
@@ -20,7 +20,7 @@ public final class ClientSystems {
         if (energy <= 1) {
             if (client.player.isSprinting() && !client.player.isUsingItem()) {
                 client.player.setSprinting(false);
-                client.options.sprintKey.setPressed(false);
+                client.options.keySprint.setDown(false);
             }
         }
 

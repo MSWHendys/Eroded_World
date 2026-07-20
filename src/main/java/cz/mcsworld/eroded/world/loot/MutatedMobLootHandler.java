@@ -1,15 +1,15 @@
 package cz.mcsworld.eroded.world.loot;
 
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
-import net.minecraft.entity.ItemEntity;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.entity.mob.HostileEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.math.random.Random;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.phys.Vec3;
 
 public final class MutatedMobLootHandler {
 
@@ -28,12 +28,12 @@ public final class MutatedMobLootHandler {
             DamageSource source
     ) {
 
-        if (!(entity instanceof HostileEntity mob)) return;
-        if (!mob.getCommandTags().contains(MUTATED_TAG)) return;
-        if (!(entity.getWorld() instanceof ServerWorld world)) return;
+        if (!(entity instanceof Monster mob)) return;
+        if (!mob.getTags().contains(MUTATED_TAG)) return;
+        if (!(entity.level() instanceof ServerLevel world)) return;
 
-        Random random = world.getRandom();
-        Vec3d pos = entity.getPos();
+        RandomSource random = world.getRandom();
+        Vec3 pos = entity.position();
 
         if (random.nextFloat() < 0.75f) {
             spawn(world, pos, new ItemStack(Items.ROTTEN_FLESH));
@@ -48,7 +48,7 @@ public final class MutatedMobLootHandler {
         }
     }
 
-    private static void spawn(ServerWorld world, Vec3d pos, ItemStack stack) {
+    private static void spawn(ServerLevel world, Vec3 pos, ItemStack stack) {
         ItemEntity item = new ItemEntity(
                 world,
                 pos.x,
@@ -56,6 +56,6 @@ public final class MutatedMobLootHandler {
                 pos.z,
                 stack
         );
-        world.spawnEntity(item);
+        world.addFreshEntity(item);
     }
 }

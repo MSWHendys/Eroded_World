@@ -3,8 +3,8 @@ package cz.mcsworld.eroded.world.darkness;
 import cz.mcsworld.eroded.network.SafeNetworkUtil;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.world.LightType;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.LightLayer;
 import cz.mcsworld.eroded.network.DarknessStatePacket;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 
@@ -27,10 +27,10 @@ public final class DarknessChecker {
         tickCounter++;
         if (tickCounter % 20 != 0) return;
 
-        for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
+        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             boolean inDarkness = isInDangerDarkness(player);
 
-            UUID id = player.getUuid();
+            UUID id = player.getUUID();
             boolean last = LAST_STATE.getOrDefault(id, false);
             if (inDarkness == last) continue;
 
@@ -43,23 +43,23 @@ public final class DarknessChecker {
         }
     }
 
-    public static boolean isInDangerDarkness(ServerPlayerEntity player) {
-        var world = player.getWorld();
-        var pos = player.getBlockPos();
+    public static boolean isInDangerDarkness(ServerPlayer player) {
+        var world = player.level();
+        var pos = player.blockPosition();
 
-        int block = world.getLightLevel(LightType.BLOCK, pos);
-        int sky   = world.getLightLevel(LightType.SKY, pos);
+        int block = world.getBrightness(LightLayer.BLOCK, pos);
+        int sky   = world.getBrightness(LightLayer.SKY, pos);
 
         int total = Math.max(block, sky);
         return total < 3;
     }
 
     public static boolean isInDangerDarkness(
-            net.minecraft.server.world.ServerWorld world,
-            net.minecraft.util.math.BlockPos pos
+            net.minecraft.server.level.ServerLevel world,
+            net.minecraft.core.BlockPos pos
     ) {
-        int block = world.getLightLevel(LightType.BLOCK, pos);
-        int sky   = world.getLightLevel(LightType.SKY, pos);
+        int block = world.getBrightness(LightLayer.BLOCK, pos);
+        int sky   = world.getBrightness(LightLayer.SKY, pos);
 
         int total = Math.max(block, sky);
         return total < 3;

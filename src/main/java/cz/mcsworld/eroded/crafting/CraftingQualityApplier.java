@@ -1,12 +1,11 @@
 package cz.mcsworld.eroded.crafting;
 
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.LoreComponent;
-import net.minecraft.item.ItemStack;
-import net.minecraft.text.Text;
-
 import java.util.ArrayList;
 import java.util.List;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.ItemLore;
 
 public class CraftingQualityApplier {
 
@@ -18,11 +17,11 @@ public class CraftingQualityApplier {
 
         QualityEffectsApplier.apply(stack, quality);
 
-        LoreComponent existing = stack.get(DataComponentTypes.LORE);
-        List<Text> lines = new ArrayList<>();
+        ItemLore existing = stack.get(DataComponents.LORE);
+        List<Component> lines = new ArrayList<>();
 
         if (existing != null) {
-            for (Text line : existing.lines()) {
+            for (Component line : existing.lines()) {
 
                 String str = line.getString();
 
@@ -36,17 +35,17 @@ public class CraftingQualityApplier {
         }
 
         if (!lines.isEmpty()) {
-            lines.add(Text.literal(""));
+            lines.add(Component.literal(""));
         }
 
         lines.add(
-                Text.translatable(
+                Component.translatable(
                         "eroded.crafting.quality.line",
-                        Text.translatable(getQualityKey(quality))
+                        Component.translatable(getQualityKey(quality))
                 )
         );
 
-        stack.set(DataComponentTypes.LORE, new LoreComponent(lines));
+        stack.set(DataComponents.LORE, new ItemLore(lines));
     }
 
     private static String getQualityKey(Quality quality) {

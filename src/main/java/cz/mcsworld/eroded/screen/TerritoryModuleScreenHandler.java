@@ -3,21 +3,21 @@ package cz.mcsworld.eroded.screen;
 import cz.mcsworld.eroded.core.ErodedScreenHandlers;
 import cz.mcsworld.eroded.protection.TerritoryClaim;
 import cz.mcsworld.eroded.protection.TerritoryProtectionManager;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.screen.ScreenHandler;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.item.ItemStack;
 
-public class TerritoryModuleScreenHandler extends ScreenHandler {
+public class TerritoryModuleScreenHandler extends AbstractContainerMenu {
 
     private final BlockPos anchorPos;
 
     public TerritoryModuleScreenHandler(
             int syncId,
-            PlayerInventory playerInventory,
+            Inventory playerInventory,
             TerritoryModuleScreenData data
     ) {
         super(ErodedScreenHandlers.TERRITORY_MODULE, syncId);
@@ -29,17 +29,17 @@ public class TerritoryModuleScreenHandler extends ScreenHandler {
     }
 
     @Override
-    public boolean canUse(PlayerEntity player) {
+    public boolean stillValid(Player player) {
 
-        if (!(player instanceof ServerPlayerEntity serverPlayer)) {
+        if (!(player instanceof ServerPlayer serverPlayer)) {
             return true;
         }
 
-        if (!(player.getWorld() instanceof ServerWorld serverWorld)) {
+        if (!(player.level() instanceof ServerLevel serverWorld)) {
             return false;
         }
 
-        if (player.squaredDistanceTo(
+        if (player.distanceToSqr(
                 anchorPos.getX() + 0.5,
                 anchorPos.getY() + 0.5,
                 anchorPos.getZ() + 0.5
@@ -53,7 +53,7 @@ public class TerritoryModuleScreenHandler extends ScreenHandler {
     }
 
     @Override
-    public ItemStack quickMove(PlayerEntity player, int slot) {
+    public ItemStack quickMoveStack(Player player, int slot) {
         return ItemStack.EMPTY;
     }
 }

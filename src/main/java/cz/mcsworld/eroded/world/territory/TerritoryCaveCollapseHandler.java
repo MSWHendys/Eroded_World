@@ -7,28 +7,28 @@ import cz.mcsworld.eroded.skills.SkillData;
 import cz.mcsworld.eroded.skills.SkillManager;
 import cz.mcsworld.eroded.world.darkness.MutatedMobResolver;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.SpawnReason;
-import net.minecraft.entity.effect.StatusEffectInstance;
-import net.minecraft.entity.effect.StatusEffects;
-import net.minecraft.entity.mob.HostileEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.particle.BlockStateParticleEffect;
-import net.minecraft.particle.ParticleTypes;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.random.Random;
-
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.particles.BlockParticleOption;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 import java.util.List;
 
 public final class TerritoryCaveCollapseHandler {
@@ -36,7 +36,7 @@ public final class TerritoryCaveCollapseHandler {
     private TerritoryCaveCollapseHandler() {
     }
 
-    private static final List<EntityType<? extends HostileEntity>> COLLAPSE_MOBS =
+    private static final List<EntityType<? extends Monster>> COLLAPSE_MOBS =
             List.of(
                     EntityType.ZOMBIE,
                     EntityType.SKELETON,
@@ -49,7 +49,7 @@ public final class TerritoryCaveCollapseHandler {
 
             var cfg = TerritoryConfig.get().server;
             if (!cfg.enabled || !cfg.caveCollapseEnabled) return;
-            if (!(world instanceof ServerWorld serverWorld)) return;
+            if (!(world instanceof ServerLevel serverWorld)) return;
 
             if (!player.isCreative()) {
                 handleMiningEnergy(player, state);
@@ -63,7 +63,7 @@ public final class TerritoryCaveCollapseHandler {
             TerritoryWorldState stateData = TerritoryWorldState.get(serverWorld);
             TerritoryCell cell = stateData.getOrCreateCell(key);
 
-            long now = serverWorld.getTime();
+            long now = serverWorld.getGameTime();
             long cooldownTicks = cfg.collapseCooldownMs / 50;
 
             if (now - cell.getLastMiningActivityTick() < cooldownTicks) return;
@@ -71,7 +71,7 @@ public final class TerritoryCaveCollapseHandler {
             int score = cell.getMiningScore();
             if (score < cfg.miningThreshold) return;
 
-            Random random = serverWorld.getRandom();
+            RandomSource random = serverWorld.getRandom();
             double chance = collapseChance(score);
 
             if (random.nextDouble() > chance) return;
@@ -82,28 +82,28 @@ public final class TerritoryCaveCollapseHandler {
                         pos.getX() + 0.5,
                         pos.getY() + 0.5,
                         pos.getZ() + 0.5,
-                        SoundEvents.ENTITY_CREAKING_AMBIENT,
-                        SoundCategory.BLOCKS,
+                        SoundEvents.CREAKING_AMBIENT,
+                        SoundSource.BLOCKS,
                         0.6f,
                         0.2f
                 );
 
                 cell.setLastMiningActivityTick(now);
-                stateData.markDirty();
+                stateData.setDirty();
                 return;
             }
 
             if (tryProtectCollapseWithLamp(serverWorld, player, pos)) {
                 cell.setLastMiningActivityTick(now);
-                stateData.markDirty();
+                stateData.setDirty();
                 return;
             }
 
             serverWorld.playSound(
                     null,
                     pos,
-                    SoundEvents.ENTITY_WARDEN_HEARTBEAT,
-                    SoundCategory.BLOCKS,
+                    SoundEvents.WARDEN_HEARTBEAT,
+                    SoundSource.BLOCKS,
                     1.2f,
                     0.5f
             );
@@ -111,18 +111,18 @@ public final class TerritoryCaveCollapseHandler {
             serverWorld.playSound(
                     null,
                     pos,
-                    SoundEvents.BLOCK_GRAVEL_BREAK,
-                    SoundCategory.BLOCKS,
+                    SoundEvents.GRAVEL_BREAK,
+                    SoundSource.BLOCKS,
                     1.0f,
                     0.5f
             );
 
-            var particleEffect = new BlockStateParticleEffect(
+            var particleEffect = new BlockParticleOption(
                     ParticleTypes.FALLING_DUST,
-                    Blocks.GRAVEL.getDefaultState()
+                    Blocks.GRAVEL.defaultBlockState()
             );
 
-            serverWorld.spawnParticles(
+            serverWorld.sendParticles(
                     particleEffect,
                     pos.getX() + 0.5,
                     pos.getY() + 2.5,
@@ -143,11 +143,11 @@ public final class TerritoryCaveCollapseHandler {
             });
 
             cell.setLastMiningActivityTick(now);
-            stateData.markDirty();
+            stateData.setDirty();
         });
     }
 
-    private static boolean tryProtectCollapseWithLamp(ServerWorld world, PlayerEntity player, BlockPos pos) {
+    private static boolean tryProtectCollapseWithLamp(ServerLevel world, Player player, BlockPos pos) {
         if (!hasActiveWardingLantern(player)) {
             return false;
         }
@@ -157,8 +157,8 @@ public final class TerritoryCaveCollapseHandler {
                 pos.getX() + 0.5,
                 pos.getY() + 0.5,
                 pos.getZ() + 0.5,
-                SoundEvents.BLOCK_LANTERN_PLACE,
-                SoundCategory.BLOCKS,
+                SoundEvents.LANTERN_PLACE,
+                SoundSource.BLOCKS,
                 1.0f,
                 0.6f
         );
@@ -168,13 +168,13 @@ public final class TerritoryCaveCollapseHandler {
                 pos.getX() + 0.5,
                 pos.getY() + 0.5,
                 pos.getZ() + 0.5,
-                SoundEvents.BLOCK_AMETHYST_BLOCK_CHIME,
-                SoundCategory.BLOCKS,
+                SoundEvents.AMETHYST_BLOCK_CHIME,
+                SoundSource.BLOCKS,
                 0.8f,
                 1.4f
         );
 
-        world.spawnParticles(
+        world.sendParticles(
                 ParticleTypes.SOUL,
                 pos.getX() + 0.5,
                 pos.getY() + 1.2,
@@ -186,7 +186,7 @@ public final class TerritoryCaveCollapseHandler {
                 0.04
         );
 
-        world.spawnParticles(
+        world.sendParticles(
                 ParticleTypes.END_ROD,
                 player.getX(),
                 player.getY() + 1.0,
@@ -198,10 +198,10 @@ public final class TerritoryCaveCollapseHandler {
                 0.03
         );
 
-        if (player instanceof ServerPlayerEntity serverPlayer) {
-            serverPlayer.sendMessage(
-                    Text.translatable("eroded.lamp_blocked_collapse")
-                            .formatted(Formatting.GOLD),
+        if (player instanceof ServerPlayer serverPlayer) {
+            serverPlayer.displayClientMessage(
+                    Component.translatable("eroded.lamp_blocked_collapse")
+                            .withStyle(ChatFormatting.GOLD),
                     true
             );
         }
@@ -209,24 +209,24 @@ public final class TerritoryCaveCollapseHandler {
         return true;
     }
 
-    private static boolean hasActiveWardingLantern(PlayerEntity player) {
-        ItemStack mainHand = player.getMainHandStack();
-        ItemStack offHand = player.getOffHandStack();
+    private static boolean hasActiveWardingLantern(Player player) {
+        ItemStack mainHand = player.getMainHandItem();
+        ItemStack offHand = player.getOffhandItem();
 
-        return mainHand.isOf(ErodedBlocks.WARDING_LANTERN.asItem())
-                || offHand.isOf(ErodedBlocks.WARDING_LANTERN.asItem());
+        return mainHand.is(ErodedBlocks.WARDING_LANTERN.asItem())
+                || offHand.is(ErodedBlocks.WARDING_LANTERN.asItem());
     }
 
-    private static void handleMiningEnergy(PlayerEntity player, BlockState state) {
-        SkillData energyData = SkillManager.get((ServerPlayerEntity) player);
+    private static void handleMiningEnergy(Player player, BlockState state) {
+        SkillData energyData = SkillManager.get((ServerPlayer) player);
 
         var energyCfg = EnergyConfig.get().server;
         var cost = calculateEnergyCost(player, state, energyCfg);
 
         if (energyCfg.core.blockWorkAtZero && energyData.getEnergy() <= 0) {
-            player.addStatusEffect(
-                    new StatusEffectInstance(
-                            StatusEffects.MINING_FATIGUE,
+            player.addEffect(
+                    new MobEffectInstance(
+                            MobEffects.MINING_FATIGUE,
                             80,
                             4,
                             true,
@@ -242,9 +242,9 @@ public final class TerritoryCaveCollapseHandler {
             SkillData.EnergyState currentState = energyData.getEnergyState();
 
             if (SkillData.severity(currentState) >= SkillData.severity(SkillData.EnergyState.EXHAUSTED)) {
-                player.addStatusEffect(
-                        new StatusEffectInstance(
-                                StatusEffects.MINING_FATIGUE,
+                player.addEffect(
+                        new MobEffectInstance(
+                                MobEffects.MINING_FATIGUE,
                                 100,
                                 2,
                                 true,
@@ -255,9 +255,9 @@ public final class TerritoryCaveCollapseHandler {
         }
     }
 
-    private static int calculateEnergyCost(PlayerEntity player, BlockState state, EnergyConfig.Server cfg) {
-        ItemStack stack = player.getMainHandStack();
-        Random random = player.getWorld().getRandom();
+    private static int calculateEnergyCost(Player player, BlockState state, EnergyConfig.Server cfg) {
+        ItemStack stack = player.getMainHandItem();
+        RandomSource random = player.level().getRandom();
 
         float base = cfg.core.miningCost;
         float chance;
@@ -265,8 +265,8 @@ public final class TerritoryCaveCollapseHandler {
         if (stack.isEmpty()) {
             chance = base * 3.0f;
         } else {
-            boolean isCorrectTool = stack.isSuitableFor(state);
-            float speed = stack.getMiningSpeedMultiplier(state);
+            boolean isCorrectTool = stack.isCorrectToolForDrops(state);
+            float speed = stack.getDestroySpeed(state);
 
             if (!isCorrectTool) {
                 chance = base * 3.0f;
@@ -293,9 +293,9 @@ public final class TerritoryCaveCollapseHandler {
         return cfg.collapseChanceHigh;
     }
 
-    private static boolean hasStabilizerNearby(ServerWorld world, BlockPos origin) {
+    private static boolean hasStabilizerNearby(ServerLevel world, BlockPos origin) {
         var cfg = TerritoryConfig.get().server;
-        BlockPos.Mutable check = new BlockPos.Mutable();
+        BlockPos.MutableBlockPos check = new BlockPos.MutableBlockPos();
 
         int radius = Math.min(cfg.stabilizerRadius, 8);
 
@@ -319,57 +319,57 @@ public final class TerritoryCaveCollapseHandler {
     }
 
     private static boolean isStabilizer(BlockState state) {
-        var stabilizerTag = net.minecraft.registry.tag.TagKey.of(
-                net.minecraft.registry.RegistryKeys.BLOCK,
-                net.minecraft.util.Identifier.of("eroded", "stabilizers")
+        var stabilizerTag = net.minecraft.tags.TagKey.create(
+                net.minecraft.core.registries.Registries.BLOCK,
+                net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("eroded", "stabilizers")
         );
 
-        return state.isIn(stabilizerTag);
+        return state.is(stabilizerTag);
     }
 
-    private static void triggerCollapse(ServerWorld world, PlayerEntity player, BlockPos origin) {
-        float pitch = player.getPitch();
-        Random random = world.getRandom();
+    private static void triggerCollapse(ServerLevel world, Player player, BlockPos origin) {
+        float pitch = player.getXRot();
+        RandomSource random = world.getRandom();
 
         if (Math.abs(pitch) > 45) {
             Direction fillDir = (pitch > 45) ? Direction.UP : Direction.DOWN;
-            BlockPos explosionPos = origin.offset(fillDir, 1);
+            BlockPos explosionPos = origin.relative(fillDir, 1);
 
-            world.createExplosion(
+            world.explode(
                     null,
                     explosionPos.getX() + 0.5,
                     explosionPos.getY() + 0.5,
                     explosionPos.getZ() + 0.5,
                     2.5f,
                     false,
-                    ServerWorld.ExplosionSourceType.NONE
+                    Level.ExplosionInteraction.NONE
             );
 
             int length = 6;
 
             for (int i = 0; i < length; i++) {
-                BlockPos layer = explosionPos.offset(fillDir, i);
+                BlockPos layer = explosionPos.relative(fillDir, i);
 
                 for (int x = -1; x <= 1; x++) {
                     for (int z = -1; z <= 1; z++) {
-                        BlockPos target = layer.add(x, 0, z);
+                        BlockPos target = layer.offset(x, 0, z);
 
-                        if (world.isAir(target) || isCollapsable(world.getBlockState(target))) {
-                            world.setBlockState(target, Blocks.GRAVEL.getDefaultState(), 3);
+                        if (world.isEmptyBlock(target) || isCollapsable(world.getBlockState(target))) {
+                            world.setBlock(target, Blocks.GRAVEL.defaultBlockState(), 3);
                         }
                     }
                 }
             }
         } else {
-            Direction behind = player.getHorizontalFacing().getOpposite();
+            Direction behind = player.getDirection().getOpposite();
 
             world.playSound(
                     null,
                     origin.getX() + 0.5,
                     origin.getY() + 0.5,
                     origin.getZ() + 0.5,
-                    SoundEvents.ENTITY_GENERIC_EXPLODE,
-                    SoundCategory.BLOCKS,
+                    SoundEvents.GENERIC_EXPLODE,
+                    SoundSource.BLOCKS,
                     0.8f,
                     0.5f
             );
@@ -378,28 +378,28 @@ public final class TerritoryCaveCollapseHandler {
             int startOffset = 5;
 
             for (int d = startOffset; d < startOffset + depth; d++) {
-                BlockPos center = origin.offset(behind, d);
+                BlockPos center = origin.relative(behind, d);
 
                 for (int w = -2; w <= 2; w++) {
                     for (int h = 1; h <= 4; h++) {
-                        BlockPos target = center.up(h);
+                        BlockPos target = center.above(h);
 
                         if (behind.getAxis() == Direction.Axis.X) {
-                            target = target.add(0, 0, w);
+                            target = target.offset(0, 0, w);
                         } else {
-                            target = target.add(w, 0, 0);
+                            target = target.offset(w, 0, 0);
                         }
 
                         BlockState targetState = world.getBlockState(target);
 
                         if (isCollapsable(targetState)) {
-                            world.setBlockState(target, Blocks.GRAVEL.getDefaultState(), 3);
+                            world.setBlock(target, Blocks.GRAVEL.defaultBlockState(), 3);
 
                             if (random.nextInt(3) == 0) {
-                                world.spawnParticles(
-                                        new BlockStateParticleEffect(
+                                world.sendParticles(
+                                        new BlockParticleOption(
                                                 ParticleTypes.BLOCK,
-                                                Blocks.GRAVEL.getDefaultState()
+                                                Blocks.GRAVEL.defaultBlockState()
                                         ),
                                         target.getX() + 0.5,
                                         target.getY() + 0.5,
@@ -419,18 +419,18 @@ public final class TerritoryCaveCollapseHandler {
     }
 
     private static boolean isCollapsable(BlockState state) {
-        return state.isOf(Blocks.STONE)
-                || state.isOf(Blocks.DEEPSLATE)
-                || state.isOf(Blocks.TUFF)
-                || state.isOf(Blocks.ANDESITE)
-                || state.isOf(Blocks.DIORITE)
-                || state.isOf(Blocks.GRANITE);
+        return state.is(Blocks.STONE)
+                || state.is(Blocks.DEEPSLATE)
+                || state.is(Blocks.TUFF)
+                || state.is(Blocks.ANDESITE)
+                || state.is(Blocks.DIORITE)
+                || state.is(Blocks.GRANITE);
     }
 
-    private static void trySpawnCollapseMob(ServerWorld world, PlayerEntity player, BlockPos origin) {
-        Random random = world.getRandom();
+    private static void trySpawnCollapseMob(ServerLevel world, Player player, BlockPos origin) {
+        RandomSource random = world.getRandom();
 
-        Direction behind = player.getHorizontalFacing().getOpposite();
+        Direction behind = player.getDirection().getOpposite();
 
         int collapseStartOffset = 5;
         int collapseDepth = 6;
@@ -442,7 +442,7 @@ public final class TerritoryCaveCollapseHandler {
         for (int attempt = 0; attempt < 8; attempt++) {
             int distance = minDistance + random.nextInt(maxExtraDistance + 1);
 
-            BlockPos basePos = origin.offset(behind, distance);
+            BlockPos basePos = origin.relative(behind, distance);
 
             BlockPos finalPos = findSafeMobSpawnPos(world, basePos);
 
@@ -450,7 +450,7 @@ public final class TerritoryCaveCollapseHandler {
                 continue;
             }
 
-            double distanceSqToPlayer = player.squaredDistanceTo(
+            double distanceSqToPlayer = player.distanceToSqr(
                     finalPos.getX() + 0.5,
                     finalPos.getY(),
                     finalPos.getZ() + 0.5
@@ -460,16 +460,16 @@ public final class TerritoryCaveCollapseHandler {
                 continue;
             }
 
-            EntityType<? extends HostileEntity> type =
+            EntityType<? extends Monster> type =
                     COLLAPSE_MOBS.get(random.nextInt(COLLAPSE_MOBS.size()));
 
-            HostileEntity mob = type.create(world, SpawnReason.EVENT);
+            Monster mob = type.create(world, EntitySpawnReason.EVENT);
 
             if (mob == null) {
                 continue;
             }
 
-            mob.refreshPositionAndAngles(
+            mob.snapTo(
                     finalPos.getX() + 0.5,
                     finalPos.getY(),
                     finalPos.getZ() + 0.5,
@@ -477,12 +477,12 @@ public final class TerritoryCaveCollapseHandler {
                     0.0f
             );
 
-            mob.addCommandTag(MutatedMobResolver.MUTATED_TAG);
-            mob.addCommandTag("eroded_special_mob");
+            mob.addTag(MutatedMobResolver.MUTATED_TAG);
+            mob.addTag("eroded_special_mob");
 
-            world.spawnEntityAndPassengers(mob);
+            world.addFreshEntityWithPassengers(mob);
 
-            world.spawnParticles(
+            world.sendParticles(
                     ParticleTypes.SMOKE,
                     finalPos.getX() + 0.5,
                     finalPos.getY() + 1.0,
@@ -499,8 +499,8 @@ public final class TerritoryCaveCollapseHandler {
                     finalPos.getX() + 0.5,
                     finalPos.getY() + 0.5,
                     finalPos.getZ() + 0.5,
-                    SoundEvents.BLOCK_GRAVEL_BREAK,
-                    SoundCategory.HOSTILE,
+                    SoundEvents.GRAVEL_BREAK,
+                    SoundSource.HOSTILE,
                     0.8f,
                     0.6f
             );
@@ -508,13 +508,13 @@ public final class TerritoryCaveCollapseHandler {
             return;
         }
     }
-    private static BlockPos findSafeMobSpawnPos(ServerWorld world, BlockPos basePos) {
+    private static BlockPos findSafeMobSpawnPos(ServerLevel world, BlockPos basePos) {
         for (int y = -4; y <= 4; y++) {
-            BlockPos check = basePos.up(y);
+            BlockPos check = basePos.above(y);
 
-            boolean feetFree = world.isAir(check);
-            boolean headFree = world.isAir(check.up());
-            boolean groundSolid = world.getBlockState(check.down()).isSolidBlock(world, check.down());
+            boolean feetFree = world.isEmptyBlock(check);
+            boolean headFree = world.isEmptyBlock(check.above());
+            boolean groundSolid = world.getBlockState(check.below()).isRedstoneConductor(world, check.below());
 
             if (feetFree && headFree && groundSolid) {
                 return check;

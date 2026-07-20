@@ -1,10 +1,9 @@
 package cz.mcsworld.eroded.death;
 
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
-import net.minecraft.entity.ItemEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.item.ItemEntity;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,7 +15,7 @@ public final class DeathChestExpiryTicker {
         ServerTickEvents.END_WORLD_TICK.register(DeathChestExpiryTicker::tick);
     }
 
-    private static void tick(ServerWorld world) {
+    private static void tick(ServerLevel world) {
 
         long now = System.currentTimeMillis();
         DeathChestState state = DeathChestState.get(world);
@@ -43,13 +42,13 @@ public final class DeathChestExpiryTicker {
                         pos.getZ() + 0.5,
                         stored.stack().copy()
                 );
-                world.spawnEntity(item);
+                world.addFreshEntity(item);
             }
 
             boolean hadBlock =
                     !world.getBlockState(pos).isAir();
 
-            world.breakBlock(pos, false);
+            world.destroyBlock(pos, false);
 
             DeathHologramHandler.removeById(
                     world,

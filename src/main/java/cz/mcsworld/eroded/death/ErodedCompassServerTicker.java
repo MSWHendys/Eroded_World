@@ -2,7 +2,7 @@ package cz.mcsworld.eroded.death;
 
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.level.ServerPlayer;
 
 public final class ErodedCompassServerTicker {
 
@@ -13,7 +13,7 @@ public final class ErodedCompassServerTicker {
     }
 
     private static void tick(MinecraftServer server) {
-        for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
+        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             ErodedCompassHandler.tick(player);
             ErodedCompassSyncHandler.sync(player);
         }

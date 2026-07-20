@@ -1,13 +1,12 @@
 package cz.mcsworld.eroded.protection;
 
 import cz.mcsworld.eroded.world.spawn.ExplosionProtectionManager;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
 
 public final class ProtectionBoundaryManager {
 
@@ -15,7 +14,7 @@ public final class ProtectionBoundaryManager {
     }
 
     public static boolean canAutomationMoveBetween(
-            ServerWorld world,
+            ServerLevel world,
             BlockPos from,
             BlockPos to
     ) {
@@ -28,20 +27,20 @@ public final class ProtectionBoundaryManager {
 
 
     public static boolean canPistonMoveBlock(
-            ServerWorld world,
+            ServerLevel world,
             BlockPos from,
             BlockPos to
     ) {
         return canAutomationMoveBetween(world, from, to);
     }
 
-    public static boolean canPistonBreakBlock(ServerWorld world, BlockPos pos) {
+    public static boolean canPistonBreakBlock(ServerLevel world, BlockPos pos) {
         return !isAnyProtected(world, pos);
     }
 
 
 
-    public static boolean isAnyProtected(ServerWorld world, BlockPos pos) {
+    public static boolean isAnyProtected(ServerLevel world, BlockPos pos) {
         if (ExplosionProtectionManager.isProtected(world, pos)) {
             return true;
         }
@@ -49,7 +48,7 @@ public final class ProtectionBoundaryManager {
         return TerritoryProtectionManager.getActiveClaimAt(world, pos) != null;
     }
 
-    private static ProtectionKey getProtectionKey(ServerWorld world, BlockPos pos) {
+    private static ProtectionKey getProtectionKey(ServerLevel world, BlockPos pos) {
         if (ExplosionProtectionManager.isProtected(world, pos)) {
             return ProtectionKey.spawn();
         }
@@ -65,16 +64,16 @@ public final class ProtectionBoundaryManager {
         return ProtectionKey.claim(claim.ownerUuid(), groupRoot);
     }
 
-    private static BlockPos getConnectedClaimRoot(ServerWorld world, TerritoryClaim claim) {
+    private static BlockPos getConnectedClaimRoot(ServerLevel world, TerritoryClaim claim) {
         List<TerritoryClaim> connectedClaims =
                 TerritoryProtectionManager.findConnectedClaims(world, claim);
 
         return connectedClaims.stream()
                 .map(TerritoryClaim::anchorPos)
                 .min(Comparator
-                        .comparingInt(BlockPos::getX)
-                        .thenComparingInt(BlockPos::getY)
-                        .thenComparingInt(BlockPos::getZ))
+                        .comparingInt((BlockPos pos) -> pos.getX())
+                        .thenComparingInt(pos -> pos.getY())
+                        .thenComparingInt(pos -> pos.getZ()))
                 .orElse(claim.anchorPos());
     }
 
@@ -88,7 +87,7 @@ public final class ProtectionBoundaryManager {
         }
 
         private static ProtectionKey spawn() {
-            return new ProtectionKey(Type.SPAWN, null, BlockPos.ORIGIN);
+            return new ProtectionKey(Type.SPAWN, null, BlockPos.ZERO);
         }
 
         private static ProtectionKey claim(UUID ownerUuid, BlockPos rootPos) {

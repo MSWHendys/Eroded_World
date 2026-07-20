@@ -2,9 +2,9 @@ package cz.mcsworld.eroded.protection;
 
 import cz.mcsworld.eroded.config.territory.TerritoryConfig;
 import cz.mcsworld.eroded.world.spawn.ExplosionProtectionManager;
-import net.minecraft.entity.Entity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.Entity;
 
 public final class ProjectileProtectionManager {
 
@@ -16,7 +16,7 @@ public final class ProjectileProtectionManager {
     }
 
     public static boolean canProjectileMoveBetween(
-            ServerWorld world,
+            ServerLevel world,
             BlockPos fromPos,
             BlockPos toPos
     ) {
@@ -44,7 +44,7 @@ public final class ProjectileProtectionManager {
     }
 
     public static boolean canProjectileAffect(
-            ServerWorld world,
+            ServerLevel world,
             Entity projectile,
             BlockPos targetPos
     ) {
@@ -54,13 +54,13 @@ public final class ProjectileProtectionManager {
 
         return canProjectileMoveBetween(
                 world,
-                projectile.getBlockPos(),
+                projectile.blockPosition(),
                 targetPos
         );
     }
 
     private static boolean crossesSpawnBoundary(
-            ServerWorld world,
+            ServerLevel world,
             BlockPos fromPos,
             BlockPos toPos
     ) {

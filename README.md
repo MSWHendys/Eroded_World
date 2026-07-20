@@ -1,10 +1,10 @@
-![Minecraft](https://img.shields.io/badge/Minecraft-1.21.8-green)
+![Minecraft](https://img.shields.io/badge/Minecraft-1.21.6%20--%201.21.8-green)
 ![Loader](https://img.shields.io/badge/Loader-Fabric-blue)
 ![Java](https://img.shields.io/badge/Java-21-orange)
 ![Requires](https://img.shields.io/badge/Requires-Fabric%20API%20%2B%20Cloth%20Config%20API-yellow)
-![Status](https://img.shields.io/badge/Status-BETA%20%2F%20EXPERIMENTAL-red)
+![Status](https://img.shields.io/badge/Status-BETA-red)
 
-![Eroded World Banner](https://mcstoryworld.cz/minecraft/mods/eroded_world_banner.png)
+![Eroded World Banner](https://github.com/MSWHendys/Eroded_World/blob/1.21.6-1.21.8/gradle/wrapper/img/fabric%201.21.6-1.21.8.png?raw=true)
 
 # Eroded World
 

@@ -2,18 +2,22 @@ package cz.mcsworld.eroded.client.gui;
 
 import cz.mcsworld.eroded.client.data.ClientEnergyData;
 import cz.mcsworld.eroded.client.hud.EnergyHudLogic;
+import cz.mcsworld.eroded.client.screen.TerritoryModuleScreen;
 import cz.mcsworld.eroded.config.energy.EnergyConfig;
 import cz.mcsworld.eroded.skills.SkillData;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.text.Text;
-import cz.mcsworld.eroded.client.screen.TerritoryModuleScreen;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.inventory.AnvilScreen;
+import net.minecraft.client.gui.screens.inventory.CraftingScreen;
+import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import net.minecraft.network.chat.Component;
 
 public final class EnergyScreenOverlay {
 
     private static final String ICON = "⚡";
+
     private static String anvilQuality = null;
     private static int lastEnergyValue = -1;
     private static boolean isRegenerating = false;
@@ -24,16 +28,17 @@ public final class EnergyScreenOverlay {
     private static SkillData.EnergyState activeWarningState = null;
 
     private static int anvilMessageTicks = 0;
-    private static Text anvilMessage = null;
+    private static Component anvilMessage = null;
 
     private static int customMessageTicks = 0;
-    private static Text customMessage = null;
+    private static Component customMessage = null;
     private static int customMessageColor = 0xFFFFFFFF;
 
-    private EnergyScreenOverlay() {}
+    private EnergyScreenOverlay() {
+    }
 
     public static void register() {
-        ScreenEvents.AFTER_INIT.register((client, screen, w, h) ->
+        ScreenEvents.AFTER_INIT.register((client, screen, width, height) ->
                 ScreenEvents.afterRender(screen).register(EnergyScreenOverlay::render)
         );
     }
@@ -47,41 +52,78 @@ public final class EnergyScreenOverlay {
         craftingFailTicks = EnergyConfig.get().client.hud.warningMessageTime;
     }
 
-    public static void showAnvilMessage(Text text, String quality) {
+    public static void showAnvilMessage(Component text, String quality) {
         anvilMessage = text;
         anvilQuality = quality;
-        anvilMessageTicks = EnergyConfig.get().client.hud.warningMessageTime * 5;
+        anvilMessageTicks =
+                EnergyConfig.get().client.hud.warningMessageTime * 5;
     }
 
-    private static void render(Screen screen, DrawContext context, int mouseX, int mouseY, float delta) {
+    public static void showCustomMessage(Component text, int color) {
+        customMessage = text;
+        customMessageColor = color;
+        customMessageTicks =
+                EnergyConfig.get().client.hud.warningMessageTime * 2;
+    }
 
-        if (screen instanceof TerritoryModuleScreen) {
+    private static boolean shouldRender(Screen screen) {
+        return screen instanceof InventoryScreen
+                || screen instanceof CraftingScreen
+                || screen instanceof AnvilScreen
+                || screen instanceof TerritoryModuleScreen;
+    }
+
+    private static void render(
+            Screen screen,
+            GuiGraphics context,
+            int mouseX,
+            int mouseY,
+            float delta
+    ) {
+        if (!shouldRender(screen)) {
             return;
         }
 
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client == null || client.player == null || !ClientEnergyData.isInitialized()) return;
+        Minecraft client = Minecraft.getInstance();
+
+        if (client.player == null
+                || !ClientEnergyData.isInitialized()) {
+            return;
+        }
 
         var root = EnergyConfig.get();
         var cfg = root.client.hud;
 
-        if (!cfg.energyHudEnabled) return;
+        if (!cfg.energyHudEnabled) {
+            return;
+        }
 
         int energy = ClientEnergyData.getEnergy();
         int maxEnergy = ClientEnergyData.getMaxEnergy();
-        if (maxEnergy <= 0) maxEnergy = root.server.core.maxEnergy;
 
-        if (energy > lastEnergyValue && lastEnergyValue != -1) isRegenerating = true;
-        else if (energy < lastEnergyValue) isRegenerating = false;
-        if (energy >= maxEnergy) isRegenerating = false;
+        if (maxEnergy <= 0) {
+            maxEnergy = root.server.core.maxEnergy;
+        }
+
+        if (energy > lastEnergyValue && lastEnergyValue != -1) {
+            isRegenerating = true;
+        } else if (energy < lastEnergyValue) {
+            isRegenerating = false;
+        }
+
+        if (energy >= maxEnergy) {
+            isRegenerating = false;
+        }
 
         lastEnergyValue = energy;
 
         int total = cfg.numberEnergyFlashes;
-        int ticks = client.inGameHud.getTicks();
-        int screenW = context.getScaledWindowWidth();
+        int ticks = client.gui.getGuiTicks();
+
+        int screenWidth = context.guiWidth();
+
         int barWidth = total * 8;
-        int iconsX = (screenW - barWidth) / 2;
+        int iconsX = (screenWidth - barWidth) / 2;
         int barCenterX = iconsX + barWidth / 2;
         int iconsY = 8;
 
@@ -89,34 +131,52 @@ public final class EnergyScreenOverlay {
             int drawX = iconsX + i * 8;
 
             EnergyHudLogic.SegmentVisual visual =
-                    EnergyHudLogic.resolve(i, total, energy, maxEnergy, isRegenerating, ticks);
+                    EnergyHudLogic.resolve(
+                            i,
+                            total,
+                            energy,
+                            maxEnergy,
+                            isRegenerating,
+                            ticks
+                    );
+
+            int iconColor;
 
             if (!visual.visible()) {
-                context.drawText(client.textRenderer, ICON, drawX, iconsY, EnergyHudLogic.EMPTY, true);
-                continue;
+                iconColor = EnergyHudLogic.EMPTY;
+            } else {
+                iconColor =
+                        0xFF000000
+                                | (visual.color() & 0x00FFFFFF);
             }
 
-            var matrices = context.getMatrices();
-            matrices.pushMatrix();
-            float cx = drawX + 4;
-            float cy = iconsY + 4;
-            matrices.translate(cx, cy);
-            matrices.scale(visual.scale(), visual.scale());
-            matrices.translate(-cx, -cy);
+            var matrices = context.pose();
 
-            context.drawText(
-                    client.textRenderer,
+            matrices.pushMatrix();
+
+            float centerX = drawX + 4.0F;
+            float centerY = iconsY + 4.0F;
+
+            matrices.translate(centerX, centerY);
+            matrices.scale(
+                    visual.scale(),
+                    visual.scale()
+            );
+            matrices.translate(-centerX, -centerY);
+
+            context.drawString(
+                    client.font,
                     ICON,
                     drawX,
                     iconsY,
-                    (0xFF << 24) | (visual.color() & 0x00FFFFFF),
+                    iconColor,
                     true
             );
 
             matrices.popMatrix();
         }
 
-        Text textToDraw = null;
+        Component textToDraw = null;
         int textColor = 0xFFFFFFFF;
 
         if (anvilMessageTicks > 0 && anvilMessage != null) {
@@ -124,68 +184,95 @@ public final class EnergyScreenOverlay {
 
             if (anvilQuality != null) {
                 switch (anvilQuality) {
-                    case "POOR" -> textColor = EnergyHudLogic.RED;
-                    case "STANDARD" -> textColor = EnergyHudLogic.YELLOW;
-                    case "EXCELLENT" -> textColor = EnergyHudLogic.GREEN;
-                    default -> textColor = 0xFFFFFFFF;
+                    case "POOR" ->
+                            textColor = EnergyHudLogic.RED;
+
+                    case "STANDARD" ->
+                            textColor = EnergyHudLogic.YELLOW;
+
+                    case "EXCELLENT" ->
+                            textColor = EnergyHudLogic.GREEN;
+
+                    default ->
+                            textColor = 0xFFFFFFFF;
                 }
-            } else {
-                textColor = 0xFFFFFFFF;
             }
 
             anvilMessageTicks--;
-        }
 
-        else if (customMessageTicks > 0 && customMessage != null) {
+            if (anvilMessageTicks <= 0) {
+                anvilMessage = null;
+                anvilQuality = null;
+            }
+
+        } else if (customMessageTicks > 0
+                && customMessage != null) {
+
             textToDraw = customMessage;
             textColor = customMessageColor;
             customMessageTicks--;
 
             if (customMessageTicks <= 0) {
                 customMessage = null;
+                customMessageColor = 0xFFFFFFFF;
             }
-        }
 
-        else if (craftingFailTicks > 0) {
-            textToDraw = Text.translatable("eroded.crafting.not_enough_energy");
+        } else if (craftingFailTicks > 0) {
+            textToDraw = Component.translatable(
+                    "eroded.crafting.not_enough_energy"
+            );
+
             textColor = EnergyHudLogic.RED;
             craftingFailTicks--;
-        }
 
-        else if (warningTicks > 0 && activeWarningState != null) {
-            String key = EnergyHudLogic.getWarningTranslationKey(activeWarningState);
-            if (key != null) {
-                textToDraw = Text.translatable(key);
+        } else if (warningTicks > 0
+                && activeWarningState != null) {
+
+            String translationKey =
+                    EnergyHudLogic.getWarningTranslationKey(
+                            activeWarningState
+                    );
+
+            if (translationKey != null) {
+                textToDraw =
+                        Component.translatable(translationKey);
+
                 textColor = EnergyHudLogic.RED;
                 warningTicks--;
+
+                if (warningTicks <= 0) {
+                    activeWarningState = null;
+                }
             } else {
                 warningTicks = 0;
+                activeWarningState = null;
             }
+
+        } else {
+            textToDraw =
+                    Component.translatable(
+                            "eroded.gui.energy.prefix"
+                    ).append(
+                            Component.literal(
+                                    energy + " / " + maxEnergy
+                            )
+                    );
         }
 
-
-        else {
-            textToDraw = Text.translatable("eroded.gui.energy.prefix")
-                    .append(Text.literal(energy + " / " + maxEnergy));
+        if (textToDraw == null) {
+            return;
         }
 
+        int textWidth =
+                client.font.width(textToDraw);
 
-        if (textToDraw != null) {
-            int w = client.textRenderer.getWidth(textToDraw);
-            context.drawText(
-                    client.textRenderer,
-                    textToDraw,
-                    barCenterX - w / 2,
-                    iconsY + 10,
-                    textColor,
-                    true
-            );
-        }
-    }
-    public static void showCustomMessage(Text text, int color) {
-        customMessage = text;
-        customMessageColor = color;
-        customMessageTicks = EnergyConfig.get().client.hud.warningMessageTime * 2;
+        context.drawString(
+                client.font,
+                textToDraw,
+                barCenterX - textWidth / 2,
+                iconsY + 10,
+                textColor,
+                true
+        );
     }
 }
-
