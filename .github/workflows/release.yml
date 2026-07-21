@@ -3,7 +3,7 @@ name: Build & Release GitHub
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 permissions:
   contents: write
@@ -14,29 +14,51 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
-      - name: Setup Java 21
-        uses: actions/setup-java@v4
+      - name: Setup Java 25
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: 21
+          java-version: 25
+          cache: gradle
 
       - name: Make gradlew executable
-        run: chmod +x gradlew
+        run: chmod +x ./gradlew
 
       - name: Build mod
-        run: ./gradlew build
+        run: ./gradlew clean build --no-daemon
 
-      - name: Get JAR file
+      - name: List build output
+        run: ls -lah build/libs
+
+      - name: Find built JAR
         id: jar
+        shell: bash
         run: |
-          JAR_PATH=$(ls build/libs/*.jar | grep -v sources | head -n 1)
-          echo "jar_path=$JAR_PATH" >> $GITHUB_OUTPUT
+          JAR_PATH=$(find build/libs \
+            -maxdepth 1 \
+            -type f \
+            -name "*.jar" \
+            ! -name "*-sources.jar" \
+            ! -name "*-dev.jar" \
+            ! -name "*-javadoc.jar" \
+            | head -n 1)
 
-      - name: Create GitHub Release & Upload JAR
-        uses: softprops/action-gh-release@v2
+          if [ -z "$JAR_PATH" ]; then
+            echo "No release JAR found in build/libs."
+            exit 1
+          fi
+
+          echo "Found JAR: $JAR_PATH"
+          echo "jar_path=$JAR_PATH" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release and upload JAR
+        uses: softprops/action-gh-release@v3
         with:
           files: ${{ steps.jar.outputs.jar_path }}
+          name: Eroded World ${{ github.ref_name }}
+          generate_release_notes: true
+          prerelease: ${{ contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
