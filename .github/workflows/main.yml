@@ -56,7 +56,4 @@ jobs:
           release_type: ${{ steps.releasetype.outputs.type }}
           changelog: ${{ github.event.release.body }}
           changelog_type: markdown
-          game_versions: |
-            Minecraft 1.21.8
-            Fabric
-
+          game_versions: "Minecraft 1.21:1.21.9,Fabric,Client,Server,Java 21"
