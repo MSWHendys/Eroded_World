@@ -24,7 +24,9 @@ public final class LightStartleImpulseGoal extends Goal {
 
     @Override
     public boolean canUse() {
-        var cfg = DarknessConfigs.get().server;
+        var root = DarknessConfigs.get();
+        var cfg = root.server;
+        if (!root.enabled || !cfg.mobLightFearEnabled) return false;
         if (!mob.isAlive()) return false;
         if (!(mob.level() instanceof ServerLevel world)) return false;
 
@@ -53,7 +55,8 @@ public final class LightStartleImpulseGoal extends Goal {
 
     @Override
     public boolean canContinueToUse() {
-        return ticksLeft-- > 0;
+        var root = DarknessConfigs.get();
+        return root.enabled && root.server.mobLightFearEnabled && ticksLeft-- > 0;
     }
 
     @Override

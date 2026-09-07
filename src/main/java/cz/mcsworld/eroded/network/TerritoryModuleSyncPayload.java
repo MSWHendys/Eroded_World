@@ -19,6 +19,10 @@ public record TerritoryModuleSyncPayload(
         String suggestionData
 ) implements CustomPacketPayload {
 
+    public static final int MAX_OWNER_NAME_LENGTH = 64;
+    public static final int MAX_TRUSTED_DATA_LENGTH = 20000;
+    public static final int MAX_SUGGESTION_DATA_LENGTH = 2048;
+
     public static final Type<TerritoryModuleSyncPayload> ID =
             new Type<>(Identifier.fromNamespaceAndPath(ErodedMod.MOD_ID, "territory_module_sync"));
 
@@ -30,7 +34,7 @@ public record TerritoryModuleSyncPayload(
 
     private void write(RegistryFriendlyByteBuf buf) {
         BlockPos.STREAM_CODEC.encode(buf, anchorPos);
-        buf.writeUtf(ownerName);
+        buf.writeUtf(ownerName, MAX_OWNER_NAME_LENGTH);
         buf.writeInt(radius);
         buf.writeInt(active);
 
@@ -38,13 +42,13 @@ public record TerritoryModuleSyncPayload(
         buf.writeInt(connectedDepth);
         buf.writeInt(connectedClaimCount);
 
-        buf.writeUtf(trustedData);
-        buf.writeUtf(suggestionData);
+        buf.writeUtf(trustedData, MAX_TRUSTED_DATA_LENGTH);
+        buf.writeUtf(suggestionData, MAX_SUGGESTION_DATA_LENGTH);
     }
 
     private static TerritoryModuleSyncPayload read(RegistryFriendlyByteBuf buf) {
         BlockPos anchorPos = BlockPos.STREAM_CODEC.decode(buf);
-        String ownerName = buf.readUtf();
+        String ownerName = buf.readUtf(MAX_OWNER_NAME_LENGTH);
         int radius = buf.readInt();
         int active = buf.readInt();
 
@@ -52,8 +56,8 @@ public record TerritoryModuleSyncPayload(
         int connectedDepth = buf.readInt();
         int connectedClaimCount = buf.readInt();
 
-        String trustedData = buf.readUtf();
-        String suggestionData = buf.readUtf();
+        String trustedData = buf.readUtf(MAX_TRUSTED_DATA_LENGTH);
+        String suggestionData = buf.readUtf(MAX_SUGGESTION_DATA_LENGTH);
 
         return new TerritoryModuleSyncPayload(
                 anchorPos,

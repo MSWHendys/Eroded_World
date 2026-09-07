@@ -30,6 +30,15 @@ public class ErodedSpecialSkeletonEntity extends Skeleton {
     }
 
     @Override
+    public void checkDespawn() {
+        if (ErodedMobDespawnBehaviour.handleDespawn(this)) {
+            return;
+        }
+
+        super.checkDespawn();
+    }
+
+    @Override
     public void tick() {
         super.tick();
 

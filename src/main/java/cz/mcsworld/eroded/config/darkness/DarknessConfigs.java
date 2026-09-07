@@ -1,219 +1,213 @@
 package cz.mcsworld.eroded.config.darkness;
 
-import me.shedaniel.autoconfig.AutoConfig;
-import me.shedaniel.autoconfig.ConfigData;
-import me.shedaniel.autoconfig.annotation.Config;
-import me.shedaniel.autoconfig.annotation.ConfigEntry;
+import cz.mcsworld.eroded.config.ConfigValidation;
+import cz.mcsworld.eroded.config.ConfigValidationException;
+import cz.mcsworld.eroded.config.ErodedConfig;
+import cz.mcsworld.eroded.config.ErodedConfigs;
 
-@Config(name = "ErodedWorld/darkness")
-public class DarknessConfigs implements ConfigData {
+public class DarknessConfigs implements ErodedConfig {
 
-    @ConfigEntry.Gui.Tooltip
     public boolean enabled = true;
 
-    @ConfigEntry.Gui.CollapsibleObject
     public Server server = new Server();
 
-    @ConfigEntry.Gui.CollapsibleObject
     public Client client = new Client();
 
     public static DarknessConfigs get() {
-        return AutoConfig
-                .getConfigHolder(DarknessConfigs.class)
-                .getConfig();
+        return ErodedConfigs.DARKNESS;
+    }
+
+    @Override
+    public void validatePostLoad() throws ConfigValidationException {
+        ConfigValidation.notNull(server, "darkness.server");
+        ConfigValidation.notNull(client, "darkness.client");
+        ConfigValidation.notNull(server.wardingLamp, "darkness.server.wardingLamp");
+        ConfigValidation.notNull(server.erodedTorch, "darkness.server.erodedTorch");
+        ConfigValidation.notNull(client.calmDown, "darkness.client.calmDown");
+        ConfigValidation.notNull(client.audio, "darkness.client.audio");
+
+        ConfigValidation.range(server.fearLightThreshold, 0, 15, "darkness.server.fearLightThreshold");
+        ConfigValidation.range(server.suppressLightThreshold, 0, 15, "darkness.server.suppressLightThreshold");
+        ConfigValidation.range(server.lightSearchRadius, 0, 32, "darkness.server.lightSearchRadius");
+        ConfigValidation.min(server.postLightCooldownTicks, 0, "darkness.server.postLightCooldownTicks");
+        ConfigValidation.min(server.flickerStages, 1, "darkness.server.flickerStages");
+        ConfigValidation.require(server.escapeSpeed > 0.0 && Double.isFinite(server.escapeSpeed),
+                "darkness.server.escapeSpeed", "must be > 0 and finite");
+        ConfigValidation.range(server.escapeDistance, 0, 64, "darkness.server.escapeDistance");
+        ConfigValidation.min(server.lightEaterCheckInterval, 1, "darkness.server.lightEaterCheckInterval");
+        ConfigValidation.range(server.lightEaterRadius, 0, 16, "darkness.server.lightEaterRadius");
+        ConfigValidation.range(server.maxLightActionsPerTick, 0, 128, "darkness.server.maxLightActionsPerTick");
+        ConfigValidation.range(server.threatRequired, 0.0f, 1.0f, "darkness.server.threatRequired");
+
+        ConfigValidation.min(server.wardingLamp.durationSeconds, 0, "darkness.server.wardingLamp.durationSeconds");
+        ConfigValidation.range(server.wardingLamp.skyLightMax, 0, 15, "darkness.server.wardingLamp.skyLightMax");
+        ConfigValidation.range(server.wardingLamp.lightLevel, 0, 15, "darkness.server.wardingLamp.lightLevel");
+
+        ConfigValidation.min(server.erodedTorch.maxChargeTicks, 1, "darkness.server.erodedTorch.maxChargeTicks");
+        ConfigValidation.min(server.erodedTorch.rechargeIntervalTicks, 1, "darkness.server.erodedTorch.rechargeIntervalTicks");
+        ConfigValidation.min(server.erodedTorch.rechargeAmount, 0, "darkness.server.erodedTorch.rechargeAmount");
+        ConfigValidation.range(server.erodedTorch.placedLightLevel, 0, 15, "darkness.server.erodedTorch.placedLightLevel");
+        ConfigValidation.range(server.erodedTorch.activeSkyLightMax, 0, 15, "darkness.server.erodedTorch.activeSkyLightMax");
+        ConfigValidation.range(server.erodedTorch.activeNightStartTime, 0, 23999, "darkness.server.erodedTorch.activeNightStartTime");
+        ConfigValidation.range(server.erodedTorch.activeNightEndTime, 0, 23999, "darkness.server.erodedTorch.activeNightEndTime");
+
+        ConfigValidation.require(client.fadeSpeed >= 0.0f && Float.isFinite(client.fadeSpeed), "darkness.client.fadeSpeed", "must be >= 0 and finite");
+        ConfigValidation.require(client.eyeSmoothing >= 0.0f && Float.isFinite(client.eyeSmoothing), "darkness.client.eyeSmoothing", "must be >= 0 and finite");
+        ConfigValidation.range(client.enterThreshold, 0.0f, 1.0f, "darkness.client.enterThreshold");
+        ConfigValidation.min(client.graceTicks, 0, "darkness.client.graceTicks");
+        ConfigValidation.range(client.darknessMaxAlpha, 0, 255, "darkness.client.darknessMaxAlpha");
+        ConfigValidation.require(client.darknessFadeSpeed >= 0.0f && Float.isFinite(client.darknessFadeSpeed), "darkness.client.darknessFadeSpeed", "must be >= 0 and finite");
+        ConfigValidation.range(client.darknessVignetteMaxAlpha, 0, 255, "darkness.client.darknessVignetteMaxAlpha");
+        ConfigValidation.range(client.darknessVignetteSize, 0.0f, 1.0f, "darkness.client.darknessVignetteSize");
+        ConfigValidation.range(client.samples, 1, 64, "darkness.client.samples");
+        ConfigValidation.min(client.sampleStart, 0.0, "darkness.client.sampleStart");
+        ConfigValidation.require(client.sampleStep > 0.0 && Double.isFinite(client.sampleStep), "darkness.client.sampleStep", "must be > 0 and finite");
+        ConfigValidation.require(client.blockCurve > 0.0 && Double.isFinite(client.blockCurve), "darkness.client.blockCurve", "must be > 0 and finite");
+        ConfigValidation.require(client.skyCurve > 0.0 && Double.isFinite(client.skyCurve), "darkness.client.skyCurve", "must be > 0 and finite");
+        ConfigValidation.require(client.localSmoothing >= 0.0f && Float.isFinite(client.localSmoothing), "darkness.client.localSmoothing", "must be >= 0 and finite");
+        ConfigValidation.range(client.skySafeThreshold, 0, 15, "darkness.client.skySafeThreshold");
+        ConfigValidation.min(client.heartbeatVolume, 0.0f, "darkness.client.heartbeatVolume");
+        ConfigValidation.require(client.heartbeatPitch > 0.0f && Float.isFinite(client.heartbeatPitch), "darkness.client.heartbeatPitch", "must be > 0 and finite");
+        ConfigValidation.min(client.calmDown.fadeTicks, 0, "darkness.client.calmDown.fadeTicks");
+        ConfigValidation.min(client.calmDown.volume, 0.0f, "darkness.client.calmDown.volume");
+        ConfigValidation.require(client.calmDown.pitchMin > 0.0f && Float.isFinite(client.calmDown.pitchMin), "darkness.client.calmDown.pitchMin", "must be > 0 and finite");
+        ConfigValidation.min(client.calmDown.pitchRand, 0.0f, "darkness.client.calmDown.pitchRand");
+        ConfigValidation.min(client.audio.volumeMultiplier, 0.0f, "darkness.client.audio.volumeMultiplier");
+        ConfigValidation.min(client.audio.delayMultiplier, 0.0f, "darkness.client.audio.delayMultiplier");
     }
 
     public static class Server {
 
-        @ConfigEntry.Gui.Tooltip
         public boolean mobLightFearEnabled = true;
 
-        @ConfigEntry.Gui.Tooltip
         public int fearLightThreshold = 4;
 
-        @ConfigEntry.Gui.Tooltip
         public int suppressLightThreshold = 7;
 
-        @ConfigEntry.Gui.Tooltip
         public int lightSearchRadius = 8;
 
-        @ConfigEntry.Gui.Tooltip
         public int postLightCooldownTicks = 12;
 
-        @ConfigEntry.Gui.Tooltip
         public int flickerStages = 3;
 
-        @ConfigEntry.Gui.Tooltip
         public double escapeSpeed = 1.2;
 
-        @ConfigEntry.Gui.Tooltip
         public int escapeDistance = 5;
 
-        @ConfigEntry.Gui.Tooltip
         public boolean lightEaterEnabled = true;
 
-        @ConfigEntry.Gui.Tooltip
         public int lightEaterCheckInterval = 40;
 
-        @ConfigEntry.Gui.Tooltip
         public int lightEaterRadius = 2;
 
-        @ConfigEntry.Gui.Tooltip
         public int maxLightActionsPerTick = 6;
 
-        @ConfigEntry.Gui.Tooltip
         public float threatRequired = 0.6f;
 
-        @ConfigEntry.Gui.CollapsibleObject
         public WardingLamp wardingLamp = new WardingLamp();
 
-        @ConfigEntry.Gui.CollapsibleObject
         public ErodedTorch erodedTorch = new ErodedTorch();
 
         public static class WardingLamp {
 
-            @ConfigEntry.Gui.Tooltip
             public int durationSeconds = 120;
 
-            @ConfigEntry.Gui.Tooltip
             public int skyLightMax = 7;
 
-            @ConfigEntry.Gui.Tooltip
             public int undergroundY = 60;
 
-            @ConfigEntry.Gui.Tooltip
             public int lightLevel = 15;
         }
 
         public static class ErodedTorch {
 
-            @ConfigEntry.Gui.Tooltip
             public boolean enabled = true;
 
-            @ConfigEntry.Gui.Tooltip
             public int maxChargeTicks = 2400;
 
-            @ConfigEntry.Gui.Tooltip
             public int rechargeIntervalTicks = 20;
 
-            @ConfigEntry.Gui.Tooltip
             public int rechargeAmount = 1;
 
-            @ConfigEntry.Gui.Tooltip
             public boolean drainOnlyInDarkness = true;
 
-            @ConfigEntry.Gui.Tooltip
             public int placedLightLevel = 15;
 
-            @ConfigEntry.Gui.Tooltip
             public int activeSkyLightMax = 7;
 
-            @ConfigEntry.Gui.Tooltip
             public int activeNightStartTime = 12000;
 
-            @ConfigEntry.Gui.Tooltip
             public int activeNightEndTime = 23000;
 
-            @ConfigEntry.Gui.Tooltip
             public boolean rechargeHeldWhenInactive = true;
         }
     }
 
     public static class Client {
 
-        @ConfigEntry.Gui.Tooltip
         public boolean visualDarknessEnabled = true;
 
-        @ConfigEntry.Gui.Tooltip
         public float fadeSpeed = 0.015f;
 
-        @ConfigEntry.Gui.Tooltip
         public float eyeSmoothing = 0.03f;
 
-        @ConfigEntry.Gui.Tooltip
         public float enterThreshold = 0.6f;
 
-        @ConfigEntry.Gui.Tooltip
         public int graceTicks = 80;
 
-        @ConfigEntry.Gui.Tooltip
         public int darknessMaxAlpha = 220;
 
-        @ConfigEntry.Gui.Tooltip
         public float darknessFadeSpeed = 0.08f;
 
-        @ConfigEntry.Gui.Tooltip
         public boolean darknessVignetteEnabled = false;
 
-        @ConfigEntry.Gui.Tooltip
         public int darknessVignetteMaxAlpha = 90;
 
-        @ConfigEntry.Gui.Tooltip
         public float darknessVignetteSize = 0.18f;
 
-        @ConfigEntry.Gui.Tooltip
         public int samples = 6;
 
-        @ConfigEntry.Gui.Tooltip
         public double sampleStart = 1.5;
 
-        @ConfigEntry.Gui.Tooltip
         public double sampleStep = 1.8;
 
-        @ConfigEntry.Gui.Tooltip
         public double blockCurve = 1.3;
 
-        @ConfigEntry.Gui.Tooltip
         public double skyCurve = 1.4;
 
-        @ConfigEntry.Gui.Tooltip
         public float localSmoothing = 0.02f;
 
-        @ConfigEntry.Gui.Tooltip
         public boolean heartbeatEnabled = true;
 
-        @ConfigEntry.Gui.Tooltip
         public int skySafeThreshold = 10;
 
-        @ConfigEntry.Gui.Tooltip
         public float heartbeatVolume = 0.8f;
 
-        @ConfigEntry.Gui.Tooltip
         public float heartbeatPitch = 1.0f;
 
-        @ConfigEntry.Gui.CollapsibleObject
         public CalmDown calmDown = new CalmDown();
 
-        @ConfigEntry.Gui.CollapsibleObject
         public AudioTuning audio = new AudioTuning();
 
-        @ConfigEntry.Gui.Tooltip
         public boolean showTorchChargeHud = true;
 
         public static class CalmDown {
 
-            @ConfigEntry.Gui.Tooltip
             public boolean enabled = true;
 
-            @ConfigEntry.Gui.Tooltip
             public int fadeTicks = 40;
 
-            @ConfigEntry.Gui.Tooltip
             public float volume = 0.6f;
 
-            @ConfigEntry.Gui.Tooltip
             public float pitchMin = 0.9f;
 
-            @ConfigEntry.Gui.Tooltip
             public float pitchRand = 0.2f;
         }
 
         public static class AudioTuning {
 
-            @ConfigEntry.Gui.Tooltip
             public float volumeMultiplier = 1.0f;
 
-            @ConfigEntry.Gui.Tooltip
             public float delayMultiplier = 1.0f;
         }
     }

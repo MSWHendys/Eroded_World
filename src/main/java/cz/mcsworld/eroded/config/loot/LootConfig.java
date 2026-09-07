@@ -1,26 +1,21 @@
 package cz.mcsworld.eroded.config.loot;
 
-import me.shedaniel.autoconfig.AutoConfig;
-import me.shedaniel.autoconfig.ConfigData;
-import me.shedaniel.autoconfig.annotation.Config;
-import me.shedaniel.autoconfig.annotation.ConfigEntry;
+import cz.mcsworld.eroded.config.ConfigValidation;
+import cz.mcsworld.eroded.config.ConfigValidationException;
+import cz.mcsworld.eroded.config.ErodedConfig;
+import cz.mcsworld.eroded.config.ErodedConfigs;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@Config(name = "ErodedWorld/loot")
-public class LootConfig implements ConfigData {
+public class LootConfig implements ErodedConfig {
 
-    @ConfigEntry.Gui.Tooltip
     public boolean enabled = true;
 
-    @ConfigEntry.Gui.Tooltip
     public int maxItemsPerChest = 5;
 
-    @ConfigEntry.Gui.Tooltip
     public double erodedLootChance = 0.5;
 
-    @ConfigEntry.Gui.Tooltip
     public List<LootEntry> loot = List.of(
             entry("minecraft:bread", 4, 0.6),
             entry("minecraft:cooked_beef", 3, 0.4),
@@ -94,16 +89,30 @@ public class LootConfig implements ConfigData {
 
             entry("eroded:territory_module", 1, 0.05),
             entry("eroded:territory_anchor", 1, 0.09),
-            entry("eroded:energy_drink", 1, 1.0),
+            entry("eroded:energy_drink", 1, 0.5),
             entry("eroded:adrenaline_shot", 1, 0.1),
             entry("eroded:eroded_lamp", 1, 0.01),
             entry("eroded:eroded_torch", 1, 0.3)
     );
 
+    @Override
+    public void validatePostLoad() throws ConfigValidationException {
+        ConfigValidation.range(maxItemsPerChest, 0, 54, "loot.maxItemsPerChest");
+        ConfigValidation.range(erodedLootChance, 0.0, 1.0, "loot.erodedLootChance");
+        ConfigValidation.notNull(loot, "loot.loot");
+
+        for (int i = 0; i < loot.size(); i++) {
+            LootEntry entry = loot.get(i);
+            ConfigValidation.notNull(entry, "loot.loot[" + i + "]");
+            ConfigValidation.notNull(entry.item, "loot.loot[" + i + "].item");
+            ConfigValidation.require(!entry.item.isBlank(), "loot.loot[" + i + "].item", "must not be blank");
+            ConfigValidation.min(entry.maxStack, 1, "loot.loot[" + i + "].maxStack");
+            ConfigValidation.range(entry.chance, 0.0, 1.0, "loot.loot[" + i + "].chance");
+        }
+    }
+
     public static LootConfig get() {
-        return AutoConfig
-                .getConfigHolder(LootConfig.class)
-                .getConfig();
+        return ErodedConfigs.LOOT;
     }
 
     public boolean ensureDefaultEntries() {

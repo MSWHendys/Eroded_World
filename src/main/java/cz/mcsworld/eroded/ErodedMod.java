@@ -5,24 +5,21 @@ import cz.mcsworld.eroded.block.ErodedBlockInteractionHandler;
 import cz.mcsworld.eroded.combat.DodgeHandler;
 import cz.mcsworld.eroded.combat.SprintEnergyHandler;
 import cz.mcsworld.eroded.command.ErodedCommand;
+import cz.mcsworld.eroded.crafting.CraftingMessageCooldown;
 import cz.mcsworld.eroded.config.*;
-import cz.mcsworld.eroded.config.combat.CombatConfig;
-import cz.mcsworld.eroded.config.crafting.CraftingConfig;
-import cz.mcsworld.eroded.config.darkness.DarknessConfigs;
-import cz.mcsworld.eroded.config.death.DeathConfig;
-import cz.mcsworld.eroded.config.energy.EnergyConfig;
-import cz.mcsworld.eroded.config.loot.LootConfig;
-import cz.mcsworld.eroded.config.territory.TerritoryConfig;
 import cz.mcsworld.eroded.core.*;
 import cz.mcsworld.eroded.death.*;
 import cz.mcsworld.eroded.death.block.ErodedBlocks;
 import cz.mcsworld.eroded.energy.EnergySleepHandler;
 import cz.mcsworld.eroded.energy.EnergySyncHandler;
+import cz.mcsworld.eroded.energy.EnergyMovementHandler;
+import cz.mcsworld.eroded.energy.MiningEnergyHandler;
 import cz.mcsworld.eroded.loot.ErodedContainerBreakHandler;
 import cz.mcsworld.eroded.loot.ErodedContainerHandler;
 import cz.mcsworld.eroded.loot.ErodedContainerPlacementHandler;
 import cz.mcsworld.eroded.loot.ErodedContainerProtectionHandler;
 import cz.mcsworld.eroded.network.NetworkPayloads;
+import cz.mcsworld.eroded.network.ServerPacketGuard;
 import cz.mcsworld.eroded.network.TerritoryModuleNetworking;
 import cz.mcsworld.eroded.network.TerritoryPlacementHintNetworking;
 import cz.mcsworld.eroded.protection.EntityProtectionEvents;
@@ -36,8 +33,6 @@ import cz.mcsworld.eroded.world.spawn.SpawnProtectionSpawnBlocker;
 import cz.mcsworld.eroded.world.spawn.SpawnProtectionTicker;
 import cz.mcsworld.eroded.world.territory.*;
 import cz.mcsworld.eroded.world.territory.ecosystem.TerritoryEcosystemTicker;
-import me.shedaniel.autoconfig.AutoConfig;
-import me.shedaniel.autoconfig.serializer.GsonConfigSerializer;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import org.slf4j.Logger;
@@ -57,13 +52,8 @@ public class ErodedMod implements ModInitializer {
         NetworkPayloads.registerAll();
         TerritoryModuleNetworking.registerServerReceivers();
 
-        AutoConfig.register(EnergyConfig.class, GsonConfigSerializer::new);
-        AutoConfig.register(CraftingConfig.class, GsonConfigSerializer::new);
-        AutoConfig.register(DarknessConfigs.class, GsonConfigSerializer::new);
-        AutoConfig.register(TerritoryConfig.class, GsonConfigSerializer::new);
-        AutoConfig.register(DeathConfig.class, GsonConfigSerializer::new);
-        AutoConfig.register(CombatConfig.class, GsonConfigSerializer::new);
-        AutoConfig.register(LootConfig.class, GsonConfigSerializer::new);
+        ErodedConfigs.initialize();
+
         ErodedEntities.register();
 
         FabricDefaultAttributeRegistry.register(
@@ -78,7 +68,6 @@ public class ErodedMod implements ModInitializer {
 
         ErodedEntityItems.register();
 
-        ErodedConfigs.reload();
 
         ErodedComponents.register();
         ErodedItems.register();
@@ -95,8 +84,11 @@ public class ErodedMod implements ModInitializer {
         DodgeHandler.register();
 
         EnergySyncHandler.register();
+        EnergyMovementHandler.register();
+        MiningEnergyHandler.register();
         DarknessChecker.register();
 
+        DynamicLightManager.register();
         ErodedTorchHandler.register();
         DarknessMobAIInit.register();
         DarknessLightEater.register();
@@ -105,6 +97,7 @@ public class ErodedMod implements ModInitializer {
         TerritoryMobSpawnHandler.register();
         TerritoryCaveCollapseHandler.register();
         TerritoryEcosystemTicker.register();
+        TerritoryStateMaintenance.register();
         MutatedMobLootHandler.register();
         ErodedCommand.register();
         DeathChestHandler.register();
@@ -123,6 +116,7 @@ public class ErodedMod implements ModInitializer {
         DeathHologramOrphanCleaner.register();
         DeathHologramInteractBlocker.register();
 
+        ErodedCompassHandler.register();
         ErodedCompassServerTicker.register();
         EnergySleepHandler.register();
         SpawnProtectionTicker.register();
@@ -145,12 +139,17 @@ public class ErodedMod implements ModInitializer {
 
             var world = handler.getPlayer().level();
 
-            SkillManager.save(handler.getPlayer());
+            SkillManager.persist(handler.getPlayer());
             SkillManager.remove(uuid);
 
             DodgeHandler.cleanup(uuid);
             SprintEnergyHandler.cleanup(uuid);
             DarknessChecker.cleanup(uuid);
+            ServerPacketGuard.cleanup(uuid);
+            ErodedCommand.cleanup(uuid);
+            ErodedCompassItem.cleanup(uuid);
+            ErodedCompassSyncHandler.cleanup(uuid);
+            CraftingMessageCooldown.cleanup(uuid);
 
             ErodedLampHandler.cleanup(uuid, world);
             ErodedTorchHandler.cleanup(uuid, world);

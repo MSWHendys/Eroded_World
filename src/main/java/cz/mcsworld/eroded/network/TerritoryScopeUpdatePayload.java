@@ -13,6 +13,8 @@ public record TerritoryScopeUpdatePayload(
         boolean connectedScopeMode
 ) implements CustomPacketPayload {
 
+    public static final int MAX_UUID_LENGTH = 36;
+
     public static final Type<TerritoryScopeUpdatePayload> ID =
             new Type<>(Identifier.fromNamespaceAndPath(ErodedMod.MOD_ID, "territory_scope_update"));
 
@@ -24,14 +26,14 @@ public record TerritoryScopeUpdatePayload(
 
     private void write(RegistryFriendlyByteBuf buf) {
         BlockPos.STREAM_CODEC.encode(buf, anchorPos);
-        buf.writeUtf(targetUuid);
+        buf.writeUtf(targetUuid, MAX_UUID_LENGTH);
         buf.writeBoolean(connectedScopeMode);
     }
 
     private static TerritoryScopeUpdatePayload read(RegistryFriendlyByteBuf buf) {
         return new TerritoryScopeUpdatePayload(
                 BlockPos.STREAM_CODEC.decode(buf),
-                buf.readUtf(),
+                buf.readUtf(MAX_UUID_LENGTH),
                 buf.readBoolean()
         );
     }

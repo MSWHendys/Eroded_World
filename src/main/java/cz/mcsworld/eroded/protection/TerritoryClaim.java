@@ -17,6 +17,7 @@ public final class TerritoryClaim {
     private static final int DEFAULT_RADIUS = 10;
     private static final int MIN_RADIUS = 1;
     private static final int MAX_RADIUS = 256;
+    public static final int MAX_TRUSTED_PLAYERS = 256;
 
     private final BlockPos anchorPos;
     private final UUID ownerUuid;
@@ -115,6 +116,14 @@ public final class TerritoryClaim {
         return Collections.unmodifiableSet(result);
     }
 
+    public boolean canAddTrusted(UUID uuid) {
+        if (uuid == null || ownerUuid.equals(uuid)) {
+            return false;
+        }
+        return trustedAccess.containsKey(uuid)
+                || trustedAccess.size() < MAX_TRUSTED_PLAYERS;
+    }
+
     public boolean addTrusted(UUID uuid, String name) {
         if (uuid == null) {
             return false;
@@ -128,6 +137,10 @@ public final class TerritoryClaim {
 
         if (existing != null) {
             existing.updateName(name);
+            return false;
+        }
+
+        if (trustedAccess.size() >= MAX_TRUSTED_PLAYERS) {
             return false;
         }
 
@@ -189,6 +202,76 @@ public final class TerritoryClaim {
         access.set(permission, enabled);
 
         return before != enabled;
+    }
+
+    public TrustedPlayer getTrustedPlayer(UUID uuid) {
+        if (uuid == null) {
+            return null;
+        }
+
+        TrustedAccess access = trustedAccess.get(uuid);
+
+        if (access == null) {
+            return null;
+        }
+
+        return new TrustedPlayer(
+                access.uuid(),
+                access.name(),
+                access.flags(),
+                access.connectedScopeMode()
+        );
+    }
+
+    /**
+     * Creates or synchronizes one trusted-player entry. Used when a player is
+     * switched to connected-area scope so every connected anchor has the same
+     * access record before area-wide permission mutations are applied.
+     */
+    public boolean syncTrustedAccess(
+            UUID uuid,
+            String name,
+            int flags,
+            boolean connectedScopeMode
+    ) {
+        if (uuid == null || ownerUuid.equals(uuid)) {
+            return false;
+        }
+
+        TrustedAccess access = trustedAccess.get(uuid);
+
+        if (access == null) {
+            if (trustedAccess.size() >= MAX_TRUSTED_PLAYERS) {
+                return false;
+            }
+
+            TrustedAccess newAccess = new TrustedAccess(
+                    uuid,
+                    name,
+                    flags,
+                    connectedScopeMode
+            );
+
+            Map<UUID, TrustedAccess> reordered = new LinkedHashMap<>();
+            reordered.put(uuid, newAccess);
+            reordered.putAll(trustedAccess);
+
+            trustedAccess.clear();
+            trustedAccess.putAll(reordered);
+            return true;
+        }
+
+        String beforeName = access.name();
+        int beforeFlags = access.flags();
+        boolean beforeScope = access.connectedScopeMode();
+
+        access.updateName(name);
+        access.setFlags(flags);
+        access.setConnectedScopeMode(connectedScopeMode);
+
+        return !beforeName.equals(access.name())
+                || beforeFlags != access.flags()
+                || beforeScope != access.connectedScopeMode();
     }
 
     public boolean setTrustedScopeMode(UUID uuid, boolean connectedScopeMode) {

@@ -3,18 +3,20 @@ package cz.mcsworld.eroded.command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import cz.mcsworld.eroded.ErodedMod;
 import cz.mcsworld.eroded.config.ErodedConfigs;
-import cz.mcsworld.eroded.config.energy.EnergyConfig;
 import cz.mcsworld.eroded.config.energy.EnergyHudPosition;
 import cz.mcsworld.eroded.death.block.ErodedBlocks;
-import cz.mcsworld.eroded.energy.EnergySyncHandler;
 import cz.mcsworld.eroded.network.SoundTuningSyncPacket;
+import cz.mcsworld.eroded.network.HudPositionSyncPacket;
 import cz.mcsworld.eroded.protection.TerritoryClaim;
 import cz.mcsworld.eroded.protection.TerritoryClaimState;
 import cz.mcsworld.eroded.protection.TerritoryProtectionManager;
 import cz.mcsworld.eroded.skills.SkillData;
 import cz.mcsworld.eroded.skills.SkillManager;
-import me.shedaniel.autoconfig.AutoConfig;
+import cz.mcsworld.eroded.world.territory.TerritoryCell;
+import cz.mcsworld.eroded.world.territory.TerritoryCellKey;
+import cz.mcsworld.eroded.world.territory.TerritoryWorldState;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -65,13 +67,22 @@ public final class ErodedCommand {
                                 .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
                                 .executes(ctx -> {
                                     try {
-                                        ErodedConfigs.reload();
+                                        ErodedConfigs.ReloadResult result = ErodedConfigs.reload();
 
-                                        ctx.getSource().sendSuccess(
-                                                () -> Component.translatable(
-                                                        "eroded.command.reload.success"
-                                                ),
-                                                false
+                                        if (!result.success()) {
+                                            for (ErodedConfigs.ReloadFailure failure : result.failures()) {
+                                                ctx.getSource().sendSystemMessage(
+                                                        Component.translatable(
+                                                                "eroded.command.reload.invalid",
+                                                                failure.configName()
+                                                        )
+                                                );
+                                            }
+                                            return 0;
+                                        }
+
+                                        ctx.getSource().sendSystemMessage(
+                                                Component.translatable("eroded.command.reload.success")
                                         );
 
                                         return 1;
@@ -83,7 +94,7 @@ public final class ErodedCommand {
                                                 )
                                         );
 
-                                        e.printStackTrace();
+                                        ErodedMod.LOGGER.error("[Eroded World] Unexpected /eroded reload failure.", e);
                                         return 0;
                                     }
                                 })
@@ -108,7 +119,6 @@ public final class ErodedCommand {
                                             CustomData.of(tag)
                                     );
 
-                                    assert player != null;
                                     player.addItem(stack);
 
                                     ctx.getSource().sendSuccess(
@@ -150,7 +160,6 @@ public final class ErodedCommand {
 
                                                                     data.setEnergy(amount);
                                                                     SkillManager.save(target);
-                                                                    EnergySyncHandler.forceSync(target);
 
                                                                     ctx.getSource().sendSuccess(
                                                                             () -> Component.translatable(
@@ -189,8 +198,6 @@ public final class ErodedCommand {
 
                                                             long now =
                                                                     System.currentTimeMillis();
-
-                                                            assert player != null;
 
                                                             Long last =
                                                                     SOUND_COOLDOWN.get(
@@ -259,8 +266,6 @@ public final class ErodedCommand {
                                                             long now =
                                                                     System.currentTimeMillis();
 
-                                                            assert player != null;
-
                                                             Long last =
                                                                     SOUND_COOLDOWN.get(
                                                                             player.getUUID()
@@ -314,8 +319,6 @@ public final class ErodedCommand {
 
                                             long now =
                                                     System.currentTimeMillis();
-
-                                            assert player != null;
 
                                             Long last =
                                                     SOUND_COOLDOWN.get(
@@ -394,8 +397,6 @@ public final class ErodedCommand {
                                             long now =
                                                     System.currentTimeMillis();
 
-                                            assert player != null;
-
                                             Long last =
                                                     SOUND_COOLDOWN.get(
                                                             player.getUUID()
@@ -467,18 +468,13 @@ public final class ErodedCommand {
                                                                         input
                                                                 );
 
-                                                        var cfg =
-                                                                EnergyConfig.get()
-                                                                        .client
-                                                                        .hud;
+                                                        ServerPlayer player =
+                                                                ctx.getSource().getPlayer();
 
-                                                        cfg.hudPosition = newPos;
-
-                                                        AutoConfig
-                                                                .getConfigHolder(
-                                                                        EnergyConfig.class
-                                                                )
-                                                                .save();
+                                                        HudPositionSyncPacket.sendTo(
+                                                                player,
+                                                                newPos
+                                                        );
 
                                                         ctx.getSource().sendSuccess(
                                                                 () -> Component.translatable(
@@ -514,8 +510,6 @@ public final class ErodedCommand {
 
                                             ServerPlayer player =
                                                     source.getPlayer();
-
-                                            assert player != null;
 
                                             TerritoryClaim claim =
                                                     findClaimForCommand(
@@ -613,8 +607,6 @@ public final class ErodedCommand {
                                             ServerPlayer player =
                                                     source.getPlayer();
 
-                                            assert player != null;
-
                                             TerritoryClaim claim =
                                                     findClaimForCommand(
                                                             world,
@@ -700,6 +692,177 @@ public final class ErodedCommand {
                                                             return 1;
                                                         })
                                         )
+                                )
+
+                                .then(Commands.literal("cell")
+                                        .executes(ctx -> {
+                                            CommandSourceStack source = ctx.getSource();
+                                            ServerLevel world = source.getLevel();
+                                            ServerPlayer player = source.getPlayer();
+
+                                            if (player == null) {
+                                                source.sendFailure(Component.translatable(
+                                                        "eroded.command.territory.cell.player_only"
+                                                ));
+                                                return 0;
+                                            }
+
+                                            var chunk = player.chunkPosition();
+                                            TerritoryCellKey key = TerritoryCellKey.fromChunk(
+                                                    chunk.x,
+                                                    chunk.z
+                                            );
+
+                                            TerritoryWorldState state =
+                                                    TerritoryWorldState.getIfPresent(world);
+
+                                            TerritoryCell cell = state == null
+                                                    ? null
+                                                    : state.getCell(key);
+
+                                            if (cell == null) {
+                                                source.sendSuccess(
+                                                        () -> Component.translatable(
+                                                                "eroded.command.territory.cell.none",
+                                                                key.cellX(),
+                                                                key.cellZ()
+                                                        ),
+                                                        false
+                                                );
+                                                return 0;
+                                            }
+
+                                            long now = world.getGameTime();
+                                            long lastActivity = cell.getLastActivityTick();
+                                            long age = lastActivity > 0L && now >= lastActivity
+                                                    ? now - lastActivity
+                                                    : -1L;
+                                            long lastCollapse = cell.getLastCollapseTick();
+                                            String collapseAge = lastCollapse > 0L && now >= lastCollapse
+                                                    ? Long.toString(now - lastCollapse)
+                                                    : "-";
+
+                                            source.sendSuccess(
+                                                    () -> Component.translatable(
+                                                            "eroded.command.territory.cell.info",
+                                                            key.cellX(),
+                                                            key.cellZ(),
+                                                            cell.getMiningScore(),
+                                                            cell.getMining(now),
+                                                            cell.getPollution(now),
+                                                            cell.getForestation(now),
+                                                            age,
+                                                            collapseAge
+                                                    ),
+                                                    false
+                                            );
+                                            return 1;
+                                        })
+                                )
+
+                                .then(Commands.literal("cells")
+                                        .executes(ctx -> {
+                                            CommandSourceStack source = ctx.getSource();
+                                            ServerLevel world = source.getLevel();
+                                            TerritoryWorldState state =
+                                                    TerritoryWorldState.getIfPresent(world);
+                                            int count = state == null ? 0 : state.size();
+
+                                            source.sendSuccess(
+                                                    () -> Component.translatable(
+                                                            "eroded.command.territory.cells.count",
+                                                            count
+                                                    ),
+                                                    false
+                                            );
+                                            return count;
+                                        })
+                                )
+
+                                .then(Commands.literal("connected")
+                                        .executes(ctx -> {
+                                            CommandSourceStack source = ctx.getSource();
+                                            ServerLevel world = source.getLevel();
+                                            ServerPlayer player = source.getPlayer();
+
+                                            if (player == null) {
+                                                source.sendFailure(Component.translatable(
+                                                        "eroded.command.territory.connected.player_only"
+                                                ));
+                                                return 0;
+                                            }
+
+                                            TerritoryClaim startClaim = findClaimForCommand(
+                                                    world,
+                                                    player.blockPosition()
+                                            );
+
+                                            if (startClaim == null) {
+                                                source.sendSuccess(
+                                                        () -> Component.translatable(
+                                                                "eroded.command.territory.connected.none_here"
+                                                        ),
+                                                        false
+                                                );
+                                                return 0;
+                                            }
+
+                                            List<TerritoryClaim> connected =
+                                                    TerritoryProtectionManager.findConnectedClaims(
+                                                            world,
+                                                            startClaim
+                                                    );
+
+                                            List<TerritoryClaim> ownerClaims =
+                                                    TerritoryClaimState.get(world)
+                                                            .all()
+                                                            .stream()
+                                                            .filter(TerritoryClaim::active)
+                                                            .filter(claim -> claim.ownerUuid().equals(
+                                                                    startClaim.ownerUuid()
+                                                            ))
+                                                            .toList();
+
+                                            java.util.Set<BlockPos> connectedAnchors =
+                                                    new java.util.HashSet<>();
+
+                                            for (TerritoryClaim claim : connected) {
+                                                connectedAnchors.add(claim.anchorPos());
+                                            }
+
+                                            source.sendSuccess(
+                                                    () -> Component.translatable(
+                                                            "eroded.command.territory.connected.header",
+                                                            connected.size(),
+                                                            ownerClaims.size(),
+                                                            startClaim.ownerName()
+                                                    ),
+                                                    false
+                                            );
+
+                                            for (TerritoryClaim claim : ownerClaims) {
+                                                boolean isConnected =
+                                                        connectedAnchors.contains(claim.anchorPos());
+
+                                                source.sendSuccess(
+                                                        () -> Component.translatable(
+                                                                "eroded.command.territory.connected.entry",
+                                                                formatPos(claim.anchorPos()),
+                                                                claim.radius(),
+                                                                isConnected
+                                                                        ? Component.translatable(
+                                                                                "eroded.command.territory.connected.yes"
+                                                                        )
+                                                                        : Component.translatable(
+                                                                                "eroded.command.territory.connected.no"
+                                                                        )
+                                                        ),
+                                                        false
+                                                );
+                                            }
+
+                                            return connected.size();
+                                        })
                                 )
 
                                 .then(Commands.literal("clear")
@@ -868,6 +1031,10 @@ public final class ErodedCommand {
                 Blocks.AIR.defaultBlockState(),
                 Block.UPDATE_ALL
         );
+    }
+
+    public static void cleanup(java.util.UUID playerId) {
+        SOUND_COOLDOWN.remove(playerId);
     }
 
     private static String formatPos(BlockPos pos) {

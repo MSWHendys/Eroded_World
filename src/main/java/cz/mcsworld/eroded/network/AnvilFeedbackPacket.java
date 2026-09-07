@@ -8,18 +8,21 @@ import net.minecraft.resources.Identifier;
 public record AnvilFeedbackPacket(String key, String quality)
         implements CustomPacketPayload {
 
+    public static final int MAX_KEY_LENGTH = 128;
+    public static final int MAX_QUALITY_LENGTH = 32;
+
     public static final Type<AnvilFeedbackPacket> ID =
             new Type<>(Identifier.fromNamespaceAndPath("eroded", "anvil_feedback"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, AnvilFeedbackPacket> CODEC =
             StreamCodec.ofMember(
                     (p, buf) -> {
-                        buf.writeUtf(p.key());
-                        buf.writeUtf(p.quality());
+                        buf.writeUtf(p.key(), MAX_KEY_LENGTH);
+                        buf.writeUtf(p.quality(), MAX_QUALITY_LENGTH);
                     },
                     buf -> new AnvilFeedbackPacket(
-                            buf.readUtf(),
-                            buf.readUtf()
+                            buf.readUtf(MAX_KEY_LENGTH),
+                            buf.readUtf(MAX_QUALITY_LENGTH)
                     )
             );
 

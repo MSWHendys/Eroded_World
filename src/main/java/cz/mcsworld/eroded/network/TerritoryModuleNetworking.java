@@ -3,14 +3,18 @@ package cz.mcsworld.eroded.network;
 import cz.mcsworld.eroded.protection.TerritoryClaim;
 import cz.mcsworld.eroded.protection.TerritoryPermission;
 import cz.mcsworld.eroded.protection.TerritoryProtectionManager;
+import java.util.UUID;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import java.util.UUID;
 
 public final class TerritoryModuleNetworking {
+
+    private static final int UI_REQUESTS_PER_SECOND = 20;
+    private static final int MUTATIONS_PER_SECOND = 12;
+    private static final int SUGGESTIONS_PER_SECOND = 12;
 
     private TerritoryModuleNetworking() {
     }
@@ -53,15 +57,15 @@ public final class TerritoryModuleNetworking {
     }
 
     public static void registerServerReceivers() {
+        // Keep C2S work on the logical server thread. This matches the
+        // Fabric 1.21.11 receiver pattern used by the original port.
         ServerPlayNetworking.registerGlobalReceiver(
                 TerritoryModuleRequestPayload.ID,
                 (payload, context) -> context.server().execute(() -> {
                     ServerPlayer player = context.player();
-
-                    if (!(player.level() instanceof ServerLevel world)) {
-                        return;
-                    }
-
+                    if (!ServerPacketGuard.allow(player, "territory_ui", UI_REQUESTS_PER_SECOND)) return;
+                    if (!ServerPacketGuard.validTerritoryMenu(player, payload.anchorPos())) return;
+                    if (!(player.level() instanceof ServerLevel world)) return;
                     sendSync(world, payload.anchorPos(), player);
                 })
         );
@@ -70,20 +74,24 @@ public final class TerritoryModuleNetworking {
                 TerritoryTrustAddPayload.ID,
                 (payload, context) -> context.server().execute(() -> {
                     ServerPlayer manager = context.player();
+                    if (!ServerPacketGuard.allow(manager, "territory_mutation", MUTATIONS_PER_SECOND)) return;
+                    if (!ServerPacketGuard.validTerritoryMenu(manager, payload.anchorPos())) return;
+                    if (!(manager.level() instanceof ServerLevel world)) return;
 
-                    if (!(manager.level() instanceof ServerLevel world)) {
+                    String playerName = payload.playerName().trim();
+                    if (playerName.isEmpty() || playerName.length() > TerritoryTrustAddPayload.MAX_PLAYER_NAME_LENGTH) {
                         return;
                     }
 
                     ServerPlayer target = world.getServer()
                             .getPlayerList()
-                            .getPlayerByName(payload.playerName());
+                            .getPlayerByName(playerName);
 
                     if (target == null) {
                         manager.displayClientMessage(
                                 net.minecraft.network.chat.Component.translatable(
                                         "eroded.territory.trust.player_not_found",
-                                        payload.playerName()
+                                        playerName
                                 ),
                                 true
                         );
@@ -108,16 +116,19 @@ public final class TerritoryModuleNetworking {
                 TerritoryTrustRemovePayload.ID,
                 (payload, context) -> context.server().execute(() -> {
                     ServerPlayer manager = context.player();
-
-                    if (!(manager.level() instanceof ServerLevel world)) {
-                        return;
-                    }
+                    if (!ServerPacketGuard.allow(manager, "territory_mutation", MUTATIONS_PER_SECOND)) return;
+                    if (!ServerPacketGuard.validTerritoryMenu(manager, payload.anchorPos())) return;
+                    if (!(manager.level() instanceof ServerLevel world)) return;
 
                     UUID targetUuid;
-
                     try {
                         targetUuid = UUID.fromString(payload.targetUuid());
                     } catch (IllegalArgumentException ex) {
+                        return;
+                    }
+
+                    String targetName = payload.targetName().trim();
+                    if (targetName.length() > TerritoryTrustRemovePayload.MAX_TARGET_NAME_LENGTH) {
                         return;
                     }
 
@@ -126,7 +137,7 @@ public final class TerritoryModuleNetworking {
                             payload.anchorPos(),
                             manager,
                             targetUuid,
-                            payload.targetName(),
+                            targetName,
                             payload.connectedArea()
                     );
 
@@ -140,13 +151,11 @@ public final class TerritoryModuleNetworking {
                 TerritoryPermissionUpdatePayload.ID,
                 (payload, context) -> context.server().execute(() -> {
                     ServerPlayer manager = context.player();
-
-                    if (!(manager.level() instanceof ServerLevel world)) {
-                        return;
-                    }
+                    if (!ServerPacketGuard.allow(manager, "territory_mutation", MUTATIONS_PER_SECOND)) return;
+                    if (!ServerPacketGuard.validTerritoryMenu(manager, payload.anchorPos())) return;
+                    if (!(manager.level() instanceof ServerLevel world)) return;
 
                     UUID targetUuid;
-
                     try {
                         targetUuid = UUID.fromString(payload.targetUuid());
                     } catch (IllegalArgumentException ex) {
@@ -154,7 +163,6 @@ public final class TerritoryModuleNetworking {
                     }
 
                     TerritoryPermission permission;
-
                     try {
                         permission = TerritoryPermission.valueOf(payload.permissionName());
                     } catch (IllegalArgumentException ex) {
@@ -181,13 +189,11 @@ public final class TerritoryModuleNetworking {
                 TerritoryScopeUpdatePayload.ID,
                 (payload, context) -> context.server().execute(() -> {
                     ServerPlayer manager = context.player();
-
-                    if (!(manager.level() instanceof ServerLevel world)) {
-                        return;
-                    }
+                    if (!ServerPacketGuard.allow(manager, "territory_mutation", MUTATIONS_PER_SECOND)) return;
+                    if (!ServerPacketGuard.validTerritoryMenu(manager, payload.anchorPos())) return;
+                    if (!(manager.level() instanceof ServerLevel world)) return;
 
                     UUID targetUuid;
-
                     try {
                         targetUuid = UUID.fromString(payload.targetUuid());
                     } catch (IllegalArgumentException ex) {
@@ -212,17 +218,16 @@ public final class TerritoryModuleNetworking {
                 TerritorySuggestionRequestPayload.ID,
                 (payload, context) -> context.server().execute(() -> {
                     ServerPlayer player = context.player();
+                    if (!ServerPacketGuard.allow(player, "territory_suggestion", SUGGESTIONS_PER_SECOND)) return;
+                    if (!ServerPacketGuard.validTerritoryMenu(player, payload.anchorPos())) return;
+                    if (!(player.level() instanceof ServerLevel world)) return;
 
-                    if (!(player.level() instanceof ServerLevel world)) {
+                    String query = payload.query().trim();
+                    if (query.length() > TerritorySuggestionRequestPayload.MAX_QUERY_LENGTH) {
                         return;
                     }
 
-                    sendSync(
-                            world,
-                            payload.anchorPos(),
-                            player,
-                            payload.query()
-                    );
+                    sendSync(world, payload.anchorPos(), player, query);
                 })
         );
     }
@@ -257,7 +262,7 @@ public final class TerritoryModuleNetworking {
                 viewer,
                 new TerritoryModuleSyncPayload(
                         anchorPos,
-                        claim.ownerName(),
+                        safeName(claim.ownerName(), TerritoryModuleSyncPayload.MAX_OWNER_NAME_LENGTH),
                         claim.radius(),
                         claim.active() ? 1 : 0,
                         connectedInfo.width(),
@@ -274,18 +279,23 @@ public final class TerritoryModuleNetworking {
 
         TerritoryProtectionManager.refreshTrustedNamesFromOnlinePlayers(world, claim);
 
+        int count = 0;
         for (TerritoryClaim.TrustedPlayer trusted : TerritoryProtectionManager.getTrustedPlayerEntries(claim)) {
+            if (count++ >= TerritoryClaim.MAX_TRUSTED_PLAYERS) break;
+
             if (!builder.isEmpty()) {
                 builder.append("\n");
             }
 
             builder.append(trusted.uuid())
                     .append("|")
-                    .append(trusted.name())
+                    .append(safeName(trusted.name(), TerritoryTrustAddPayload.MAX_PLAYER_NAME_LENGTH))
                     .append("|")
                     .append(trusted.flags())
                     .append("|")
                     .append(trusted.connectedScopeMode());
+
+            if (builder.length() >= TerritoryModuleSyncPayload.MAX_TRUSTED_DATA_LENGTH - 128) break;
         }
 
         return builder.toString();
@@ -301,9 +311,14 @@ public final class TerritoryModuleNetworking {
 
             builder.append(player.getUUID())
                     .append("|")
-                    .append(player.getName().getString());
+                    .append(safeName(player.getName().getString(), TerritoryTrustAddPayload.MAX_PLAYER_NAME_LENGTH));
         }
 
         return builder.toString();
     }
+    private static String safeName(String value, int maxLength) {
+        if (value == null || value.isEmpty()) return "Unknown";
+        return value.length() <= maxLength ? value : value.substring(0, maxLength);
+    }
+
 }

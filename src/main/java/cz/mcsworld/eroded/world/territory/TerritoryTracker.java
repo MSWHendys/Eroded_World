@@ -12,7 +12,7 @@ public final class TerritoryTracker {
     private TerritoryTracker() {}
 
     public static void onBlockPlaced(ServerLevel world, BlockPos pos, BlockState blockState) {
-        long tick = world.getServer().getTickCount();
+        long tick = world.getGameTime();
         Block block = blockState.getBlock();
 
         int forest = resolveForestationValue(blockState);
@@ -27,7 +27,7 @@ public final class TerritoryTracker {
     }
 
     public static void onBlockBroken(ServerLevel world, BlockPos pos, BlockState blockState) {
-        long tick = world.getServer().getTickCount();
+        long tick = world.getGameTime();
         int mining = resolveMiningValue(blockState, pos);
 
         if (mining > 0) {
@@ -42,6 +42,7 @@ public final class TerritoryTracker {
         TerritoryCell cell = worldState.getOrCreateCell(key);
 
         action.accept(cell);
+        cell.touchActivity(tick);
         worldState.setDirty();
     }
 

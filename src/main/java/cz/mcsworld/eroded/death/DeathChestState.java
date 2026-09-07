@@ -114,10 +114,23 @@ public final class DeathChestState extends SavedData {
 
     private final Map<Long, Entry> entries = new HashMap<>();
 
+    /**
+     * Runtime-only GUI locks. They are deliberately not serialized: after a
+     * restart no player can still own an open menu. The random session token
+     * prevents an old menu close callback from unlocking a newer session.
+     */
+    private final Map<Long, OpenSession> openSessions = new HashMap<>();
+
+    private record OpenSession(UUID playerId, UUID token) {}
+
     private DeathChestState() {}
 
     public static DeathChestState get(ServerLevel world) {
         return world.getDataStorage().computeIfAbsent(TYPE);
+    }
+
+    public static DeathChestState getIfPresent(ServerLevel world) {
+        return world.getDataStorage().get(TYPE);
     }
 
     public Entry get(BlockPos pos) {
@@ -125,7 +138,7 @@ public final class DeathChestState extends SavedData {
     }
 
     public Collection<Entry> all() {
-        return entries.values();
+        return List.copyOf(entries.values());
     }
 
     public void put(
@@ -149,9 +162,75 @@ public final class DeathChestState extends SavedData {
     }
 
     public void remove(BlockPos pos) {
-        if (entries.remove(pos.asLong()) != null) {
+        long key = pos.asLong();
+        openSessions.remove(key);
+        if (entries.remove(key) != null) {
             setDirty();
         }
+    }
+
+    public UUID tryOpen(BlockPos pos, UUID playerId) {
+        long key = pos.asLong();
+        if (!entries.containsKey(key) || openSessions.containsKey(key)) {
+            return null;
+        }
+
+        UUID token = UUID.randomUUID();
+        openSessions.put(key, new OpenSession(playerId, token));
+        return token;
+    }
+
+    public boolean isOpen(BlockPos pos) {
+        return openSessions.containsKey(pos.asLong());
+    }
+
+    public boolean isOpenBy(BlockPos pos, UUID playerId, UUID token) {
+        OpenSession session = openSessions.get(pos.asLong());
+        return session != null
+                && session.playerId().equals(playerId)
+                && session.token().equals(token);
+    }
+
+    public void releaseOpen(BlockPos pos, UUID token) {
+        long key = pos.asLong();
+        OpenSession session = openSessions.get(key);
+        if (session != null && session.token().equals(token)) {
+            openSessions.remove(key);
+        }
+    }
+
+    /**
+     * Keeps persistent SavedData synchronized with an open GUI. This makes the
+     * state authoritative during the session instead of leaving a full stale
+     * copy in SavedData until the screen closes.
+     */
+    public boolean updateItems(
+            BlockPos pos,
+            UUID playerId,
+            UUID token,
+            List<ItemStack> inventory
+    ) {
+        if (!isOpenBy(pos, playerId, token)) {
+            return false;
+        }
+
+        Entry old = get(pos);
+        if (old == null) {
+            return false;
+        }
+
+        entries.put(
+                pos.asLong(),
+                new Entry(
+                        old.pos(),
+                        old.owner(),
+                        old.protectUntilEpochMs(),
+                        fromInventory(inventory),
+                        old.hologramId()
+                )
+        );
+        setDirty();
+        return true;
     }
 
     public boolean isProtected(BlockPos pos) {

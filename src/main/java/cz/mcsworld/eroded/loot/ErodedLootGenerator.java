@@ -44,9 +44,10 @@ public class ErodedLootGenerator {
             if (item == null)
                 continue;
 
+            ItemStack stack = new ItemStack(item);
             int count = 1 + random.nextInt(Math.max(1, entry.maxStack));
-
-            ItemStack stack = new ItemStack(item, count);
+            count = Math.min(count, stack.getMaxStackSize());
+            stack.setCount(count);
 
             applyQuality(stack);
 

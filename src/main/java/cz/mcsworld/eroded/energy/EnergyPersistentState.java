@@ -8,6 +8,13 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
 
+/**
+ * Legacy energy-only persistence from versions before Part 8A.
+ *
+ * <p>Energy is now authoritative in SkillPersistentState. This SavedData is
+ * retained only so existing worlds can migrate a player's last value once,
+ * without losing progress.</p>
+ */
 public final class EnergyPersistentState extends SavedData {
 
     private static final String ID = "eroded_energy";
@@ -35,16 +42,23 @@ public final class EnergyPersistentState extends SavedData {
                     null
             );
 
-    public static EnergyPersistentState get(ServerLevel world) {
-        return world.getDataStorage().computeIfAbsent(TYPE);
+    public static EnergyPersistentState getIfPresent(ServerLevel world) {
+        return world.getDataStorage().get(TYPE);
     }
 
-    public int getEnergy(UUID uuid, int fallback) {
-        return energy.getOrDefault(uuid, fallback);
+    /**
+     * Removes and returns one legacy energy value. Once consumed, future
+     * logins use SkillPersistentState as the only source of truth.
+     */
+    public Integer takeEnergy(UUID uuid) {
+        Integer value = energy.remove(uuid);
+        if (value != null) {
+            setDirty();
+        }
+        return value;
     }
 
-    public void setEnergy(UUID uuid, int value) {
-        energy.put(uuid, value);
-        setDirty();
+    public int size() {
+        return energy.size();
     }
 }
