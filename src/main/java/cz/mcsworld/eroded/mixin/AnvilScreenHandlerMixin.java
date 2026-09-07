@@ -28,6 +28,9 @@ public class AnvilScreenHandlerMixin {
     )
     private int eroded$modifyRepairAmount(int repairedAmount) {
 
+        var root = CraftingConfig.get();
+        if (!root.enabled || !root.quality.enabled) return repairedAmount;
+
         AnvilMenu self = (AnvilMenu) (Object) this;
 
         ItemStack input = self.getSlot(0).getItem();
@@ -45,6 +48,9 @@ public class AnvilScreenHandlerMixin {
             cancellable = true
     )
     private void eroded$blockTooDamaged(CallbackInfo ci) {
+
+        var root = CraftingConfig.get();
+        if (!root.enabled || !root.quality.enabled) return;
 
         AnvilMenu self = (AnvilMenu)(Object)this;
 
@@ -76,17 +82,22 @@ public class AnvilScreenHandlerMixin {
         ItemStack input = self.getSlot(0).getItem();
         if (input.isEmpty()) return;
 
-        SkillData data = SkillManager.get(serverPlayer);
-
         var root = CraftingConfig.get();
+        if (!root.enabled) return;
+
+        SkillData data = SkillManager.get(serverPlayer);
         var craftingCfg = root.energy;
+        boolean qualityEnabled = root.quality.enabled;
 
         var energyRoot = EnergyConfig.get();
         var energyCfg = energyRoot.server.core;
+        boolean energyEnabled = energyRoot.server.enabled && craftingCfg.enabled;
 
         int baseCost = EnergyCostResolver.getBaseCraftingCost(input);
 
-        Quality workQuality = QualityResolver.resolveQuality(data, 1.0f);
+        Quality workQuality = qualityEnabled
+                ? QualityResolver.resolveQuality(data, 1.0f)
+                : Quality.STANDARD;
 
         float modifier = switch (workQuality) {
             case POOR -> craftingCfg.poorQualityEnergyMultiplier;
@@ -102,7 +113,7 @@ public class AnvilScreenHandlerMixin {
         int energyCost =
                 segmentCost * Math.max(1, energyCfg.energyPerSegment);
 
-        if (!data.hasEnoughEnergy(energyCost)) {
+        if (energyEnabled && !data.hasEnoughEnergy(energyCost)) {
             if (energyCfg.blockWorkAtZero) {
 
                 SafeNetworkUtil.safeSend(
@@ -118,24 +129,28 @@ public class AnvilScreenHandlerMixin {
             }
         }
 
-        data.consumeEnergy(energyCost);
+        if (energyEnabled) {
+            data.consumeEnergy(energyCost);
+        }
 
-        Quality currentQuality = ItemQuality.get(input);
+        if (qualityEnabled) {
+            Quality currentQuality = ItemQuality.get(input);
 
-        Quality newQuality = switch (currentQuality) {
-            case EXCELLENT -> Quality.STANDARD;
-            case STANDARD -> Quality.POOR;
-            default -> currentQuality;
-        };
+            Quality newQuality = switch (currentQuality) {
+                case EXCELLENT -> Quality.STANDARD;
+                case STANDARD -> Quality.POOR;
+                default -> currentQuality;
+            };
 
-        CraftingQualityApplier.apply(stack, newQuality);
+            CraftingQualityApplier.apply(stack, newQuality);
 
-        SafeNetworkUtil.safeSend(
-                serverPlayer,
-                new AnvilFeedbackPacket(
-                        "eroded.anvil.quality_degraded",
-                        newQuality.name()
-                )
-        );
+            SafeNetworkUtil.safeSend(
+                    serverPlayer,
+                    new AnvilFeedbackPacket(
+                            "eroded.anvil.quality_degraded",
+                            newQuality.name()
+                    )
+            );
+        }
     }
 }

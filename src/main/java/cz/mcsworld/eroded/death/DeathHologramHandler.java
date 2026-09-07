@@ -3,6 +3,8 @@ package cz.mcsworld.eroded.death;
 import com.mojang.authlib.GameProfile;
 import cz.mcsworld.eroded.config.death.DeathConfig;
 import cz.mcsworld.eroded.death.block.ErodedBlocks;
+import java.util.Set;
+import java.util.UUID;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -18,12 +20,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.ResolvableProfile;
 import net.minecraft.world.phys.AABB;
-import java.util.Set;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
 public final class DeathHologramHandler {
-
 
     private static final String TAG = "eroded_death_hologram";
     private static final String TAG_HEAD = "rotating_head";
@@ -46,7 +44,6 @@ public final class DeathHologramHandler {
         double baseX = pos.getX() + 0.5;
         double baseY = pos.getY();
         double baseZ = pos.getZ() + 0.5;
-
 
         double standBaseY = baseY + 0.3;
         ArmorStand stand = new ArmorStand(world, baseX, standBaseY, baseZ);
@@ -83,79 +80,80 @@ public final class DeathHologramHandler {
     }
 
     public static void tick(ServerLevel world) {
-        boolean eachSecond = world.getServer().getTickCount() % 20 == 0;
+        DeathChestState state = DeathChestState.getIfPresent(world);
+        if (state == null) return;
+        var entries = state.all();
+        if (entries.isEmpty()) return;
+
+        long serverTick = world.getServer().getTickCount();
+        boolean eachSecond = serverTick % 20L == 0L;
+        long nowMs = eachSecond ? System.currentTimeMillis() : 0L;
         var cfg = DeathConfig.get().hologram;
-        DeathChestState state = DeathChestState.get(world);
 
-        if (eachSecond) {
-            Set<UUID> activeHids = state.all().stream()
-                    .map(DeathChestState.Entry::hologramId)
-                    .collect(Collectors.toSet());
-
-            for (Entity e : world.getAllEntities()) {
-                if (e == null || e.isRemoved()) continue;
-
-                Set<String> tags = e.getTags();
-                if (tags.contains(TAG)) {
-                    UUID hid = getHologramIdFromTags(e);
-                    if (hid != null && !activeHids.contains(hid)) {
-                        e.discard();
-                    }
-                }
-            }
-        }
-
-        for (DeathChestState.Entry entry : state.all()) {
+        for (DeathChestState.Entry entry : entries) {
             BlockPos pos = entry.pos();
-            UUID hid = entry.hologramId();
-            String hidTag = TAG_HOLOGRAM_ID + hid;
 
-
-            if (!world.getBlockState(pos).is(ErodedBlocks.DEATH_ENDER_CHEST)) {
-                removeById(world, hid);
+            // Never force-load a distant death-chest chunk for hologram upkeep.
+            // Orphan cleanup is performed when a chunk actually loads.
+            if (!world.hasChunkAt(pos)) {
                 continue;
             }
 
-            if (!world.hasChunkAt(pos)) continue;
+            if (!world.getBlockState(pos).is(ErodedBlocks.DEATH_ENDER_CHEST)) {
+                removeAt(world, pos, entry.hologramId());
+                continue;
+            }
 
-            AABB box = new AABB(pos).inflate(1.0, 4.0, 1.0);
+            String hidTag = TAG_HOLOGRAM_ID + entry.hologramId();
+            AABB box = hologramBox(pos);
+
             for (Entity e : world.getEntities(null, box)) {
                 if (e == null || e.isRemoved()) continue;
 
                 Set<String> tags = e.getTags();
                 if (!tags.contains(hidTag)) continue;
 
-                if (e instanceof ArmorStand stand && e.getTags().contains(TAG_HEAD)) {
-                    float yaw = (world.getServer().getTickCount() * cfg.rotationSpeed) % 360f;
+                if (e instanceof ArmorStand stand && tags.contains(TAG_HEAD)) {
+                    float yaw = (serverTick * cfg.rotationSpeed) % 360f;
                     stand.setYRot(yaw);
 
                     double baseY = getBaseY(stand);
-                    double bob = Math.sin(world.getServer().getTickCount() * cfg.bobbingSpeed) * cfg.bobbingAmplitude;
+                    double bob = Math.sin(serverTick * cfg.bobbingSpeed) * cfg.bobbingAmplitude;
                     stand.setPos(stand.getX(), baseY + bob, stand.getZ());
                 }
 
                 if (eachSecond && e instanceof Display.TextDisplay text) {
                     long expiry = getExpiry(e);
-                    if (expiry <= 0 || System.currentTimeMillis() >= expiry) {
+                    if (expiry <= 0 || nowMs >= expiry) {
                         continue;
                     }
 
-                    int remainingSeconds = (int) ((expiry - System.currentTimeMillis()) / 1000);
+                    int remainingSeconds = (int) ((expiry - nowMs) / 1000L);
                     text.setText(buildText(getName(e), remainingSeconds));
                 }
             }
         }
     }
 
-    public static void removeById(ServerLevel world, UUID hologramId) {
-        String hidTag = TAG_HOLOGRAM_ID + hologramId;
-        for (Entity e : world.getAllEntities()) {
-            if (e == null || e.isRemoved()) continue;
+    /**
+     * Removes only the hologram entities next to the known death-chest
+     * position. The old implementation scanned every entity in the dimension.
+     */
+    public static void removeAt(ServerLevel world, BlockPos pos, UUID hologramId) {
+        if (pos == null || hologramId == null || !world.hasChunkAt(pos)) {
+            return;
+        }
 
-            if (e.getTags().contains(hidTag)) {
+        String hidTag = TAG_HOLOGRAM_ID + hologramId;
+        for (Entity e : world.getEntities(null, hologramBox(pos))) {
+            if (e != null && !e.isRemoved() && e.getTags().contains(hidTag)) {
                 e.discard();
             }
         }
+    }
+
+    private static AABB hologramBox(BlockPos pos) {
+        return new AABB(pos).inflate(2.0, 5.0, 2.0);
     }
 
     public static Component buildText(String name, int seconds) {
@@ -172,17 +170,6 @@ public final class DeathHologramHandler {
                 .append(Component.literal(String.format(" %d:%02d", min, sec)).withStyle(timeColor, ChatFormatting.BOLD))
                 .append(Component.translatable("eroded.death.hologram.line.hint"))
                 .append(Component.literal("\n "));
-    }
-
-    private static UUID getHologramIdFromTags(Entity e) {
-        for (String tag : e.getTags()) {
-            if (tag.startsWith(TAG_HOLOGRAM_ID)) {
-                try {
-                    return UUID.fromString(tag.substring(TAG_HOLOGRAM_ID.length()));
-                } catch (Exception ignored) {}
-            }
-        }
-        return null;
     }
 
     private static double getBaseY(Entity e) {

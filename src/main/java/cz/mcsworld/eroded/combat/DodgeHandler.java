@@ -2,8 +2,7 @@ package cz.mcsworld.eroded.combat;
 
 import cz.mcsworld.eroded.config.combat.CombatConfig;
 import cz.mcsworld.eroded.network.DodgeRequestPacket;
-import cz.mcsworld.eroded.network.EnergyWarningPacket;
-import cz.mcsworld.eroded.network.SafeNetworkUtil;
+import cz.mcsworld.eroded.network.ServerPacketGuard;
 import cz.mcsworld.eroded.skills.SkillData;
 import cz.mcsworld.eroded.skills.SkillManager;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
@@ -27,12 +26,29 @@ public final class DodgeHandler {
                 DodgeRequestPacket.ID,
                 (payload, context) -> {
                     ServerPlayer player = context.player();
-                    context.server().execute(() ->
-                            handle(player, payload)
-                    );
+
+                    // Object payload handlers already run on the server thread.
+                    // Drop malformed/spammy requests before collision scanning.
+                    if (!ServerPacketGuard.allow(player, "dodge", 10)) return;
+                    if (!isValidDirection(payload)) return;
+
+                    handle(player, payload);
                 }
         );
 
+    }
+
+    private static boolean isValidDirection(DodgeRequestPacket pkt) {
+        float x = pkt.dirX();
+        float z = pkt.dirZ();
+
+        if (!Float.isFinite(x) || !Float.isFinite(z)) {
+            return false;
+        }
+
+        boolean xAxis = (x == 1.0F || x == -1.0F) && z == 0.0F;
+        boolean zAxis = (z == 1.0F || z == -1.0F) && x == 0.0F;
+        return xAxis || zAxis;
     }
 
     private static void handle(ServerPlayer player, DodgeRequestPacket pkt) {
@@ -51,7 +67,6 @@ public final class DodgeHandler {
 
         SkillData data = SkillManager.get(player);
 
-        SkillManager.save(player);
         Vec3 dir = resolveDirection(player, pkt);
         Vec3 start = player.position();
         Vec3 safeTarget = findSafeTarget(
@@ -72,6 +87,7 @@ public final class DodgeHandler {
                 safeTarget.z
         );
 
+        SkillManager.save(player);
         COOLDOWNS.put(id, ticks);
     }
 

@@ -3,11 +3,14 @@ package cz.mcsworld.eroded.death.gui;
 import cz.mcsworld.eroded.death.DeathChestState;
 import cz.mcsworld.eroded.death.DeathHologramHandler;
 import cz.mcsworld.eroded.death.ErodedCompassHandler;
+import cz.mcsworld.eroded.death.block.ErodedBlocks;
 import java.util.List;
+import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -18,32 +21,35 @@ import net.minecraft.world.item.ItemStack;
 public class DeathInventoryScreenHandler extends AbstractContainerMenu {
 
     private static final int SIZE = DeathChestState.SIZE;
+    private static final double MAX_USE_DISTANCE_SQR = 64.0D;
 
     private final ServerLevel world;
     private final BlockPos pos;
-    private final SimpleContainer inventory;
+    private final UUID playerId;
+    private final UUID sessionToken;
+    private final BackedContainer inventory;
     private final DeathChestState state;
+    private boolean closing;
 
     public DeathInventoryScreenHandler(
             int syncId,
             Inventory playerInv,
             ServerLevel world,
-            BlockPos pos
+            BlockPos pos,
+            UUID sessionToken
     ) {
         super(MenuType.GENERIC_9x6, syncId);
 
         this.world = world;
-        this.pos = pos;
+        this.pos = pos.immutable();
+        this.playerId = playerInv.player.getUUID();
+        this.sessionToken = sessionToken;
         this.state = DeathChestState.get(world);
-        this.inventory = new SimpleContainer(SIZE);
+        this.inventory = new BackedContainer();
 
         DeathChestState.Entry entry = state.get(pos);
-        if (entry != null) {
-            List<ItemStack> items =
-                    DeathChestState.toInventory(entry.items());
-            for (int i = 0; i < SIZE; i++) {
-                inventory.setItem(i, items.get(i));
-            }
+        if (entry != null && state.isOpenBy(pos, playerId, sessionToken)) {
+            inventory.load(DeathChestState.toInventory(entry.items()));
         }
 
         inventory.startOpen(playerInv.player);
@@ -76,48 +82,128 @@ public class DeathInventoryScreenHandler extends AbstractContainerMenu {
 
         if (world.isClientSide) return;
 
+        // If this is a stale menu, it must never materialize its copied items.
+        if (!state.isOpenBy(pos, playerId, sessionToken)) {
+            inventory.discardWithoutSync();
+            return;
+        }
+
+        closing = true;
         DeathChestState.Entry entry = state.get(pos);
 
-        for (ItemStack stack : inventory.getItems()) {
-            if (!stack.isEmpty()) {
-                world.addFreshEntity(
-                        new net.minecraft.world.entity.item.ItemEntity(
-                                world,
-                                pos.getX() + 0.5,
-                                pos.getY() + 1.0,
-                                pos.getZ() + 0.5,
-                                stack.copy()
-                        )
-                );
+        try {
+            // The persistent entry is authoritative. If it disappeared while
+            // this GUI was open, dropping the local copy could duplicate items.
+            if (entry == null) {
+                inventory.discardWithoutSync();
+                return;
             }
-        }
 
-        inventory.clearContent();
+            for (ItemStack stack : inventory.getItems()) {
+                if (stack.isEmpty()) continue;
 
-        state.remove(pos);
+                world.addFreshEntity(new ItemEntity(
+                        world,
+                        pos.getX() + 0.5,
+                        pos.getY() + 1.0,
+                        pos.getZ() + 0.5,
+                        stack.copy()
+                ));
+            }
 
-        boolean hadBlock = !world.getBlockState(pos).isAir();
-        world.destroyBlock(pos, false);
+            inventory.discardWithoutSync();
+            state.remove(pos);
 
+            if (world.getBlockState(pos).is(ErodedBlocks.DEATH_ENDER_CHEST)) {
+                world.destroyBlock(pos, false);
+            }
 
-        if (entry != null) {
-            DeathHologramHandler.removeById(world, entry.hologramId());
+            DeathHologramHandler.removeAt(world, pos, entry.hologramId());
 
-        }
-
-        if (player instanceof ServerPlayer sp) {
-            ErodedCompassHandler.forceRemove(sp);
-
+            if (player instanceof ServerPlayer sp) {
+                ErodedCompassHandler.refreshFromPersistentState(sp);
+            }
+        } finally {
+            // state.remove() already clears the lock, but releaseOpen() is also
+            // safe when the entry vanished through another recovery path.
+            state.releaseOpen(pos, sessionToken);
         }
     }
 
     @Override
     public boolean stillValid(Player player) {
-        return true;
+        if (world.isClientSide) {
+            return true;
+        }
+
+        if (!player.getUUID().equals(playerId)) {
+            return false;
+        }
+
+        if (!state.isOpenBy(pos, playerId, sessionToken)) {
+            return false;
+        }
+
+        if (state.get(pos) == null) {
+            return false;
+        }
+
+        if (!world.getBlockState(pos).is(ErodedBlocks.DEATH_ENDER_CHEST)) {
+            return false;
+        }
+
+        double dx = player.getX() - (pos.getX() + 0.5D);
+        double dy = player.getY() - (pos.getY() + 0.5D);
+        double dz = player.getZ() - (pos.getZ() + 0.5D);
+        return dx * dx + dy * dy + dz * dz <= MAX_USE_DISTANCE_SQR;
     }
 
     @Override
     public ItemStack quickMoveStack(Player player, int slot) {
         return ItemStack.EMPTY;
+    }
+
+    private final class BackedContainer extends SimpleContainer {
+        private boolean loading;
+
+        private BackedContainer() {
+            super(SIZE);
+        }
+
+        private void load(List<ItemStack> items) {
+            loading = true;
+            try {
+                for (int i = 0; i < SIZE; i++) {
+                    super.setItem(i, items.get(i));
+                }
+            } finally {
+                loading = false;
+            }
+        }
+
+        private void discardWithoutSync() {
+            loading = true;
+            try {
+                super.clearContent();
+            } finally {
+                loading = false;
+            }
+        }
+
+        @Override
+        public void setChanged() {
+            super.setChanged();
+
+            if (loading || closing) {
+                return;
+            }
+
+            state.updateItems(
+                    pos,
+                    playerId,
+                    sessionToken,
+                    getItems()
+            );
+        }
     }
 }

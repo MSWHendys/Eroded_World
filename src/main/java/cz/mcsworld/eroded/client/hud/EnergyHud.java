@@ -17,8 +17,11 @@ public class EnergyHud implements HudRenderCallback {
     private static int lastEnergyValue = -1;
     private static boolean isRegenerating = false;
 
-    private static int warningTicks = 0;
+    private static long warningUntilMs = 0L;
     private static SkillData.EnergyState activeWarningState = null;
+
+    private static final long POSITION_PREVIEW_DURATION_MS = 3000L;
+    private static long positionPreviewUntilMs = 0L;
 
     public EnergyHud() {}
 
@@ -26,12 +29,30 @@ public class EnergyHud implements HudRenderCallback {
         if (state == null || state == SkillData.EnergyState.NORMAL) return;
 
         activeWarningState = state;
-        warningTicks = EnergyConfig.get().client.hud.warningMessageTime;
+        warningUntilMs = System.currentTimeMillis() + warningDurationMs(state);
     }
 
     public static void resetWarning() {
-        warningTicks = 0;
+        warningUntilMs = 0L;
         activeWarningState = null;
+    }
+
+    /**
+     * Temporarily keeps the Energy HUD visible after /eroded icon changes its position.
+     * This lets players immediately see the selected position even at full Energy.
+     */
+    public static void showPositionPreview() {
+        positionPreviewUntilMs = System.currentTimeMillis() + POSITION_PREVIEW_DURATION_MS;
+    }
+
+    private static long warningDurationMs(SkillData.EnergyState state) {
+        var cfg = EnergyConfig.get().client.hud;
+        return switch (state) {
+            case TIRED -> cfg.tiredWarningDurationMs;
+            case EXHAUSTED -> cfg.exhaustedWarningDurationMs;
+            case EMPTY -> cfg.emptyWarningDurationMs;
+            case NORMAL -> 0L;
+        };
     }
 
     @Override
@@ -39,6 +60,7 @@ public class EnergyHud implements HudRenderCallback {
         Minecraft client = Minecraft.getInstance();
 
         if (client.player == null || !ClientEnergyData.isInitialized()) return;
+        if (!ClientEnergyData.isEnabled()) return;
 
         var root = EnergyConfig.get();
         var cfg = root.client.hud;
@@ -61,7 +83,13 @@ public class EnergyHud implements HudRenderCallback {
         }
         lastEnergyValue = energy;
 
-        if (!cfg.showHudWhenFull && energy >= maxEnergy && !isImmune) return;
+        long nowMs = System.currentTimeMillis();
+        boolean positionPreviewActive = positionPreviewUntilMs > nowMs;
+
+        if (!cfg.showHudWhenFull
+                && energy >= maxEnergy
+                && !isImmune
+                && !positionPreviewActive) return;
 
         int total = cfg.numberEnergyFlashes;
         int ticks = client.gui.getGuiTicks();
@@ -81,7 +109,10 @@ public class EnergyHud implements HudRenderCallback {
         switch (cfg.hudPosition) {
             case CENTER_DOWN -> {
                 x = (screenW - hudWidth) / 2;
-                y = screenH - posIconHUD_Y;
+                // Keep the centered HUD above the vanilla health/food rows and hotbar.
+                // LEFT_DOWN / RIGHT_DOWN retain the configurable bottom offset.
+                int centerDownOffset = Math.max(posIconHUD_Y, 52);
+                y = screenH - centerDownOffset;
             }
             case LEFT_DOWN -> {
                 x = margin;
@@ -156,7 +187,7 @@ public class EnergyHud implements HudRenderCallback {
             }
         }
 
-        if (warningTicks > 0 && !isRegenerating && root.server.warnings.warningsEnabled) {
+        if (warningUntilMs > nowMs && !isRegenerating && root.server.warnings.warningsEnabled) {
             String key = (activeWarningState == null)
                     ? null
                     : EnergyHudLogic.getWarningTranslationKey(activeWarningState);
@@ -171,12 +202,11 @@ public class EnergyHud implements HudRenderCallback {
                 context.fill(textX - padding, textY - padding, textX + textWidth + padding, textY + client.font.lineHeight + padding, 0xCC000000);
                 context.drawString(client.font, text, textX, textY, EnergyHudLogic.RED, true);
 
-                warningTicks--;
-                if (warningTicks <= 0) activeWarningState = null;
             } else {
-                warningTicks = 0;
-                activeWarningState = null;
+                resetWarning();
             }
+        } else if (activeWarningState != null && warningUntilMs <= nowMs) {
+            resetWarning();
         }
     }
 }

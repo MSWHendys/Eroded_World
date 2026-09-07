@@ -1,130 +1,134 @@
 package cz.mcsworld.eroded.config.crafting;
 
-import me.shedaniel.autoconfig.AutoConfig;
-import me.shedaniel.autoconfig.ConfigData;
-import me.shedaniel.autoconfig.annotation.Config;
-import me.shedaniel.autoconfig.annotation.ConfigEntry;
+import cz.mcsworld.eroded.config.ConfigValidation;
+import cz.mcsworld.eroded.config.ConfigValidationException;
+import cz.mcsworld.eroded.config.ErodedConfig;
+import cz.mcsworld.eroded.config.ErodedConfigs;
 
-@Config(name = "ErodedWorld/crafting")
-public class CraftingConfig implements ConfigData {
+public class CraftingConfig implements ErodedConfig {
 
-    @ConfigEntry.Gui.Tooltip
     public boolean enabled = true;
 
-    @ConfigEntry.Gui.CollapsibleObject
     public Energy energy = new Energy();
 
-    @ConfigEntry.Gui.CollapsibleObject
     public Quality quality = new Quality();
 
-    @ConfigEntry.Gui.CollapsibleObject
     public Cg cg = new Cg();
 
     public static CraftingConfig get() {
-        return AutoConfig
-                .getConfigHolder(CraftingConfig.class)
-                .getConfig();
+        return ErodedConfigs.CRAFTING;
+    }
+
+    @Override
+    public void validatePostLoad() throws ConfigValidationException {
+        ConfigValidation.notNull(energy, "crafting.energy");
+        ConfigValidation.notNull(quality, "crafting.quality");
+        ConfigValidation.notNull(cg, "crafting.cg");
+
+        ConfigValidation.min(energy.minimumCraftCost, 0, "crafting.energy.minimumCraftCost");
+        ConfigValidation.min(energy.minorCraftCost, 0, "crafting.energy.minorCraftCost");
+        ConfigValidation.min(energy.woodCraftCost, 0, "crafting.energy.woodCraftCost");
+        ConfigValidation.min(energy.stoneCraftCost, 0, "crafting.energy.stoneCraftCost");
+        ConfigValidation.min(energy.ironCraftCost, 0, "crafting.energy.ironCraftCost");
+        ConfigValidation.min(energy.diamondCraftCost, 0, "crafting.energy.diamondCraftCost");
+        ConfigValidation.min(energy.netheriteCraftCost, 0, "crafting.energy.netheriteCraftCost");
+        ConfigValidation.min(energy.simpleRecipeEnergyMultiplier, 0.0f, "crafting.energy.simpleRecipeEnergyMultiplier");
+        ConfigValidation.min(energy.normalRecipeEnergyMultiplier, 0.0f, "crafting.energy.normalRecipeEnergyMultiplier");
+        ConfigValidation.min(energy.complexRecipeEnergyMultiplier, 0.0f, "crafting.energy.complexRecipeEnergyMultiplier");
+        ConfigValidation.min(energy.poorQualityEnergyMultiplier, 0.0f, "crafting.energy.poorQualityEnergyMultiplier");
+        ConfigValidation.min(energy.standardQualityEnergyMultiplier, 0.0f, "crafting.energy.standardQualityEnergyMultiplier");
+        ConfigValidation.min(energy.excellentQualityEnergyMultiplier, 0.0f, "crafting.energy.excellentQualityEnergyMultiplier");
+
+        ConfigValidation.min(quality.qualityPoorToStandard, 0.0f, "crafting.quality.qualityPoorToStandard");
+        ConfigValidation.require(quality.qualityStandardToExcellent >= quality.qualityPoorToStandard
+                        && Float.isFinite(quality.qualityStandardToExcellent),
+                "crafting.quality.qualityStandardToExcellent",
+                "must be finite and >= qualityPoorToStandard");
+        ConfigValidation.min(quality.inputQualityInfluence, 0.0f, "crafting.quality.inputQualityInfluence");
+        ConfigValidation.range(quality.poorInputBlockExcellentBelow, 0.0f, 1.0f,
+                "crafting.quality.poorInputBlockExcellentBelow");
+        ConfigValidation.min(quality.poorDurabilityMultiplier, 0.0f, "crafting.quality.poorDurabilityMultiplier");
+        ConfigValidation.min(quality.standardDurabilityMultiplier, 0.0f, "crafting.quality.standardDurabilityMultiplier");
+        ConfigValidation.min(quality.excellentDurabilityMultiplier, 0.0f, "crafting.quality.excellentDurabilityMultiplier");
+        ConfigValidation.min(quality.poorRepairMultiplier, 0.0f, "crafting.quality.poorRepairMultiplier");
+        ConfigValidation.min(quality.standardRepairMultiplier, 0.0f, "crafting.quality.standardRepairMultiplier");
+        ConfigValidation.min(quality.excellentRepairMultiplier, 0.0f, "crafting.quality.excellentRepairMultiplier");
+
+        ConfigValidation.min(cg.baseCgDamageable, 0.0f, "crafting.cg.baseCgDamageable");
+        ConfigValidation.min(cg.baseCgGeneric, 0.0f, "crafting.cg.baseCgGeneric");
+        ConfigValidation.min(cg.simpleRecipeCgMultiplier, 0.0f, "crafting.cg.simpleRecipeCgMultiplier");
+        ConfigValidation.min(cg.normalRecipeCgMultiplier, 0.0f, "crafting.cg.normalRecipeCgMultiplier");
+        ConfigValidation.min(cg.complexRecipeCgMultiplier, 0.0f, "crafting.cg.complexRecipeCgMultiplier");
     }
 
     public static class Energy {
 
-        @ConfigEntry.Gui.Tooltip
         public boolean enabled = true;
 
-        @ConfigEntry.Gui.Tooltip
         public int minimumCraftCost = 1;
 
-        @ConfigEntry.Gui.Tooltip
         public int minorCraftCost = 0;
 
-        @ConfigEntry.Gui.Tooltip
         public int woodCraftCost = 1;
 
-        @ConfigEntry.Gui.Tooltip
         public int stoneCraftCost = 2;
 
-        @ConfigEntry.Gui.Tooltip
         public int ironCraftCost = 3;
 
-        @ConfigEntry.Gui.Tooltip
         public int diamondCraftCost = 4;
 
-        @ConfigEntry.Gui.Tooltip
         public int netheriteCraftCost = 5;
 
-        @ConfigEntry.Gui.Tooltip
         public float simpleRecipeEnergyMultiplier = 0.80f;
 
-        @ConfigEntry.Gui.Tooltip
         public float normalRecipeEnergyMultiplier = 1.00f;
 
-        @ConfigEntry.Gui.Tooltip
         public float complexRecipeEnergyMultiplier = 1.30f;
 
-        @ConfigEntry.Gui.Tooltip
         public float poorQualityEnergyMultiplier = 1.10f;
 
-        @ConfigEntry.Gui.Tooltip
         public float standardQualityEnergyMultiplier = 1.00f;
 
-        @ConfigEntry.Gui.Tooltip
         public float excellentQualityEnergyMultiplier = 0.90f;
     }
 
     public static class Quality {
 
-        @ConfigEntry.Gui.Tooltip
         public boolean enabled = true;
 
-        @ConfigEntry.Gui.Tooltip
         public float qualityPoorToStandard = 40.0f;
 
-        @ConfigEntry.Gui.Tooltip
         public float qualityStandardToExcellent = 120.0f;
 
-        @ConfigEntry.Gui.Tooltip
         public float inputQualityInfluence = 15.0f;
 
-        @ConfigEntry.Gui.Tooltip
         public float poorInputBlockExcellentBelow = 0.5f;
 
-        @ConfigEntry.Gui.Tooltip
         public float poorDurabilityMultiplier = 0.65f;
 
-        @ConfigEntry.Gui.Tooltip
         public float standardDurabilityMultiplier = 1.0f;
 
-        @ConfigEntry.Gui.Tooltip
         public float excellentDurabilityMultiplier = 1.4f;
 
-        @ConfigEntry.Gui.Tooltip
         public float poorRepairMultiplier = 0.80f;
 
-        @ConfigEntry.Gui.Tooltip
         public float standardRepairMultiplier = 1.0f;
 
-        @ConfigEntry.Gui.Tooltip
         public float excellentRepairMultiplier = 1.15f;
     }
 
     public static class Cg {
 
-        @ConfigEntry.Gui.Tooltip
         public boolean enabled = true;
 
-        @ConfigEntry.Gui.Tooltip
         public float baseCgDamageable = 0.6f;
 
-        @ConfigEntry.Gui.Tooltip
         public float baseCgGeneric = 0.1f;
 
-        @ConfigEntry.Gui.Tooltip
         public float simpleRecipeCgMultiplier = 0.75f;
 
-        @ConfigEntry.Gui.Tooltip
         public float normalRecipeCgMultiplier = 1.00f;
 
-        @ConfigEntry.Gui.Tooltip
         public float complexRecipeCgMultiplier = 1.25f;
     }
 }

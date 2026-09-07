@@ -29,7 +29,6 @@ public final class DeathChestBreakHandler {
             BlockState state,
             @Nullable BlockEntity blockEntity
     ) {
-
         if (world.isClientSide) return true;
         if (!(world instanceof ServerLevel sw)) return true;
         if (!(player instanceof ServerPlayer sp)) return true;
@@ -45,12 +44,21 @@ public final class DeathChestBreakHandler {
             return true;
         }
 
+        // Breaking an actively opened chest would create a second materialize
+        // path (block break vs. GUI close), so nobody may break it while locked.
+        if (st.isOpen(pos)) {
+            sp.displayClientMessage(
+                    Component.translatable("eroded.death.chest.in_use"),
+                    true
+            );
+            return false;
+        }
+
         if (e.owner().equals(sp.getUUID())) {
             return true;
         }
 
         if (e.isProtected(System.currentTimeMillis())) {
-
             sp.displayClientMessage(
                     Component.translatable("eroded.death.chest.protected"),
                     true

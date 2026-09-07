@@ -12,22 +12,22 @@ import net.minecraft.world.phys.Vec3;
 public final class EscapeFromLightGoal extends Goal {
     private final Monster mob;
     private Vec3 targetPos;
-    private final double speed;
 
-    public EscapeFromLightGoal(Monster mob, double speed) {
+    public EscapeFromLightGoal(Monster mob) {
         this.mob = mob;
-        this.speed = speed;
         this.setFlags(EnumSet.of(Flag.MOVE));
     }
 
     @Override
     public boolean canUse() {
 
+        var root = DarknessConfigs.get();
+        var cfg = root.server;
+        if (!root.enabled || !cfg.mobLightFearEnabled) return false;
         if (!mob.isAlive() || mob.getTarget() != null) return false;
 
         ServerLevel world = (ServerLevel) mob.level();
         BlockPos pos = mob.blockPosition();
-        var cfg = DarknessConfigs.get().server;
         if (!DarknessEnvironment.isDarkForMobs(world, pos)) return false;
         if (world.getBrightness(LightLayer.BLOCK, pos) < cfg.fearLightThreshold) return false;
 
@@ -56,13 +56,15 @@ public final class EscapeFromLightGoal extends Goal {
     @Override
     public void start() {
         if (targetPos != null) {
-            mob.getNavigation().moveTo(targetPos.x, targetPos.y, targetPos.z, speed);
+            mob.getNavigation().moveTo(targetPos.x, targetPos.y, targetPos.z, DarknessConfigs.get().server.escapeSpeed);
         }
     }
 
     @Override
     public boolean canContinueToUse() {
-        var cfg = DarknessConfigs.get().server;
+        var root = DarknessConfigs.get();
+        var cfg = root.server;
+        if (!root.enabled || !cfg.mobLightFearEnabled) return false;
         if (mob.getNavigation().isDone()) return false;
 
         int blockLight = mob.level()
