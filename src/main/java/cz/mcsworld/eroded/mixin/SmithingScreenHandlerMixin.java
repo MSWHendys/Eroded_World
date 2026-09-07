@@ -40,10 +40,13 @@ public class SmithingScreenHandlerMixin {
 
         var root = CraftingConfig.get();
         var craftingCfg = root.energy;
+        if (!root.enabled || !energyRoot.server.enabled || !craftingCfg.enabled) return;
 
         int baseCost = EnergyCostResolver.getBaseCraftingCost(stack);
 
-        Quality quality = QualityResolver.resolveQuality(data, 1.0f);
+        Quality quality = root.quality.enabled
+                ? QualityResolver.resolveQuality(data, 1.0f)
+                : Quality.STANDARD;
 
         float modifier = switch (quality) {
             case POOR -> craftingCfg.poorQualityEnergyMultiplier;

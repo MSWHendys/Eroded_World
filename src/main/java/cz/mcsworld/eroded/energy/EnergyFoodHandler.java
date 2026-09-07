@@ -33,6 +33,7 @@ public final class EnergyFoodHandler {
 
     public static void onEat(Player player, ItemStack stack) {
         if (!(player instanceof ServerPlayer serverPlayer)) return;
+        if (!EnergyConfig.get().server.enabled) return;
 
         SkillData data = SkillManager.get(serverPlayer);
         int value = calculate(stack, data);
@@ -50,8 +51,6 @@ public final class EnergyFoodHandler {
         }
 
         SkillManager.save(serverPlayer);
-
-        SkillManager.sync(serverPlayer);
     }
 
     private static int calculate(ItemStack stack, SkillData data) {

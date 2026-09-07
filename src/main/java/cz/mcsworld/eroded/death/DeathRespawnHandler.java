@@ -1,5 +1,6 @@
 package cz.mcsworld.eroded.death;
 
+import cz.mcsworld.eroded.config.energy.EnergyConfig;
 import cz.mcsworld.eroded.skills.SkillData;
 import cz.mcsworld.eroded.skills.SkillManager;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
@@ -9,6 +10,8 @@ import net.minecraft.world.effect.MobEffects;
 public final class DeathRespawnHandler {
 
 
+    // Single authority for the post-death Energy penalty. TraumaEffectHandler
+    // intentionally does not modify Energy.
     private static final float ENERGY_AFTER_DEATH_RATIO = 0.55F;
 
     private DeathRespawnHandler() {
@@ -30,11 +33,11 @@ public final class DeathRespawnHandler {
     }
 
     private static void applyDeathEnergyPenalty(ServerPlayer player) {
+        if (!EnergyConfig.get().server.enabled) return;
         SkillData data = SkillManager.get(player);
 
         data.setEnergyAfterDeath(ENERGY_AFTER_DEATH_RATIO);
 
         SkillManager.save(player);
-        SkillManager.sync(player);
     }
 }

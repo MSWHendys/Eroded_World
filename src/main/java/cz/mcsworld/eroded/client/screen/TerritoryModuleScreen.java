@@ -357,7 +357,7 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<@NotNull Terr
                                                         anchorPos,
                                                         entry.uuid().toString(),
                                                         entry.name(),
-                                                        false
+                                                        connectedAreaModeFor(entry.uuid())
                                                 )
                                         );
 
@@ -895,7 +895,6 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<@NotNull Terr
     @Override
     public boolean keyPressed(KeyEvent input) {
         int keyCode = input.key();
-
         if (this.playerNameField != null && this.playerNameField.isFocused()) {
             if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
                 this.playerNameField.setFocused(false);

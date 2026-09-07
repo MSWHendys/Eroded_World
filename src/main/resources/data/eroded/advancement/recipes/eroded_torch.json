@@ -26,5 +26,11 @@
         ]
       }
     }
-  }
+  },
+  "requirements": [
+    [
+      "has_iron_ingot",
+      "has_torch"
+    ]
+  ]
 }

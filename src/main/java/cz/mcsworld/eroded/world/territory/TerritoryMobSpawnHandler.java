@@ -2,6 +2,7 @@ package cz.mcsworld.eroded.world.territory;
 
 import cz.mcsworld.eroded.config.territory.TerritoryConfig;
 import cz.mcsworld.eroded.core.ErodedEntities;
+import cz.mcsworld.eroded.entity.ErodedMobDespawnBehaviour;
 import cz.mcsworld.eroded.entity.ErodedMobSunBehaviour;
 import cz.mcsworld.eroded.world.darkness.MutatedMobResolver;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
@@ -16,8 +17,8 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.monster.skeleton.AbstractSkeleton;
+import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ChunkPos;
@@ -25,7 +26,10 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
 public final class TerritoryMobSpawnHandler {
 
@@ -54,7 +58,11 @@ public final class TerritoryMobSpawnHandler {
             }
         }
 
-        handleMobBehaviour(world, cfg);
+        // Sun/protection upkeep does not need a 20 Hz radius scan. Run it
+        // once per second and deduplicate mobs seen by overlapping players.
+        if (world.getGameTime() % 20L == 0L) {
+            handleMobBehaviour(world, cfg);
+        }
     }
 
     private static void trySpawnErodedMob(
@@ -73,8 +81,14 @@ public final class TerritoryMobSpawnHandler {
         ChunkPos cp = new ChunkPos(
                 player.blockPosition().getX() >> 4,
                 player.blockPosition().getZ() >> 4);
-        TerritoryWorldState worldState = TerritoryWorldState.get(world);
-        TerritoryCell cell = worldState.getOrCreateCell(TerritoryCellKey.fromChunk(cp.x(), cp.z()));
+        TerritoryWorldState worldState = TerritoryWorldState.getIfPresent(world);
+        if (worldState == null) {
+            return;
+        }
+        TerritoryCell cell = worldState.getCell(TerritoryCellKey.fromChunk(cp.x(), cp.z()));
+        if (cell == null) {
+            return;
+        }
 
         int mined = cell.getMiningScore();
 
@@ -82,24 +96,6 @@ public final class TerritoryMobSpawnHandler {
             return;
         }
 
-        BlockPos startPos = cp.getWorldPosition();
-
-        int currentMobs = world.getEntitiesOfClass(
-                Monster.class,
-                new AABB(
-                        startPos.getX(),
-                        -64,
-                        startPos.getZ(),
-                        startPos.getX() + 15,
-                        320,
-                        startPos.getZ() + 15
-                ),
-                e -> e.entityTags().contains(TAG_ERODED)
-        ).size();
-
-        if (currentMobs >= cfg.mobMaxPerChunk) {
-            return;
-        }
 
         RandomSource random = world.getRandom();
         float threat = TerritoryThreatResolver.computeThreat(cell, world.getGameTime());
@@ -110,16 +106,26 @@ public final class TerritoryMobSpawnHandler {
             return;
         }
 
-        int count = random.nextInt(cfg.maxMobsPerSpawnCycle + 1);
+        if (cfg.maxMobsPerSpawnCycle <= 0) {
+            return;
+        }
+
+        // A successful spawn cycle must spawn at least one mob.
+        // maxMobsPerSpawnCycle=1 therefore means exactly one mob, not 0-1.
+        int count = 1 + random.nextInt(cfg.maxMobsPerSpawnCycle);
 
         for (int i = 0; i < count; i++) {
-            if (currentMobs + i >= cfg.mobMaxPerChunk) {
-                break;
-            }
-
             BlockPos spawnPos = findSpawnPos(world, pPos, random, cfg);
 
             if (spawnPos == null) {
+                continue;
+            }
+
+            ChunkPos spawnChunk = new ChunkPos(
+                    spawnPos.getX() >> 4,
+                    spawnPos.getZ() >> 4
+            );
+            if (countErodedMobsInChunk(world, spawnChunk) >= cfg.mobMaxPerChunk) {
                 continue;
             }
 
@@ -148,8 +154,8 @@ public final class TerritoryMobSpawnHandler {
                     null
             );
 
-            mob.setPersistenceRequired();
             mob.addTag(TAG_ERODED);
+            mob.addTag(ErodedMobDespawnBehaviour.TAG_TERRITORY_SPAWN);
 
             if (cfg.mobBuffEnabled && threat > cfg.mobBuffThreshold) {
                 mob.addTag(MutatedMobResolver.MUTATED_TAG);
@@ -173,6 +179,23 @@ public final class TerritoryMobSpawnHandler {
         }
     }
 
+    private static int countErodedMobsInChunk(ServerLevel world, ChunkPos chunkPos) {
+        AABB chunkBounds = new AABB(
+                chunkPos.getMinBlockX(),
+                world.getMinY(),
+                chunkPos.getMinBlockZ(),
+                chunkPos.getMaxBlockX() + 1,
+                world.getMaxY() + 1,
+                chunkPos.getMaxBlockZ() + 1
+        );
+
+        return world.getEntitiesOfClass(
+                Monster.class,
+                chunkBounds,
+                mob -> mob.entityTags().contains(TAG_ERODED)
+        ).size();
+    }
+
     private static void applySpawnBehaviour(
             Monster mob,
             RandomSource random
@@ -184,6 +207,8 @@ public final class TerritoryMobSpawnHandler {
     }
 
     private static void handleMobBehaviour(ServerLevel world, TerritoryConfig.Server cfg) {
+        Set<UUID> processed = new HashSet<>();
+
         for (ServerPlayer player : world.players()) {
             AABB box = new AABB(player.blockPosition()).inflate(cfg.mobDespawnRadius);
 
@@ -194,7 +219,9 @@ public final class TerritoryMobSpawnHandler {
             );
 
             for (Monster mob : nearby) {
-                processProtection(mob, world);
+                if (processed.add(mob.getUUID())) {
+                    processProtection(mob, world);
+                }
             }
         }
     }
@@ -348,19 +375,27 @@ public final class TerritoryMobSpawnHandler {
             RandomSource random,
             TerritoryConfig.Server cfg
     ) {
-        int r = (int) cfg.spawnMaxDistance;
+        int r = Math.max(1, (int) Math.ceil(cfg.spawnMaxDistance));
         double minSq = cfg.spawnMinDistance * cfg.spawnMinDistance;
 
         for (int i = 0; i < cfg.spawnAttempts; i++) {
             int x = center.getX() + random.nextIntBetweenInclusive(-r, r);
             int z = center.getZ() + random.nextIntBetweenInclusive(-r, r);
-            int y = world.getHeight(
-                    Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
-                    x,
-                    z
-            );
+
+            BlockPos columnProbe = new BlockPos(x, center.getY(), z);
+            if (!world.hasChunkAt(columnProbe)) {
+                continue;
+            }
+
+            BlockPos pos;
 
             if (cfg.surfaceOnlySpawns) {
+                int y = world.getHeight(
+                        Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+                        x,
+                        z
+                );
+
                 int surfaceY = world.getHeight(
                         Heightmap.Types.WORLD_SURFACE,
                         x,
@@ -370,22 +405,78 @@ public final class TerritoryMobSpawnHandler {
                 if (y < surfaceY - cfg.undergroundTolerance) {
                     continue;
                 }
-            }
 
-            BlockPos pos = new BlockPos(x, y, z);
+                pos = new BlockPos(x, y, z);
+
+                if (!isValidSpawnPos(world, pos)) {
+                    continue;
+                }
+            } else {
+                // Do not use a surface heightmap here. Search around the player's
+                // current Y level so a player mining in a cave can actually get
+                // cave spawns. The nearest usable floor is preferred.
+                pos = findLocalSpawnPos(world, x, z, center.getY(), r, random);
+                if (pos == null) {
+                    continue;
+                }
+            }
 
             if (center.distToCenterSqr(pos.getCenter()) < minSq) {
                 continue;
             }
 
-            if (world.getBlockState(pos.below()).isRedstoneConductor(world, pos.below())
-                    && world.isEmptyBlock(pos)
-                    && world.isEmptyBlock(pos.above())) {
-                return pos;
+            return pos;
+        }
+
+        return null;
+    }
+
+    private static BlockPos findLocalSpawnPos(
+            ServerLevel world,
+            int x,
+            int z,
+            int centerY,
+            int verticalRange,
+            RandomSource random
+    ) {
+        int minY = world.getMinY() + 1;
+        int maxY = world.getMaxY() - 2;
+        boolean upFirst = random.nextBoolean();
+
+        for (int offset = 0; offset <= verticalRange; offset++) {
+            if (offset == 0) {
+                int y = Math.max(minY, Math.min(maxY, centerY));
+                BlockPos pos = new BlockPos(x, y, z);
+                if (isValidSpawnPos(world, pos)) {
+                    return pos;
+                }
+                continue;
+            }
+
+            int firstY = centerY + (upFirst ? offset : -offset);
+            if (firstY >= minY && firstY <= maxY) {
+                BlockPos pos = new BlockPos(x, firstY, z);
+                if (isValidSpawnPos(world, pos)) {
+                    return pos;
+                }
+            }
+
+            int secondY = centerY + (upFirst ? -offset : offset);
+            if (secondY >= minY && secondY <= maxY) {
+                BlockPos pos = new BlockPos(x, secondY, z);
+                if (isValidSpawnPos(world, pos)) {
+                    return pos;
+                }
             }
         }
 
         return null;
+    }
+
+    private static boolean isValidSpawnPos(ServerLevel world, BlockPos pos) {
+        return world.getBlockState(pos.below()).isRedstoneConductor(world, pos.below())
+                && world.isEmptyBlock(pos)
+                && world.isEmptyBlock(pos.above());
     }
 
     private record TitleInfo(String name, ChatFormatting color) {

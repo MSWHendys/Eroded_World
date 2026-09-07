@@ -22,8 +22,11 @@ public final class EnergyHud {
     private static int lastEnergyValue = -1;
     private static boolean isRegenerating = false;
 
-    private static int warningTicks = 0;
+    private static long warningUntilMs = 0L;
     private static SkillData.EnergyState activeWarningState = null;
+
+    private static final long POSITION_PREVIEW_DURATION_MS = 3000L;
+    private static long positionPreviewUntilMs = 0L;
 
     private EnergyHud() {}
 
@@ -41,18 +44,39 @@ public final class EnergyHud {
         }
 
         activeWarningState = state;
-        warningTicks = EnergyConfig.get().client.hud.warningMessageTime;
+        warningUntilMs = System.currentTimeMillis() + warningDurationMs(state);
     }
 
     public static void resetWarning() {
-        warningTicks = 0;
+        warningUntilMs = 0L;
         activeWarningState = null;
+    }
+
+    /**
+     * Temporarily keeps the Energy HUD visible after /eroded icon changes its position.
+     * This lets players immediately see the selected position even at full Energy.
+     */
+    public static void showPositionPreview() {
+        positionPreviewUntilMs = System.currentTimeMillis() + POSITION_PREVIEW_DURATION_MS;
+    }
+
+    private static long warningDurationMs(SkillData.EnergyState state) {
+        var cfg = EnergyConfig.get().client.hud;
+        return switch (state) {
+            case TIRED -> cfg.tiredWarningDurationMs;
+            case EXHAUSTED -> cfg.exhaustedWarningDurationMs;
+            case EMPTY -> cfg.emptyWarningDurationMs;
+            case NORMAL -> 0L;
+        };
     }
 
     private static void render(GuiGraphicsExtractor graphics, DeltaTracker tickCounter) {
         Minecraft client = Minecraft.getInstance();
 
         if (client.player == null || !ClientEnergyData.isInitialized()) {
+            return;
+        }
+        if (!ClientEnergyData.isEnabled()) {
             return;
         }
 
@@ -65,7 +89,6 @@ public final class EnergyHud {
 
         int energy = ClientEnergyData.getEnergy();
         int maxEnergy = ClientEnergyData.getMaxEnergy();
-
         boolean isImmune = ClientEnergyData.isImmune();
         int immunitySecs = ClientEnergyData.getImmunitySeconds();
 
@@ -85,7 +108,13 @@ public final class EnergyHud {
 
         lastEnergyValue = energy;
 
-        if (!cfg.showHudWhenFull && energy >= maxEnergy && !isImmune) {
+        long nowMs = System.currentTimeMillis();
+        boolean positionPreviewActive = positionPreviewUntilMs > nowMs;
+
+        if (!cfg.showHudWhenFull
+                && energy >= maxEnergy
+                && !isImmune
+                && !positionPreviewActive) {
             return;
         }
 
@@ -94,7 +123,6 @@ public final class EnergyHud {
 
         int screenW = client.getWindow().getGuiScaledWidth();
         int screenH = client.getWindow().getGuiScaledHeight();
-
         int spacing = 8;
         int hudWidth = total * spacing;
 
@@ -106,6 +134,12 @@ public final class EnergyHud {
         int y;
 
         switch (cfg.hudPosition) {
+            case CENTER_DOWN -> {
+                x = (screenW - hudWidth) / 2;
+                // Keep the centered HUD above the vanilla health/food rows and hotbar.
+                int centerDownOffset = Math.max(posIconHUD_Y, 52);
+                y = screenH - centerDownOffset;
+            }
             case LEFT_DOWN -> {
                 x = margin;
                 y = screenH - posIconHUD_Y;
@@ -149,7 +183,6 @@ public final class EnergyHud {
                         );
 
                 int iconColor;
-
                 if (!visual.visible()) {
                     iconColor = EnergyHudLogic.EMPTY;
                 } else {
@@ -158,14 +191,13 @@ public final class EnergyHud {
                 }
 
                 var pose = graphics.pose();
-
                 pose.pushMatrix();
-
-                float cx = drawX + 4.0f;
-                float cy = y + 4.0f;
+                float cx = drawX + 4.0F;
+                float cy = y + 4.0F;
                 pose.translate(cx, cy);
                 pose.scale(visual.scale(), visual.scale());
                 pose.translate(-cx, -cy);
+
                 graphics.text(
                         client.font,
                         ICON,
@@ -183,8 +215,7 @@ public final class EnergyHud {
                 int barHeight = 2;
                 int barX = x;
                 int barY = y + 10;
-
-                float progress = Math.min(1.0f, immunitySecs / 120.0f);
+                float progress = Math.min(1.0F, immunitySecs / 120.0F);
 
                 graphics.fill(
                         barX,
@@ -204,14 +235,16 @@ public final class EnergyHud {
             }
         }
 
-        if (warningTicks > 0 && !isRegenerating && root.server.warnings.warningsEnabled) {
+        if (warningUntilMs > nowMs
+                && !isRegenerating
+                && root.server.warnings.warningsEnabled) {
+
             String key = activeWarningState == null
                     ? null
                     : EnergyHudLogic.getWarningTranslationKey(activeWarningState);
 
             if (key != null) {
                 Component text = Component.translatable(key);
-
                 int textWidth = client.font.width(text);
                 int textX = (screenW - textWidth) / 2;
                 int textY = y - posTextHUD_Y;
@@ -233,16 +266,11 @@ public final class EnergyHud {
                         EnergyHudLogic.RED,
                         true
                 );
-
-                warningTicks--;
-
-                if (warningTicks <= 0) {
-                    activeWarningState = null;
-                }
             } else {
-                warningTicks = 0;
-                activeWarningState = null;
+                resetWarning();
             }
+        } else if (activeWarningState != null && warningUntilMs <= nowMs) {
+            resetWarning();
         }
     }
 }

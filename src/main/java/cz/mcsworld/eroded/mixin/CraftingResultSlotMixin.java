@@ -1,7 +1,9 @@
 package cz.mcsworld.eroded.mixin;
 
+import cz.mcsworld.eroded.config.crafting.CraftingConfig;
 import cz.mcsworld.eroded.core.ErodedItems;
 import cz.mcsworld.eroded.crafting.CraftingService;
+import cz.mcsworld.eroded.crafting.CraftingMessageCooldown;
 import cz.mcsworld.eroded.crafting.context.CraftingContext;
 import cz.mcsworld.eroded.crafting.context.CraftingContextFactory;
 import cz.mcsworld.eroded.death.block.ErodedBlocks;
@@ -14,9 +16,6 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.CraftingContainer;
@@ -31,9 +30,6 @@ public class CraftingResultSlotMixin {
     @Unique
     private static final int ERODED_REQUIRED_LEVEL = 10;
 
-    @Unique
-    private static final Map<UUID, Long> ERODED_LEVEL_MESSAGE_COOLDOWN = new ConcurrentHashMap<>();
-
     @Inject(
             method = "remove",
             at = @At("HEAD"),
@@ -43,6 +39,8 @@ public class CraftingResultSlotMixin {
             int amount,
             CallbackInfoReturnable<ItemStack> cir
     ) {
+        if (!CraftingConfig.get().enabled) return;
+
         ResultSlot self = (ResultSlot) (Object) this;
         ItemStack result = self.getItem();
 
@@ -75,6 +73,7 @@ public class CraftingResultSlotMixin {
             ItemStack stack,
             CallbackInfo ci
     ) {
+        if (!CraftingConfig.get().enabled) return;
         if (!(player instanceof ServerPlayer serverPlayer)) return;
         if (stack == null || stack.isEmpty()) return;
 
@@ -118,13 +117,9 @@ public class CraftingResultSlotMixin {
     @Unique
     private static void eroded$sendLevelMessage(ServerPlayer player) {
         long now = System.currentTimeMillis();
-        long last = ERODED_LEVEL_MESSAGE_COOLDOWN.getOrDefault(player.getUUID(), 0L);
-
-        if (now - last < 1000L) {
+        if (!CraftingMessageCooldown.tryAcquire(player.getUUID(), now, 1000L)) {
             return;
         }
-
-        ERODED_LEVEL_MESSAGE_COOLDOWN.put(player.getUUID(), now);
 
         SafeNetworkUtil.safeSend(
                 player,

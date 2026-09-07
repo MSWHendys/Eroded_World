@@ -4,6 +4,7 @@
   "compatibilityLevel": "JAVA_25",
   "mixins": [
     "MobEntityAccessor",
+    "MobSunBurnMixin",
     "CraftingResultSlotMixin",
     "AnvilScreenHandlerMixin",
     "SmithingScreenHandlerMixin",
@@ -36,10 +37,13 @@
     "FarmlandBlockInvoker",
     "FarmlandTrampleProtectionMixin",
     "TurtleEggProtectionMixin",
-    "VehicleDamageProtectionMixin"
+    "VehicleDamageProtectionMixin",
+    "PlayerMiningSpeedMixin",
+    "PlayerDeathInventoryMixin"
   ],
   "client": [
     "client.NumericPropertiesMixin",
-    "client.HeldItemRendererMixin"
+    "client.HeldItemRendererMixin",
+    "client.PlayerMiningSpeedClientMixin"
   ]
 }

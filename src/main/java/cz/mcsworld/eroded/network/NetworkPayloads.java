@@ -13,6 +13,7 @@ public final class NetworkPayloads {
         PayloadTypeRegistry.clientboundPlay().register(CompassDarknessBreakPacket.ID, CompassDarknessBreakPacket.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DodgeRequestPacket.ID, DodgeRequestPacket.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(SoundTuningSyncPacket.ID, SoundTuningSyncPacket.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(HudPositionSyncPacket.ID, HudPositionSyncPacket.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(SkillSyncPacket.ID, SkillSyncPacket.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(AnvilFeedbackPacket.ID, AnvilFeedbackPacket.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(CraftingRequirementPacket.ID, CraftingRequirementPacket.CODEC);

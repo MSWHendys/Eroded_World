@@ -1,6 +1,7 @@
 package cz.mcsworld.eroded.combat;
 
 import cz.mcsworld.eroded.config.combat.CombatConfig;
+import cz.mcsworld.eroded.config.energy.EnergyConfig;
 import cz.mcsworld.eroded.skills.SkillData;
 import cz.mcsworld.eroded.skills.SkillManager;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
@@ -19,6 +20,13 @@ public final class SprintEnergyHandler {
     }
 
     private static void onWorldTick(ServerLevel world) {
+        if (!EnergyConfig.get().server.enabled) {
+            for (ServerPlayer player : world.players()) {
+                sprintTicks.remove(player.getUUID());
+            }
+            return;
+        }
+
         CombatConfig root = CombatConfig.get();
         if (!root.enabled || !root.sprint.enabled) return;
         CombatConfig.Sprint cfg = root.sprint;
@@ -55,8 +63,6 @@ public final class SprintEnergyHandler {
                 }
 
                 sprintTicks.remove(id);
-
-                SkillManager.sync(player);
                 continue;
             }
 
@@ -70,9 +76,6 @@ public final class SprintEnergyHandler {
 
             sprintTicks.put(id, ticks);
 
-            if (world.getGameTime() % 20 == 0 && data.isImmune()) {
-                SkillManager.sync(player);
-            }
         }
     }
 

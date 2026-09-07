@@ -86,6 +86,9 @@ public class ErodedLootState extends SavedData {
         return world.getDataStorage().computeIfAbsent(TYPE);
     }
 
+    public static ErodedLootState getIfPresent(ServerLevel world) {
+        return world.getDataStorage().get(TYPE);
+    }
 
     public boolean hasOpened(long pos, UUID player) {
         Set<UUID> set = openedByPlayers.get(pos);
@@ -101,12 +104,18 @@ public class ErodedLootState extends SavedData {
         return players != null && !players.isEmpty();
     }
 
-    public void clearOpenedHistory(long pos) {
-        if (openedByPlayers.remove(pos) != null) {
-            setDirty();
-        }
+    public void compactOpenedHistory(long pos) {
+        Set<UUID> players = openedByPlayers.get(pos);
+        if (players == null || players.size() <= 1) return;
+
+        UUID keep = players.iterator().next();
+        openedByPlayers.put(pos, new HashSet<>(Set.of(keep)));
+        setDirty();
     }
 
+    public void clearOpenedHistory(long pos) {
+        if (openedByPlayers.remove(pos) != null) setDirty();
+    }
 
     public boolean isPlayerPlaced(long pos) {
         return playerPlacedContainers.contains(pos);
@@ -144,24 +153,149 @@ public class ErodedLootState extends SavedData {
         if (erodedGeneratedContainers.remove(pos)) setDirty();
     }
 
+    /** Clears every piece of loot metadata for a physical coordinate. */
+    public void resetPosition(long pos) {
+        boolean changed = false;
+        changed |= openedByPlayers.remove(pos) != null;
+        changed |= playerPlacedContainers.remove(pos);
+        changed |= adminPlacedContainers.remove(pos);
+        changed |= erodedGeneratedContainers.remove(pos);
+        if (changed) setDirty();
+    }
+
+    /**
+     * Merges legacy per-half double-chest metadata into one canonical key.
+     * Admin status wins over player status; player placement wins over
+     * generated-world status. Opened-player history is unioned.
+     */
+    public long normalize(ErodedContainerIdentity.Identity identity) {
+        long canonical = identity.canonicalKey();
+        long[] keys = identity.memberKeys();
+
+        if (keys.length == 1 && keys[0] == canonical) return canonical;
+
+        boolean aliasHasData = false;
+        for (long key : keys) {
+            if (key == canonical) continue;
+            aliasHasData |= openedByPlayers.containsKey(key)
+                    || playerPlacedContainers.contains(key)
+                    || adminPlacedContainers.contains(key)
+                    || erodedGeneratedContainers.contains(key);
+        }
+        if (!aliasHasData) return canonical;
+
+        Set<UUID> opened = new HashSet<>();
+        boolean playerPlaced = false;
+        boolean adminPlaced = false;
+        boolean generated = false;
+        boolean hadAny = false;
+
+        for (long key : keys) {
+            Set<UUID> players = openedByPlayers.get(key);
+            if (players != null) {
+                opened.addAll(players);
+                hadAny = true;
+            }
+            playerPlaced |= playerPlacedContainers.contains(key);
+            adminPlaced |= adminPlacedContainers.contains(key);
+            generated |= erodedGeneratedContainers.contains(key);
+            hadAny |= playerPlacedContainers.contains(key)
+                    || adminPlacedContainers.contains(key)
+                    || erodedGeneratedContainers.contains(key);
+        }
+
+        if (!hadAny) return canonical;
+
+        for (long key : keys) {
+            openedByPlayers.remove(key);
+            playerPlacedContainers.remove(key);
+            adminPlacedContainers.remove(key);
+            erodedGeneratedContainers.remove(key);
+        }
+
+        if (!opened.isEmpty()) openedByPlayers.put(canonical, opened);
+
+        if (adminPlaced) {
+            adminPlacedContainers.add(canonical);
+        } else if (playerPlaced) {
+            playerPlacedContainers.add(canonical);
+        } else if (generated) {
+            erodedGeneratedContainers.add(canonical);
+        }
+
+        setDirty();
+        return canonical;
+    }
+
+    public record ContainerSnapshot(
+            Set<UUID> openedBy,
+            boolean playerPlaced,
+            boolean adminPlaced,
+            boolean erodedGenerated
+    ) {
+        public boolean isEmpty() {
+            return openedBy.isEmpty() && !playerPlaced && !adminPlaced && !erodedGenerated;
+        }
+    }
+
+    public ContainerSnapshot captureAndClear(long[] keys) {
+        Set<UUID> opened = new HashSet<>();
+        boolean playerPlaced = false;
+        boolean adminPlaced = false;
+        boolean generated = false;
+        boolean changed = false;
+
+        for (long key : keys) {
+            Set<UUID> players = openedByPlayers.get(key);
+            if (players != null) opened.addAll(players);
+            playerPlaced |= playerPlacedContainers.contains(key);
+            adminPlaced |= adminPlacedContainers.contains(key);
+            generated |= erodedGeneratedContainers.contains(key);
+        }
+
+        for (long key : keys) {
+            changed |= openedByPlayers.remove(key) != null;
+            changed |= playerPlacedContainers.remove(key);
+            changed |= adminPlacedContainers.remove(key);
+            changed |= erodedGeneratedContainers.remove(key);
+        }
+
+        if (changed) setDirty();
+        return new ContainerSnapshot(opened, playerPlaced, adminPlaced, generated);
+    }
+
+    public void applySnapshot(long key, ContainerSnapshot snapshot) {
+        resetPosition(key);
+        boolean changed = false;
+
+        if (!snapshot.openedBy().isEmpty()) {
+            openedByPlayers.put(key, new HashSet<>(snapshot.openedBy()));
+            changed = true;
+        }
+
+        if (snapshot.adminPlaced()) {
+            changed |= adminPlacedContainers.add(key);
+        } else if (snapshot.playerPlaced()) {
+            changed |= playerPlacedContainers.add(key);
+        } else if (snapshot.erodedGenerated()) {
+            changed |= erodedGeneratedContainers.add(key);
+        }
+
+        if (changed) setDirty();
+    }
 
     public static boolean isProtected(ServerLevel world, BlockPos pos) {
-        BlockState state = world.getBlockState(pos);
-        if (!(state.getBlock() instanceof ChestBlock || state.getBlock() instanceof BarrelBlock)) {
+        BlockState blockState = world.getBlockState(pos);
+        if (!(blockState.getBlock() instanceof ChestBlock || blockState.getBlock() instanceof BarrelBlock)) {
             return false;
         }
 
         ErodedLootState lootState = ErodedLootState.get(world);
-        long key = pos.asLong();
+        long key = lootState.normalize(ErodedContainerIdentity.resolve(world, pos, blockState));
 
         if (lootState.isAdminPlaced(key)) return true;
-
         if (lootState.isErodedGenerated(key)) return true;
-
-        if (!lootState.isPlayerPlaced(key)) {
-            return !lootState.hasAnyPlayerOpened(key);
-        }
-
+        if (!lootState.isPlayerPlaced(key)) return !lootState.hasAnyPlayerOpened(key);
         return false;
     }
 }

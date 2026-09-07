@@ -1,14 +1,14 @@
 package cz.mcsworld.eroded.death;
 
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerChunkEvents;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.phys.AABB;
-import java.util.Set;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
 public final class DeathHologramOrphanCleaner {
 
@@ -17,19 +17,13 @@ public final class DeathHologramOrphanCleaner {
     private DeathHologramOrphanCleaner() {}
 
     public static void register() {
+        // 26.x Fabric supplies an additional callback argument here.
         ServerChunkEvents.CHUNK_LOAD.register((world, chunk, ignored) ->
                 onChunkLoad(world, chunk)
         );
     }
 
     private static void onChunkLoad(ServerLevel world, LevelChunk chunk) {
-
-        Set<UUID> validIds = DeathChestState.get(world)
-                .all()
-                .stream()
-                .map(DeathChestState.Entry::hologramId)
-                .collect(Collectors.toSet());
-
         ChunkPos cPos = chunk.getPos();
 
         int bottomY = world.getMinY();
@@ -40,22 +34,38 @@ public final class DeathHologramOrphanCleaner {
                 cPos.getMaxBlockX() + 1, topY + 1, cPos.getMaxBlockZ() + 1
         );
 
-        for (Entity e : world.getEntities(null, chunkBox)) {
+        var chunkEntities = world.getEntities(null, chunkBox);
+        boolean hasTaggedHologram = chunkEntities.stream()
+                .anyMatch(e -> e.entityTags().stream().anyMatch(tag -> tag.startsWith(TAG_HOLOGRAM_ID)));
+        if (!hasTaggedHologram) {
+            return;
+        }
 
-            if (e.entityTags().isEmpty()) continue;
+        DeathChestState state = DeathChestState.getIfPresent(world);
+        Set<UUID> validIds = state == null
+                ? Set.of()
+                : state.all()
+                        .stream()
+                        .map(DeathChestState.Entry::hologramId)
+                        .collect(Collectors.toSet());
+
+        for (Entity e : chunkEntities) {
+            if (e.entityTags().isEmpty()) {
+                continue;
+            }
 
             for (String tag : e.entityTags()) {
-                if (tag.startsWith(TAG_HOLOGRAM_ID)) {
-                    try {
-                        UUID id = UUID.fromString(tag.substring(TAG_HOLOGRAM_ID.length()));
+                if (!tag.startsWith(TAG_HOLOGRAM_ID)) {
+                    continue;
+                }
 
-                        if (!validIds.contains(id)) {
-                            e.discard();
-                        }
-                    } catch (IllegalArgumentException ignored) {
-
+                try {
+                    UUID id = UUID.fromString(tag.substring(TAG_HOLOGRAM_ID.length()));
+                    if (!validIds.contains(id)) {
                         e.discard();
                     }
+                } catch (IllegalArgumentException ignored) {
+                    e.discard();
                 }
             }
         }

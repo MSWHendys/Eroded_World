@@ -82,6 +82,10 @@ public class ErodedCompassItem extends Item {
         return InteractionResult.CONSUME;
     }
 
+    public static void cleanup(UUID playerId) {
+        DARKNESS_BREAK_COOLDOWNS.remove(playerId);
+    }
+
     private InteractionResult tryBreakDarkness(
             ServerPlayer player,
             ErodedDeathMemory memory

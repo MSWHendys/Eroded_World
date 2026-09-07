@@ -20,6 +20,7 @@ public final class EnergySleepHandler {
         if (!(entity instanceof ServerPlayer player)) return;
 
         var root = EnergyConfig.get();
+        if (!root.server.enabled) return;
         var cfg = root.server.sleep;
 
         if (!cfg.sleepRestoresFull) return;
@@ -27,6 +28,5 @@ public final class EnergySleepHandler {
         SkillData data = SkillManager.get(player);
         data.addEnergy(data.getMaxEnergy());
         SkillManager.save(player);
-        SkillManager.sync(player);
     }
 }

@@ -56,5 +56,14 @@
         ]
       }
     }
-  }
+  },
+  "requirements": [
+    [
+      "has_iron_ingot",
+      "has_eroded_block",
+      "has_amethyst_shard",
+      "has_redstone",
+      "has_emerald"
+    ]
+  ]
 }
