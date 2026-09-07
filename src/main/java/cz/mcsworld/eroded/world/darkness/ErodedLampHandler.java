@@ -5,29 +5,14 @@ import cz.mcsworld.eroded.death.block.ErodedBlocks;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LightLayer;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.LightBlock;
-import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 public final class ErodedLampHandler {
-
-    private static final Map<UUID, LastLight> LAST_LIGHT = new ConcurrentHashMap<>();
-
-    private ErodedLampHandler() {
-    }
-
-    private record LastLight(ResourceKey<Level> worldKey, BlockPos pos) {
-    }
 
     public static void register() {
         ServerTickEvents.END_SERVER_TICK.register(server -> {
@@ -42,13 +27,14 @@ public final class ErodedLampHandler {
         UUID uuid = player.getUUID();
 
         ItemStack lamp = getHeldLamp(player);
+        var root = DarknessConfigs.get();
 
-        if (lamp.isEmpty()) {
+        if (!root.enabled || lamp.isEmpty()) {
             cleanup(uuid, server);
             return;
         }
 
-        var lampCfg = DarknessConfigs.get().server.wardingLamp;
+        var lampCfg = root.server.wardingLamp;
 
         ensureLampMaxDamage(lamp, lampCfg.durationSeconds);
 
@@ -74,32 +60,21 @@ public final class ErodedLampHandler {
             }
         }
 
-        BlockPos wantedPos = findLightPos(world, playerPos);
+        BlockPos wantedPos = findLightPos(world, playerPos, uuid);
         if (wantedPos == null) {
             cleanup(uuid, server);
             return;
         }
 
-        LastLight oldLight = LAST_LIGHT.get(uuid);
-
-        if (oldLight != null) {
-            if (oldLight.worldKey().equals(world.dimension())) {
-                BlockPos oldPos = oldLight.pos();
-
-                if (player.distanceToSqr(oldPos.getX() + 0.5, oldPos.getY() + 0.5, oldPos.getZ() + 0.5) < 2.25) {
-                    if (world.getBlockState(oldPos).is(Blocks.LIGHT)) return;
-                    if (world.isEmptyBlock(oldPos)) {
-                        placeLightAt(world, oldPos);
-                        return;
-                    }
-                }
-            }
+        int lightLevel = Math.min(15, Math.max(1, lampCfg.lightLevel));
+        if (!DynamicLightManager.ensure(
+                world,
+                wantedPos,
+                uuid,
+                DynamicLightManager.Source.WARDING_LAMP,
+                lightLevel
+        )) {
             cleanup(uuid, server);
-        }
-
-        if (canPlaceLightAt(world, wantedPos)) {
-            placeLightAt(world, wantedPos);
-            LAST_LIGHT.put(uuid, new LastLight(world.dimension(), wantedPos));
         }
     }
 
@@ -115,49 +90,32 @@ public final class ErodedLampHandler {
         }
     }
 
-    private static BlockPos findLightPos(ServerLevel world, BlockPos playerPos) {
-        if (canPlaceLightAt(world, playerPos.above())) return playerPos.above();
-        if (canPlaceLightAt(world, playerPos)) return playerPos;
+    private static BlockPos findLightPos(
+            ServerLevel world,
+            BlockPos playerPos,
+            UUID uuid
+    ) {
+        if (DynamicLightManager.canUse(
+                world, playerPos.above(), uuid, DynamicLightManager.Source.WARDING_LAMP)) {
+            return playerPos.above().immutable();
+        }
+        if (DynamicLightManager.canUse(
+                world, playerPos, uuid, DynamicLightManager.Source.WARDING_LAMP)) {
+            return playerPos.immutable();
+        }
         return null;
     }
 
-    private static boolean canPlaceLightAt(ServerLevel world, BlockPos pos) {
-        return world.isEmptyBlock(pos) || world.getBlockState(pos).is(Blocks.LIGHT);
-    }
-
-    private static void placeLightAt(ServerLevel world, BlockPos pos) {
-        if (!canPlaceLightAt(world, pos)) {
-            return;
-        }
-
-        int lightLevel = Math.min(15, Math.max(1, DarknessConfigs.get().server.wardingLamp.lightLevel));
-
-        world.setBlock(
-                pos,
-                Blocks.LIGHT.defaultBlockState().setValue(LightBlock.LEVEL, lightLevel),
-                Block.UPDATE_ALL
-        );
-    }
-
-    private static void removeLightAt(ServerLevel world, BlockPos pos) {
-        if (world != null && world.getBlockState(pos).is(Blocks.LIGHT)) {
-            world.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
-        }
-    }
-
     public static void cleanup(UUID uuid, MinecraftServer server) {
-        LastLight lastLight = LAST_LIGHT.remove(uuid);
-        if (lastLight != null) {
-            ServerLevel world = server.getLevel(lastLight.worldKey());
-            if (world != null) removeLightAt(world, lastLight.pos());
-        }
+        DynamicLightManager.release(uuid, DynamicLightManager.Source.WARDING_LAMP, server);
     }
 
     public static void cleanup(UUID uuid, ServerLevel fallbackWorld) {
-        LastLight lastLight = LAST_LIGHT.remove(uuid);
-        if (lastLight != null && fallbackWorld.dimension().equals(lastLight.worldKey())) {
-            removeLightAt(fallbackWorld, lastLight.pos());
-        }
+        DynamicLightManager.release(
+                uuid,
+                DynamicLightManager.Source.WARDING_LAMP,
+                fallbackWorld.getServer()
+        );
     }
 
     private static ItemStack getHeldLamp(ServerPlayer player) {

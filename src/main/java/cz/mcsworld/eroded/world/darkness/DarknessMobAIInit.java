@@ -21,16 +21,7 @@ public final class DarknessMobAIInit {
     }
 
     private static void onLoad(Entity entity, ServerLevel world) {
-        var root = DarknessConfigs.get();
-        var cfg = root.server;
-
-        if (!root.enabled) {
-            return;
-        }
-
-        if (!cfg.mobLightFearEnabled) {
-            return;
-        }
+        var cfg = DarknessConfigs.get().server;
 
         if (!(entity instanceof Monster mob)) {
             return;
@@ -54,7 +45,7 @@ public final class DarknessMobAIInit {
         GoalSelector selector = ((MobEntityAccessor) mob).eroded$getGoalSelector();
 
         selector.addGoal(1, new LightStartleImpulseGoal(mob));
-        selector.addGoal(4, new EscapeFromLightGoal(mob, cfg.escapeSpeed));
-        selector.addGoal(5, new StartleFromLightGoal(mob, cfg.escapeDistance, 1.0));
+        selector.addGoal(4, new EscapeFromLightGoal(mob));
+        selector.addGoal(5, new StartleFromLightGoal(mob, 1.0));
     }
 }

@@ -13,24 +13,29 @@ public class ErodedLootManager {
         if (!config.enabled) return;
 
         ErodedLootState state = ErodedLootState.get(world);
-        long key = pos.asLong();
+        long key = state.normalize(ErodedContainerIdentity.resolve(world, pos));
 
         if (state.isPlayerPlaced(key)) return;
         if (state.hasOpened(key, player.getUUID())) return;
 
-        if (state.isAdminPlaced(key)) {
+        boolean adminPlaced = state.isAdminPlaced(key);
+        boolean generated = state.isErodedGenerated(key);
+
+        // A normal world chest is rolled only once globally. After that first
+        // decision there is no reason to retain every future player's UUID.
+        if (!adminPlaced && !generated && state.hasAnyPlayerOpened(key)) {
+            state.compactOpenedHistory(key);
+            return;
+        }
+
+        if (adminPlaced) {
             ErodedLootGenerator.generate(inv);
-        } else {
-
-            if (state.isErodedGenerated(key)) {
+        } else if (generated) {
+            ErodedLootGenerator.generate(inv);
+        } else if (!state.hasAnyPlayerOpened(key)) {
+            if (world.random.nextDouble() <= config.erodedLootChance) {
+                state.markErodedGenerated(key);
                 ErodedLootGenerator.generate(inv);
-            }
-
-            else if (!state.hasAnyPlayerOpened(key)) {
-                if (world.random.nextDouble() <= config.erodedLootChance) {
-                    state.markErodedGenerated(key);
-                    ErodedLootGenerator.generate(inv);
-                }
             }
         }
 

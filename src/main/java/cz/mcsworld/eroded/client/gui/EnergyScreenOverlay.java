@@ -2,7 +2,6 @@ package cz.mcsworld.eroded.client.gui;
 
 import cz.mcsworld.eroded.client.data.ClientEnergyData;
 import cz.mcsworld.eroded.client.hud.EnergyHudLogic;
-import cz.mcsworld.eroded.client.screen.TerritoryModuleScreen;
 import cz.mcsworld.eroded.config.energy.EnergyConfig;
 import cz.mcsworld.eroded.skills.SkillData;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
@@ -24,7 +23,7 @@ public final class EnergyScreenOverlay {
 
     private static int craftingFailTicks = 0;
 
-    private static int warningTicks = 0;
+    private static long warningUntilMs = 0L;
     private static SkillData.EnergyState activeWarningState = null;
 
     private static int anvilMessageTicks = 0;
@@ -44,12 +43,35 @@ public final class EnergyScreenOverlay {
     }
 
     public static void triggerWarning(SkillData.EnergyState state) {
+        if (state == null || state == SkillData.EnergyState.NORMAL) return;
         activeWarningState = state;
-        warningTicks = EnergyConfig.get().client.hud.warningMessageTime;
+        warningUntilMs = System.currentTimeMillis() + warningDurationMs(state);
     }
 
     public static void onCraftingFail() {
         craftingFailTicks = EnergyConfig.get().client.hud.warningMessageTime;
+    }
+
+    public static void resetWarning() {
+        warningUntilMs = 0L;
+        activeWarningState = null;
+    }
+
+    private static long warningDurationMs(SkillData.EnergyState state) {
+        var cfg = EnergyConfig.get().client.hud;
+        return switch (state) {
+            case TIRED -> cfg.tiredWarningDurationMs;
+            case EXHAUSTED -> cfg.exhaustedWarningDurationMs;
+            case EMPTY -> cfg.emptyWarningDurationMs;
+            case NORMAL -> 0L;
+        };
+    }
+
+    public static void resetEnergyState() {
+        craftingFailTicks = 0;
+        resetWarning();
+        lastEnergyValue = -1;
+        isRegenerating = false;
     }
 
     public static void showAnvilMessage(Component text, String quality) {
@@ -69,8 +91,7 @@ public final class EnergyScreenOverlay {
     private static boolean shouldRender(Screen screen) {
         return screen instanceof InventoryScreen
                 || screen instanceof CraftingScreen
-                || screen instanceof AnvilScreen
-                || screen instanceof TerritoryModuleScreen;
+                || screen instanceof AnvilScreen;
     }
 
     private static void render(
@@ -98,6 +119,7 @@ public final class EnergyScreenOverlay {
             return;
         }
 
+        boolean energyEnabled = ClientEnergyData.isEnabled();
         int energy = ClientEnergyData.getEnergy();
         int maxEnergy = ClientEnergyData.getMaxEnergy();
 
@@ -127,53 +149,55 @@ public final class EnergyScreenOverlay {
         int barCenterX = iconsX + barWidth / 2;
         int iconsY = 8;
 
-        for (int i = 0; i < total; i++) {
-            int drawX = iconsX + i * 8;
+        if (energyEnabled) {
+            for (int i = 0; i < total; i++) {
+                int drawX = iconsX + i * 8;
 
-            EnergyHudLogic.SegmentVisual visual =
-                    EnergyHudLogic.resolve(
-                            i,
-                            total,
-                            energy,
-                            maxEnergy,
-                            isRegenerating,
-                            ticks
-                    );
+                EnergyHudLogic.SegmentVisual visual =
+                        EnergyHudLogic.resolve(
+                                i,
+                                total,
+                                energy,
+                                maxEnergy,
+                                isRegenerating,
+                                ticks
+                        );
 
-            int iconColor;
+                int iconColor;
 
-            if (!visual.visible()) {
-                iconColor = EnergyHudLogic.EMPTY;
-            } else {
-                iconColor =
-                        0xFF000000
-                                | (visual.color() & 0x00FFFFFF);
+                if (!visual.visible()) {
+                    iconColor = EnergyHudLogic.EMPTY;
+                } else {
+                    iconColor =
+                            0xFF000000
+                                    | (visual.color() & 0x00FFFFFF);
+                }
+
+                var matrices = context.pose();
+
+                matrices.pushMatrix();
+
+                float centerX = drawX + 4.0F;
+                float centerY = iconsY + 4.0F;
+
+                matrices.translate(centerX, centerY);
+                matrices.scale(
+                        visual.scale(),
+                        visual.scale()
+                );
+                matrices.translate(-centerX, -centerY);
+
+                context.drawString(
+                        client.font,
+                        ICON,
+                        drawX,
+                        iconsY,
+                        iconColor,
+                        true
+                );
+
+                matrices.popMatrix();
             }
-
-            var matrices = context.pose();
-
-            matrices.pushMatrix();
-
-            float centerX = drawX + 4.0F;
-            float centerY = iconsY + 4.0F;
-
-            matrices.translate(centerX, centerY);
-            matrices.scale(
-                    visual.scale(),
-                    visual.scale()
-            );
-            matrices.translate(-centerX, -centerY);
-
-            context.drawString(
-                    client.font,
-                    ICON,
-                    drawX,
-                    iconsY,
-                    iconColor,
-                    true
-            );
-
-            matrices.popMatrix();
         }
 
         Component textToDraw = null;
@@ -217,7 +241,7 @@ public final class EnergyScreenOverlay {
                 customMessageColor = 0xFFFFFFFF;
             }
 
-        } else if (craftingFailTicks > 0) {
+        } else if (energyEnabled && craftingFailTicks > 0) {
             textToDraw = Component.translatable(
                     "eroded.crafting.not_enough_energy"
             );
@@ -225,8 +249,8 @@ public final class EnergyScreenOverlay {
             textColor = EnergyHudLogic.RED;
             craftingFailTicks--;
 
-        } else if (warningTicks > 0
-                && activeWarningState != null) {
+        } else if (energyEnabled && activeWarningState != null
+                && warningUntilMs > System.currentTimeMillis()) {
 
             String translationKey =
                     EnergyHudLogic.getWarningTranslationKey(
@@ -238,17 +262,24 @@ public final class EnergyScreenOverlay {
                         Component.translatable(translationKey);
 
                 textColor = EnergyHudLogic.RED;
-                warningTicks--;
-
-                if (warningTicks <= 0) {
-                    activeWarningState = null;
-                }
             } else {
-                warningTicks = 0;
-                activeWarningState = null;
+                resetWarning();
             }
 
-        } else {
+        } else if (activeWarningState != null
+                && warningUntilMs <= System.currentTimeMillis()) {
+            resetWarning();
+            if (energyEnabled) {
+                textToDraw = Component.translatable(
+                        "eroded.gui.energy.prefix"
+                ).append(
+                        Component.literal(
+                                energy + " / " + maxEnergy
+                        )
+                );
+            }
+
+        } else if (energyEnabled) {
             textToDraw =
                     Component.translatable(
                             "eroded.gui.energy.prefix"

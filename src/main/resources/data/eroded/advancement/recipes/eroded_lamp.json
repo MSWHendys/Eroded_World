@@ -6,19 +6,6 @@
     ]
   },
   "criteria": {
-    "level_10": {
-      "trigger": "minecraft:location",
-      "conditions": {
-        "player": {
-          "type_specific": {
-            "type": "player",
-            "level": {
-              "min": 10
-            }
-          }
-        }
-      }
-    },
     "has_eroded_block": {
       "trigger": "minecraft:inventory_changed",
       "conditions": {
@@ -69,5 +56,14 @@
         ]
       }
     }
-  }
+  },
+  "requirements": [
+    [
+      "has_eroded_block",
+      "has_tnt",
+      "has_soul_lantern",
+      "has_oak_log",
+      "has_shield"
+    ]
+  ]
 }

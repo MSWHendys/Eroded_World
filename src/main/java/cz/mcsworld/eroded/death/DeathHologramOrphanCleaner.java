@@ -24,12 +24,6 @@ public final class DeathHologramOrphanCleaner {
 
     private static void onChunkLoad(ServerLevel world, LevelChunk chunk) {
 
-        Set<UUID> validIds = DeathChestState.get(world)
-                .all()
-                .stream()
-                .map(DeathChestState.Entry::hologramId)
-                .collect(Collectors.toSet());
-
         ChunkPos cPos = chunk.getPos();
 
         int bottomY = world.getMinY();
@@ -40,8 +34,20 @@ public final class DeathHologramOrphanCleaner {
                 cPos.getMaxBlockX() + 1, topY + 1, cPos.getMaxBlockZ() + 1
         );
 
-        for (Entity e : world.getEntities(null, chunkBox)) {
+        var chunkEntities = world.getEntities(null, chunkBox);
+        boolean hasTaggedHologram = chunkEntities.stream()
+                .anyMatch(e -> e.getTags().stream().anyMatch(tag -> tag.startsWith(TAG_HOLOGRAM_ID)));
+        if (!hasTaggedHologram) return;
 
+        DeathChestState state = DeathChestState.getIfPresent(world);
+        Set<UUID> validIds = state == null
+                ? Set.of()
+                : state.all()
+                        .stream()
+                        .map(DeathChestState.Entry::hologramId)
+                        .collect(Collectors.toSet());
+
+        for (Entity e : chunkEntities) {
             if (e.getTags().isEmpty()) continue;
 
             for (String tag : e.getTags()) {
@@ -53,7 +59,6 @@ public final class DeathHologramOrphanCleaner {
                             e.discard();
                         }
                     } catch (IllegalArgumentException ignored) {
-
                         e.discard();
                     }
                 }

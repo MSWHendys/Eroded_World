@@ -24,6 +24,9 @@ public class AdrenalineShotItem extends Item {
     @Override
     public ItemStack finishUsingItem(ItemStack stack, Level world, LivingEntity user) {
         if (user instanceof ServerPlayer player) {
+            if (!EnergyConfig.get().server.enabled) {
+                return stack;
+            }
             SkillData data = SkillManager.get(player);
 
             int immunitySeconds = Math.max(
@@ -55,6 +58,9 @@ public class AdrenalineShotItem extends Item {
 
     @Override
     public InteractionResult use(Level world, Player user, InteractionHand hand) {
+        if (!world.isClientSide() && !EnergyConfig.get().server.enabled) {
+            return InteractionResult.FAIL;
+        }
         return ItemUtils.startUsingInstantly(world, user, hand);
     }
 }

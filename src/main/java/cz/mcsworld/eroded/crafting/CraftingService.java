@@ -34,10 +34,12 @@ public final class CraftingService {
             return false;
         }
 
-        var energyCfg = EnergyConfig.get().server.core;
-        int energyCost = calculateEnergyCost(cfg, data, context, result);
+        var energyRoot = EnergyConfig.get().server;
+        var energyCfg = energyRoot.core;
+        boolean energyEnabled = energyRoot.enabled && cfg.energy.enabled;
+        int energyCost = energyEnabled ? calculateEnergyCost(cfg, data, context, result) : 0;
 
-        if (cfg.energy.enabled && energyCfg.blockWorkAtZero) {
+        if (energyEnabled && energyCfg.blockWorkAtZero) {
             if (!data.canAffordEnergy(energyCost)) {
                 player.displayClientMessage(
                         Component.translatable("eroded.crafting.not_enough_energy")
@@ -50,7 +52,7 @@ public final class CraftingService {
             }
         }
 
-        if (cfg.energy.enabled && energyCost > 0) {
+        if (energyEnabled && energyCost > 0) {
             data.consumeEnergy(energyCost);
         }
 
@@ -59,7 +61,6 @@ public final class CraftingService {
         }
 
         SkillManager.save(player);
-        SkillManager.sync(player);
 
         syncSkillsToClient(player, data);
 

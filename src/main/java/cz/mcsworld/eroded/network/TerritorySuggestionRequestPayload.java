@@ -12,6 +12,8 @@ public record TerritorySuggestionRequestPayload(
         String query
 ) implements CustomPacketPayload {
 
+    public static final int MAX_QUERY_LENGTH = 32;
+
     public static final Type<TerritorySuggestionRequestPayload> ID =
             new Type<>(ResourceLocation.fromNamespaceAndPath(ErodedMod.MOD_ID, "territory_suggestion_request"));
 
@@ -23,13 +25,13 @@ public record TerritorySuggestionRequestPayload(
 
     private void write(RegistryFriendlyByteBuf buf) {
         BlockPos.STREAM_CODEC.encode(buf, anchorPos);
-        buf.writeUtf(query);
+        buf.writeUtf(query, MAX_QUERY_LENGTH);
     }
 
     private static TerritorySuggestionRequestPayload read(RegistryFriendlyByteBuf buf) {
         return new TerritorySuggestionRequestPayload(
                 BlockPos.STREAM_CODEC.decode(buf),
-                buf.readUtf()
+                buf.readUtf(MAX_QUERY_LENGTH)
         );
     }
 

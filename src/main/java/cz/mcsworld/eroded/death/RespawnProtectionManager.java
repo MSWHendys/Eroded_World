@@ -134,7 +134,7 @@ public final class RespawnProtectionManager {
                 continue;
             }
 
-            if (cfg.respawnProtection.clearMobTargets) {
+            if (cfg.respawnProtection.clearMobTargets && serverTick % 5L == 0L) {
                 clearNearbyMobTargets(player, cfg.respawnProtection.clearTargetRadius);
             }
         }

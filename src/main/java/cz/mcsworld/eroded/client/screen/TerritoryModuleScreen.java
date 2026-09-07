@@ -359,7 +359,7 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
                                                         anchorPos,
                                                         entry.uuid().toString(),
                                                         entry.name(),
-                                                        false
+                                                        connectedAreaModeFor(entry.uuid())
                                                 )
                                         );
 

@@ -2,6 +2,7 @@ package cz.mcsworld.eroded.mixin;
 
 import cz.mcsworld.eroded.config.darkness.DarknessConfigs;
 import cz.mcsworld.eroded.death.RespawnProtectionManager;
+import cz.mcsworld.eroded.server.spawn.SpawnProtectionSystem;
 import cz.mcsworld.eroded.world.darkness.DarknessEnvironment;
 import cz.mcsworld.eroded.world.darkness.DarknessLightResolver;
 import cz.mcsworld.eroded.world.darkness.DarknessMobLightMemory;
@@ -79,10 +80,9 @@ public abstract class LivingEntityCanTargetMixin {
             return;
         }
 
-        if (!RespawnProtectionManager.shouldPreventDamage(player)) {
-            return;
+        if (RespawnProtectionManager.shouldPreventDamage(player)
+                || SpawnProtectionSystem.shouldPreventDamage(player)) {
+            cir.setReturnValue(false);
         }
-
-        cir.setReturnValue(false);
     }
 }

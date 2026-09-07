@@ -1,293 +1,277 @@
 package cz.mcsworld.eroded.config.territory;
 
-import me.shedaniel.autoconfig.AutoConfig;
-import me.shedaniel.autoconfig.ConfigData;
-import me.shedaniel.autoconfig.annotation.Config;
-import me.shedaniel.autoconfig.annotation.ConfigEntry;
+import cz.mcsworld.eroded.config.ConfigValidation;
+import cz.mcsworld.eroded.config.ConfigValidationException;
+import cz.mcsworld.eroded.config.ErodedConfig;
+import cz.mcsworld.eroded.config.ErodedConfigs;
 
-@Config(name = "ErodedWorld/territory")
-public class TerritoryConfig implements ConfigData {
+public class TerritoryConfig implements ErodedConfig {
 
-    @ConfigEntry.Category("server")
     public Server server = new Server();
 
     public static TerritoryConfig get() {
-        return AutoConfig.getConfigHolder(TerritoryConfig.class).get();
+        return ErodedConfigs.TERRITORY;
+    }
+
+    @Override
+    public void validatePostLoad() throws ConfigValidationException {
+        ConfigValidation.notNull(server, "territory.server");
+        ConfigValidation.min(server.miningWeight, 0.0f, "territory.server.miningWeight");
+        ConfigValidation.min(server.pollutionWeight, 0.0f, "territory.server.pollutionWeight");
+        ConfigValidation.min(server.forestWeight, 0.0f, "territory.server.forestWeight");
+        ConfigValidation.min(server.miningThreshold, 0, "territory.server.miningThreshold");
+        ConfigValidation.min(server.collapseCooldownMs, 0L, "territory.server.collapseCooldownMs");
+        ConfigValidation.range(server.stabilizerRadius, 0, 32, "territory.server.stabilizerRadius");
+        ConfigValidation.range(server.collapseChanceLow, 0.0f, 1.0f, "territory.server.collapseChanceLow");
+        ConfigValidation.range(server.collapseChanceMid, 0.0f, 1.0f, "territory.server.collapseChanceMid");
+        ConfigValidation.range(server.collapseChanceHigh, 0.0f, 1.0f, "territory.server.collapseChanceHigh");
+        ConfigValidation.range(server.collapseMobSpawnChance, 0.0f, 1.0f, "territory.server.collapseMobSpawnChance");
+        ConfigValidation.min(server.ecosystemIntervalTicks, 1, "territory.server.ecosystemIntervalTicks");
+        ConfigValidation.range(server.ecosystemVisibleRadiusBlocks, 0, 256, "territory.server.ecosystemVisibleRadiusBlocks");
+        ConfigValidation.range(server.ecosystemMaxPlayersPerSlice, 1, 128, "territory.server.ecosystemMaxPlayersPerSlice");
+        ConfigValidation.range(server.ecosystemAttemptsPerPlayer, 0, 128, "territory.server.ecosystemAttemptsPerPlayer");
+        ConfigValidation.range(server.ecosystemSurfaceAttempts, 0, 128, "territory.server.ecosystemSurfaceAttempts");
+        ConfigValidation.range(server.ecosystemLeafAttempts, 0, 128, "territory.server.ecosystemLeafAttempts");
+        ConfigValidation.require(server.ecosystemLeafMaxY >= server.ecosystemLeafMinY, "territory.server.ecosystemLeafMaxY", "must be >= ecosystemLeafMinY");
+        ConfigValidation.min(server.ecosystemCalmDownDelay, 0, "territory.server.ecosystemCalmDownDelay");
+        ConfigValidation.min(server.statePruneIntervalTicks, 20, "territory.server.statePruneIntervalTicks");
+        ConfigValidation.min(server.stateRetentionTicks, 1200L, "territory.server.stateRetentionTicks");
+        ConfigValidation.range(server.ecosystemDegradeThreatThreshold, 0.0f, 1.0f, "territory.server.ecosystemDegradeThreatThreshold");
+        ConfigValidation.range(server.ecosystemRegenThreatThreshold, 0.0f, 1.0f, "territory.server.ecosystemRegenThreatThreshold");
+        ConfigValidation.range(server.grassDegradeChance, 0.0f, 1.0f, "territory.server.grassDegradeChance");
+        ConfigValidation.range(server.grassRegrowChance, 0.0f, 1.0f, "territory.server.grassRegrowChance");
+        ConfigValidation.range(server.permanentScarChance, 0.0f, 1.0f, "territory.server.permanentScarChance");
+        ConfigValidation.min(server.ecosystemLeafLossMultiplier, 0.0f, "territory.server.ecosystemLeafLossMultiplier");
+        ConfigValidation.range(server.ecosystemLeafLossMaxChance, 0.0f, 1.0f, "territory.server.ecosystemLeafLossMaxChance");
+        ConfigValidation.range(server.ecosystemLeafLossMinChance, 0.0f, 1.0f, "territory.server.ecosystemLeafLossMinChance");
+        ConfigValidation.require(server.ecosystemLeafLossMaxChance >= server.ecosystemLeafLossMinChance, "territory.server.ecosystemLeafLossMaxChance", "must be >= ecosystemLeafLossMinChance");
+        ConfigValidation.min(server.undergroundTolerance, 0, "territory.server.undergroundTolerance");
+        ConfigValidation.min(server.spawnCheckInterval, 1, "territory.server.spawnCheckInterval");
+        ConfigValidation.range(server.spawnAttempts, 0, 128, "territory.server.spawnAttempts");
+        ConfigValidation.range(server.spawnMinDistance, 0.0, 256.0, "territory.server.spawnMinDistance");
+        ConfigValidation.require(server.spawnMaxDistance >= server.spawnMinDistance
+                        && server.spawnMaxDistance <= 256.0
+                        && Double.isFinite(server.spawnMaxDistance),
+                "territory.server.spawnMaxDistance", "must be finite, >= spawnMinDistance and <= 256");
+        ConfigValidation.range(server.spawnKeepMinChance, 0.0f, 1.0f, "territory.server.spawnKeepMinChance");
+        ConfigValidation.range(server.mobMaxPerChunk, 0, 128, "territory.server.mobMaxPerChunk");
+        ConfigValidation.range(server.maxMobsPerSpawnCycle, 0, 32, "territory.server.maxMobsPerSpawnCycle");
+        ConfigValidation.range(server.mobDespawnRadius, 1, 512, "territory.server.mobDespawnRadius");
+        ConfigValidation.require(
+                server.mobDespawnRadius >= server.spawnMaxDistance,
+                "territory.server.mobDespawnRadius",
+                "must be >= spawnMaxDistance so newly spawned mobs do not despawn immediately"
+        );
+        ConfigValidation.require(server.mobMaxHp > 0.0 && Double.isFinite(server.mobMaxHp), "territory.server.mobMaxHp", "must be > 0 and finite");
+        ConfigValidation.range(server.mobBuffThreshold, 0.0f, 1.0f, "territory.server.mobBuffThreshold");
+        ConfigValidation.notNull(server.titleLow, "territory.server.titleLow");
+        ConfigValidation.notNull(server.titleMid, "territory.server.titleMid");
+        ConfigValidation.notNull(server.titleHigh, "territory.server.titleHigh");
+        ConfigValidation.min(server.titleMidThreshold, 0, "territory.server.titleMidThreshold");
+        ConfigValidation.require(server.titleHighThreshold >= server.titleMidThreshold, "territory.server.titleHighThreshold", "must be >= titleMidThreshold");
+        ConfigValidation.range(server.erodedMobSunProofChance, 0.0f, 1.0f, "territory.server.erodedMobSunProofChance");
+        ConfigValidation.min(server.erodedMobTempProtectionMinTicks, 0, "territory.server.erodedMobTempProtectionMinTicks");
+        ConfigValidation.min(server.erodedMobTempProtectionRandomTicks, 0, "territory.server.erodedMobTempProtectionRandomTicks");
+        ConfigValidation.min(server.erodedSkeletonBurnSeconds, 0.0f, "territory.server.erodedSkeletonBurnSeconds");
+        ConfigValidation.range(server.spawnProtectionRadius, 0, 256, "territory.server.spawnProtectionRadius");
+        ConfigValidation.range(server.playerClaimRadius, 0, 256, "territory.server.playerClaimRadius");
+        ConfigValidation.min(server.playerClaimActivationDelaySeconds, 0, "territory.server.playerClaimActivationDelaySeconds");
+        ConfigValidation.range(server.maxClaimsPerPlayer, 0, 64, "territory.server.maxClaimsPerPlayer");
     }
 
     public static class Server {
 
-        @ConfigEntry.Gui.Tooltip
         public boolean enabled = true;
 
-        @ConfigEntry.Gui.Tooltip
         public float miningWeight = 0.40f;
 
-        @ConfigEntry.Gui.Tooltip
         public float pollutionWeight = 0.50f;
 
-        @ConfigEntry.Gui.Tooltip
         public float forestWeight = 0.40f;
 
-        @ConfigEntry.Gui.Tooltip
         public boolean caveCollapseEnabled = true;
 
-        @ConfigEntry.Gui.Tooltip
         public int miningThreshold = 250;
 
-        @ConfigEntry.Gui.Tooltip
         public long collapseCooldownMs = 3000;
 
-        @ConfigEntry.Gui.Tooltip
         public int stabilizerRadius = 8;
 
-        @ConfigEntry.Gui.Tooltip
         public int collapseMaxY = 50;
 
-        @ConfigEntry.Gui.Tooltip
         public float collapseChanceLow = 0.08f;
 
-        @ConfigEntry.Gui.Tooltip
         public float collapseChanceMid = 0.18f;
 
-        @ConfigEntry.Gui.Tooltip
         public float collapseChanceHigh = 0.35f;
 
-        @ConfigEntry.Gui.Tooltip
         public float collapseMobSpawnChance = 0.25f;
 
-        @ConfigEntry.Gui.Tooltip
         public boolean ecosystemEnabled = true;
 
-        @ConfigEntry.Gui.Tooltip
         public int ecosystemIntervalTicks = 100;
 
-        @ConfigEntry.Gui.Tooltip
         public int ecosystemVisibleRadiusBlocks = 32;
 
-        @ConfigEntry.Gui.Tooltip
         public int ecosystemMaxPlayersPerSlice = 10;
 
-        @ConfigEntry.Gui.Tooltip
         public int ecosystemAttemptsPerPlayer = 6;
 
-        @ConfigEntry.Gui.Tooltip
         public int ecosystemSurfaceAttempts = 4;
 
-        @ConfigEntry.Gui.Tooltip
         public int ecosystemLeafAttempts = 2;
 
-        @ConfigEntry.Gui.Tooltip
         public int ecosystemLeafMinY = 60;
 
-        @ConfigEntry.Gui.Tooltip
         public int ecosystemLeafMaxY = 140;
 
-        @ConfigEntry.Gui.Tooltip
         public int ecosystemCalmDownDelay = 1200;
 
-        @ConfigEntry.Gui.Tooltip
+        public boolean statePruningEnabled = true;
+
+        /** How often inactive territory cells are checked (6000 ticks = 5 minutes). */
+        public int statePruneIntervalTicks = 6000;
+
+        /**
+         * Forget a territory cell after this many ticks without real player
+         * territory activity (432000 ticks = 6 hours of server world time).
+         */
+        public long stateRetentionTicks = 432000L;
+
         public float ecosystemDegradeThreatThreshold = 0.60f;
 
-        @ConfigEntry.Gui.Tooltip
         public float ecosystemRegenThreatThreshold = 0.30f;
 
-        @ConfigEntry.Gui.Tooltip
         public float grassDegradeChance = 0.20f;
 
-        @ConfigEntry.Gui.Tooltip
         public float grassRegrowChance = 0.4f;
 
-        @ConfigEntry.Gui.Tooltip
         public float permanentScarChance = 0.05f;
 
-        @ConfigEntry.Gui.Tooltip
         public float ecosystemLeafLossMultiplier = 0.10f;
 
-        @ConfigEntry.Gui.Tooltip
         public float ecosystemLeafLossMaxChance = 0.30f;
 
-        @ConfigEntry.Gui.Tooltip
         public float ecosystemLeafLossMinChance = 0.02f;
 
-        @ConfigEntry.Gui.Tooltip
         public boolean mobSpawnControlEnabled = true;
 
-        @ConfigEntry.Gui.Tooltip
         public boolean surfaceOnlySpawns = true;
 
-        @ConfigEntry.Gui.Tooltip
         public int undergroundTolerance = 5;
 
-        @ConfigEntry.Gui.Tooltip
         public int spawnCheckInterval = 1200;
 
-        @ConfigEntry.Gui.Tooltip
         public int spawnAttempts = 20;
 
-        @ConfigEntry.Gui.Tooltip
         public double spawnMinDistance = 14.0;
 
-        @ConfigEntry.Gui.Tooltip
         public double spawnMaxDistance = 40.0;
 
-        @ConfigEntry.Gui.Tooltip
         public float spawnKeepMinChance = 0.08f;
 
-        @ConfigEntry.Gui.Tooltip
         public int mobMaxPerChunk = 3;
 
-        @ConfigEntry.Gui.Tooltip
         public int maxMobsPerSpawnCycle = 1;
 
-        @ConfigEntry.Gui.Tooltip
         public int mobDespawnRadius = 64;
 
-        @ConfigEntry.Gui.Tooltip
         public double mobMaxHp = 40.0;
 
-        @ConfigEntry.Gui.Tooltip
         public boolean MobNameVisible = false;
 
-        @ConfigEntry.Gui.Tooltip
         public boolean mobBuffEnabled = true;
 
-        @ConfigEntry.Gui.Tooltip
         public float mobBuffThreshold = 0.40f;
 
-        @ConfigEntry.Gui.Tooltip
         public String titleLow = "Forsaken";
 
-        @ConfigEntry.Gui.Tooltip
         public String titleMid = "Eroded";
 
-        @ConfigEntry.Gui.Tooltip
         public String titleHigh = "Apocalypse";
 
-        @ConfigEntry.Gui.Tooltip
         public int titleMidThreshold = 250;
 
-        @ConfigEntry.Gui.Tooltip
         public int titleHighThreshold = 1000;
 
-        @ConfigEntry.Gui.Tooltip
         public float erodedMobSunProofChance = 0.35F;
 
-        @ConfigEntry.Gui.Tooltip
         public int erodedMobTempProtectionMinTicks = 600;
 
-        @ConfigEntry.Gui.Tooltip
         public int erodedMobTempProtectionRandomTicks = 1200;
 
-        @ConfigEntry.Gui.Tooltip
         public float erodedSkeletonBurnSeconds = 8.0F;
 
-        @ConfigEntry.Gui.Tooltip
         public boolean spawnProtectionEnabled = true;
 
-        @ConfigEntry.Gui.Tooltip
         public int spawnProtectionRadius = 64;
 
-        @ConfigEntry.Gui.Tooltip
         public boolean bypassCreative = true;
 
-        @ConfigEntry.Gui.Tooltip
         public boolean bypassOP = true;
 
-        @ConfigEntry.Gui.Tooltip
         public boolean preventExplosions = true;
 
-        @ConfigEntry.Gui.Tooltip
         public boolean preventBlockBreak = true;
 
-        @ConfigEntry.Gui.Tooltip
         public boolean preventBlockPlace = true;
 
-        @ConfigEntry.Gui.Tooltip
         public boolean preventContainerUse = false;
 
-        @ConfigEntry.Gui.Tooltip
         public boolean preventRedstoneControls = false;
 
-        @ConfigEntry.Gui.Tooltip
         public boolean preventPressurePlates = false;
 
-        @ConfigEntry.Gui.Tooltip
         public boolean preventProtectedEntityInteraction = true;
 
-        @ConfigEntry.Gui.Tooltip
         public boolean preventPistonPush = true;
 
-        @ConfigEntry.Gui.Tooltip
         public boolean preventFluidFlow = true;
 
-        @ConfigEntry.Gui.Tooltip
         public boolean preventInventoryAutomationTransfer = true;
 
-        @ConfigEntry.Gui.Tooltip
         public boolean preventDispenserDropperBoundaryActions = true;
 
-        @ConfigEntry.Gui.Tooltip
         public boolean spawnPreventProjectileBoundaryActions = true;
 
-        @ConfigEntry.Gui.Tooltip
         public boolean spawnPreventMobGriefing = true;
 
-        @ConfigEntry.Gui.Tooltip
         public boolean spawnPreventVehicles = true;
 
-        @ConfigEntry.Gui.Tooltip
         public boolean spawnPreventSpecialBlockUse = false;
 
-        @ConfigEntry.Gui.Tooltip
         public boolean playerClaimProtectionEnabled = true;
 
-        @ConfigEntry.Gui.Tooltip
         public int playerClaimRadius = 10;
 
-        @ConfigEntry.Gui.Tooltip
         public int playerClaimActivationDelaySeconds = 60;
 
-        @ConfigEntry.Gui.Tooltip
         public int maxClaimsPerPlayer = 4;
 
-        @ConfigEntry.Gui.Tooltip
         public boolean preventPlayerClaimOverlap = true;
 
-        @ConfigEntry.Gui.Tooltip
         public boolean claimCreativeBypass = true;
 
-        @ConfigEntry.Gui.Tooltip
         public boolean protectClaimBlockBreak = true;
 
-        @ConfigEntry.Gui.Tooltip
         public boolean protectClaimBlockPlace = true;
 
-        @ConfigEntry.Gui.Tooltip
         public boolean protectClaimContainers = true;
 
-        @ConfigEntry.Gui.Tooltip
         public boolean protectClaimFire = true;
 
-        @ConfigEntry.Gui.Tooltip
         public boolean protectClaimExplosions = true;
 
-        @ConfigEntry.Gui.Tooltip
         public boolean preventProjectileBoundaryActions = true;
 
-        @ConfigEntry.Gui.Tooltip
         public boolean protectClaimMobGriefing = true;
 
-        @ConfigEntry.Gui.Tooltip
         public boolean protectClaimVehicles = true;
 
-        @ConfigEntry.Gui.Tooltip
         public boolean protectClaimFluidFlow = true;
 
-        @ConfigEntry.Gui.Tooltip
         public boolean protectClaimInventoryAutomationTransfer = true;
 
-        @ConfigEntry.Gui.Tooltip
         public boolean protectClaimDispenserDropperBoundaryActions = true;
     }
 }

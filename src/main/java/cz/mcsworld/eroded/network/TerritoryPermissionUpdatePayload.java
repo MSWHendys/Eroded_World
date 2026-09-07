@@ -15,6 +15,9 @@ public record TerritoryPermissionUpdatePayload(
         boolean connectedArea
 ) implements CustomPacketPayload {
 
+    public static final int MAX_UUID_LENGTH = 36;
+    public static final int MAX_PERMISSION_NAME_LENGTH = 32;
+
     public static final Type<TerritoryPermissionUpdatePayload> ID =
             new Type<>(ResourceLocation.fromNamespaceAndPath(ErodedMod.MOD_ID, "territory_permission_update"));
 
@@ -26,8 +29,8 @@ public record TerritoryPermissionUpdatePayload(
 
     private void write(RegistryFriendlyByteBuf buf) {
         BlockPos.STREAM_CODEC.encode(buf, anchorPos);
-        buf.writeUtf(targetUuid);
-        buf.writeUtf(permissionName);
+        buf.writeUtf(targetUuid, MAX_UUID_LENGTH);
+        buf.writeUtf(permissionName, MAX_PERMISSION_NAME_LENGTH);
         buf.writeBoolean(enabled);
         buf.writeBoolean(connectedArea);
     }
@@ -35,8 +38,8 @@ public record TerritoryPermissionUpdatePayload(
     private static TerritoryPermissionUpdatePayload read(RegistryFriendlyByteBuf buf) {
         return new TerritoryPermissionUpdatePayload(
                 BlockPos.STREAM_CODEC.decode(buf),
-                buf.readUtf(),
-                buf.readUtf(),
+                buf.readUtf(MAX_UUID_LENGTH),
+                buf.readUtf(MAX_PERMISSION_NAME_LENGTH),
                 buf.readBoolean(),
                 buf.readBoolean()
         );

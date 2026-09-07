@@ -50,6 +50,10 @@ public final class TrustedAccess {
         this.connectedScopeMode = connectedScopeMode;
     }
 
+    public void setFlags(int flags) {
+        this.flags = TerritoryPermission.sanitize(flags);
+    }
+
     public void updateName(String name) {
         if (name == null || name.isBlank()) {
             return;

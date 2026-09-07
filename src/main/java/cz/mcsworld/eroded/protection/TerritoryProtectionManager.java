@@ -34,6 +34,15 @@ public final class TerritoryProtectionManager {
     private static final int MIN_RADIUS = 1;
     private static final int MAX_RADIUS = 256;
 
+    /**
+     * Small placement tolerance for connected player claims. Placement hints
+     * mark the exact side-adjacent position, but real terrain often makes the
+     * player place the next anchor one or two blocks away from that marker.
+     * Keep the tolerance deliberately small so separated/diagonal territories
+     * do not merge accidentally.
+     */
+    private static final int CLAIM_CONNECTION_GAP_TOLERANCE = 2;
+
     public record ConnectedTerritoryInfo(
             int width,
             int depth,
@@ -109,7 +118,19 @@ public final class TerritoryProtectionManager {
     }
 
     public static TerritoryClaim getAnchorClaim(ServerLevel world, BlockPos pos) {
-        return TerritoryClaimState.get(world).getByAnchor(pos);
+        TerritoryClaimState state = TerritoryClaimState.get(world);
+        TerritoryClaim claim = state.getByAnchor(pos);
+
+        if (claim == null) {
+            return null;
+        }
+
+        if (isClaimStillValid(world, claim)) {
+            return claim;
+        }
+
+        state.remove(pos);
+        return null;
     }
 
     public static TerritoryClaim getActiveClaimAt(ServerLevel world, BlockPos pos) {
@@ -122,7 +143,7 @@ public final class TerritoryProtectionManager {
                 return null;
             }
 
-            if (world.getBlockState(claim.anchorPos()).is(ErodedBlocks.TERRITORY_ANCHOR)) {
+            if (isClaimStillValid(world, claim)) {
                 return claim;
             }
 
@@ -131,7 +152,9 @@ public final class TerritoryProtectionManager {
     }
 
     public static int getClaimCount(ServerLevel world, ServerPlayer player) {
-        return TerritoryClaimState.get(world).countByOwner(player.getUUID());
+        TerritoryClaimState state = TerritoryClaimState.get(world);
+        pruneInvalidLoadedClaims(world, state);
+        return state.countByOwner(player.getUUID());
     }
 
     public static boolean canCreateMoreClaims(ServerLevel world, ServerPlayer player) {
@@ -153,7 +176,9 @@ public final class TerritoryProtectionManager {
             return null;
         }
 
-        return TerritoryClaimState.get(world).findOverlappingClaim(anchorPos, radius);
+        TerritoryClaimState state = TerritoryClaimState.get(world);
+        pruneInvalidLoadedClaims(world, state);
+        return state.findOverlappingClaim(anchorPos, radius);
     }
 
     public static boolean validateNewClaim(ServerLevel world, BlockPos anchorPos, ServerPlayer player) {
@@ -493,12 +518,23 @@ public final class TerritoryProtectionManager {
                 : List.of(claim);
 
         boolean changed = false;
+        boolean trustLimitReached = false;
 
         for (TerritoryClaim targetClaim : targetClaims) {
+            if (!targetClaim.canAddTrusted(target.getUUID())) {
+                trustLimitReached = true;
+                continue;
+            }
+
             if (targetClaim.addTrusted(
                     target.getUUID(),
                     target.getName().getString()
             )) {
+                changed = true;
+            }
+
+            if (connectedArea
+                    && targetClaim.setTrustedScopeMode(target.getUUID(), true)) {
                 changed = true;
             }
         }
@@ -506,25 +542,41 @@ public final class TerritoryProtectionManager {
         if (!changed) {
             manager.displayClientMessage(
                     Component.translatable(
-                            "eroded.territory.trust.already",
-                            target.getName().getString()
+                            trustLimitReached
+                                    ? "eroded.territory.trust.limit"
+                                    : "eroded.territory.trust.already",
+                            trustLimitReached
+                                    ? TerritoryClaim.MAX_TRUSTED_PLAYERS
+                                    : target.getName().getString()
                     ),
                     true
             );
             return false;
         }
 
+        if (trustLimitReached) {
+            manager.displayClientMessage(
+                    Component.translatable(
+                            "eroded.territory.trust.limit_partial",
+                            TerritoryClaim.MAX_TRUSTED_PLAYERS
+                    ),
+                    true
+            );
+        }
+
         TerritoryClaimState.get(world).setDirty();
 
-        manager.displayClientMessage(
-                Component.translatable(
-                        connectedArea
-                                ? "eroded.territory.trust.added.connected"
-                                : "eroded.territory.trust.added",
-                        target.getName().getString()
-                ),
-                true
-        );
+        if (!trustLimitReached) {
+            manager.displayClientMessage(
+                    Component.translatable(
+                            connectedArea
+                                    ? "eroded.territory.trust.added.connected"
+                                    : "eroded.territory.trust.added",
+                            target.getName().getString()
+                    ),
+                    true
+            );
+        }
 
         target.displayClientMessage(
                 Component.translatable(
@@ -584,8 +636,32 @@ public final class TerritoryProtectionManager {
                 : List.of(claim);
 
         boolean changed = false;
+        boolean trustLimitReached = false;
+        TerritoryClaim.TrustedPlayer sourceAccess = connectedArea
+                ? claim.getTrustedPlayer(targetUuid)
+                : null;
 
         for (TerritoryClaim targetClaim : targetClaims) {
+            // Self-heal saves created by older versions where the UI stored
+            // connectedScopeMode=true only on the current anchor. Before an
+            // area-wide permission change, make sure the trusted entry exists
+            // everywhere and carries the current anchor's permission mask.
+            if (connectedArea && sourceAccess != null) {
+                if (!targetClaim.canAddTrusted(targetUuid)) {
+                    trustLimitReached = true;
+                    continue;
+                }
+
+                if (targetClaim.syncTrustedAccess(
+                        targetUuid,
+                        sourceAccess.name(),
+                        sourceAccess.flags(),
+                        true
+                )) {
+                    changed = true;
+                }
+            }
+
             if (targetClaim.setTrustedPermission(
                     targetUuid,
                     permission,
@@ -593,6 +669,16 @@ public final class TerritoryProtectionManager {
             )) {
                 changed = true;
             }
+        }
+
+        if (trustLimitReached) {
+            manager.displayClientMessage(
+                    Component.translatable(
+                            "eroded.territory.trust.limit_partial",
+                            TerritoryClaim.MAX_TRUSTED_PLAYERS
+                    ),
+                    true
+            );
         }
 
         if (changed) {
@@ -631,18 +717,63 @@ public final class TerritoryProtectionManager {
             return false;
         }
 
-        if (targetUuid == null) {
+        if (targetUuid == null || claim.ownerUuid().equals(targetUuid)) {
             return false;
         }
 
-        if (claim.ownerUuid().equals(targetUuid)) {
+        TerritoryClaim.TrustedPlayer sourceAccess = claim.getTrustedPlayer(targetUuid);
+
+        if (sourceAccess == null) {
             return false;
         }
 
-        boolean changed = claim.setTrustedScopeMode(targetUuid, connectedScopeMode);
+        List<TerritoryClaim> connectedClaims = findConnectedClaims(world, claim);
+        boolean changed = false;
+        boolean trustLimitReached = false;
+
+        if (connectedScopeMode) {
+            // "All connected anchors" is not only a UI flag. The trusted
+            // player must exist on every connected claim; otherwise later
+            // area-wide permission updates have nothing to modify there. Copy
+            // the current anchor's permission mask to every connected anchor.
+            for (TerritoryClaim targetClaim : connectedClaims) {
+                if (!targetClaim.canAddTrusted(targetUuid)) {
+                    trustLimitReached = true;
+                    continue;
+                }
+
+                if (targetClaim.syncTrustedAccess(
+                        targetUuid,
+                        sourceAccess.name(),
+                        sourceAccess.flags(),
+                        true
+                )) {
+                    changed = true;
+                }
+            }
+        } else {
+            // Scope mode is a property of the connected management set. Keep
+            // it consistent on every anchor where the player is already
+            // trusted, but do not revoke trust from the other anchors.
+            for (TerritoryClaim targetClaim : connectedClaims) {
+                if (targetClaim.setTrustedScopeMode(targetUuid, false)) {
+                    changed = true;
+                }
+            }
+        }
 
         if (changed) {
             TerritoryClaimState.get(world).setDirty();
+        }
+
+        if (trustLimitReached) {
+            manager.displayClientMessage(
+                    Component.translatable(
+                            "eroded.territory.trust.limit_partial",
+                            TerritoryClaim.MAX_TRUSTED_PLAYERS
+                    ),
+                    true
+            );
         }
 
         return changed;
@@ -945,6 +1076,7 @@ public final class TerritoryProtectionManager {
             ServerPlayer player
     ) {
         TerritoryClaimState state = TerritoryClaimState.get(world);
+        pruneInvalidLoadedClaims(world, state);
 
         TerritoryClaim nearest = null;
         double nearestDistance = Double.MAX_VALUE;
@@ -955,11 +1087,6 @@ public final class TerritoryProtectionManager {
             }
 
             if (!claim.ownerUuid().equals(player.getUUID())) {
-                continue;
-            }
-
-            if (!world.getBlockState(claim.anchorPos()).is(ErodedBlocks.TERRITORY_ANCHOR)) {
-                state.remove(claim.anchorPos());
                 continue;
             }
 
@@ -1018,24 +1145,30 @@ public final class TerritoryProtectionManager {
         }
 
         TerritoryClaimState state = TerritoryClaimState.get(world);
+        pruneInvalidLoadedClaims(world, state);
+
+        TerritoryClaim persistedStart = state.getByAnchor(startClaim.anchorPos());
+
+        if (persistedStart == null || !persistedStart.active()) {
+            return result;
+        }
+
+        // One stable snapshot for the whole traversal. Besides avoiding live-map
+        // mutation hazards, this also avoids allocating a new claims snapshot
+        // for every BFS node. A spatial index is a separate performance task.
+        List<TerritoryClaim> allClaims = state.all();
 
         HashSet<BlockPos> visited = new HashSet<>();
         Queue<TerritoryClaim> queue = new ArrayDeque<>();
 
-        queue.add(startClaim);
-        visited.add(startClaim.anchorPos());
+        queue.add(persistedStart);
+        visited.add(persistedStart.anchorPos());
 
         while (!queue.isEmpty()) {
             TerritoryClaim current = queue.poll();
-
-            if (!isClaimStillValid(world, current)) {
-                state.remove(current.anchorPos());
-                continue;
-            }
-
             result.add(current);
 
-            for (TerritoryClaim candidate : state.all()) {
+            for (TerritoryClaim candidate : allClaims) {
                 if (candidate == current) {
                     continue;
                 }
@@ -1044,16 +1177,11 @@ public final class TerritoryProtectionManager {
                     continue;
                 }
 
-                if (!candidate.ownerUuid().equals(startClaim.ownerUuid())) {
+                if (!candidate.ownerUuid().equals(persistedStart.ownerUuid())) {
                     continue;
                 }
 
                 if (visited.contains(candidate.anchorPos())) {
-                    continue;
-                }
-
-                if (!isClaimStillValid(world, candidate)) {
-                    state.remove(candidate.anchorPos());
                     continue;
                 }
 
@@ -1069,44 +1197,93 @@ public final class TerritoryProtectionManager {
         return result;
     }
 
+    /**
+     * A claim in an unloaded chunk is retained without forcing that chunk to
+     * load. Once its anchor chunk is loaded, the block is authoritative and a
+     * missing anchor makes the persisted claim stale.
+     */
     private static boolean isClaimStillValid(ServerLevel world, TerritoryClaim claim) {
-        return world.getBlockState(claim.anchorPos()).is(ErodedBlocks.TERRITORY_ANCHOR);
-    }
+        BlockPos anchorPos = claim.anchorPos();
 
-    private static boolean areClaimsConnectedBySide(TerritoryClaim a, TerritoryClaim b) {
-        boolean touchesOnX =
-                claimMaxX(a) + 1 == claimMinX(b)
-                        || claimMaxX(b) + 1 == claimMinX(a);
-
-        boolean overlapsOnZ =
-                rangesOverlap(
-                        claimMinZ(a),
-                        claimMaxZ(a),
-                        claimMinZ(b),
-                        claimMaxZ(b)
-                );
-
-        if (touchesOnX && overlapsOnZ) {
+        if (!world.hasChunkAt(anchorPos)) {
             return true;
         }
 
-        boolean touchesOnZ =
-                claimMaxZ(a) + 1 == claimMinZ(b)
-                        || claimMaxZ(b) + 1 == claimMinZ(a);
+        return world.getBlockState(anchorPos).is(ErodedBlocks.TERRITORY_ANCHOR);
+    }
 
-        boolean overlapsOnX =
-                rangesOverlap(
-                        claimMinX(a),
-                        claimMaxX(a),
-                        claimMinX(b),
-                        claimMaxX(b)
-                );
+    /**
+     * Removes only claims whose anchor chunks are already loaded and whose
+     * anchor blocks are gone. This cleans ghost claims without causing chunk
+     * loads merely because a protection lookup happened elsewhere.
+     */
+    private static void pruneInvalidLoadedClaims(
+            ServerLevel world,
+            TerritoryClaimState state
+    ) {
+        List<BlockPos> staleAnchors = new ArrayList<>();
 
-        return touchesOnZ && overlapsOnX;
+        for (TerritoryClaim claim : state.all()) {
+            if (!isClaimStillValid(world, claim)) {
+                staleAnchors.add(claim.anchorPos());
+            }
+        }
+
+        for (BlockPos staleAnchor : staleAnchors) {
+            state.remove(staleAnchor);
+        }
+    }
+
+    private static boolean areClaimsConnectedBySide(TerritoryClaim a, TerritoryClaim b) {
+        int aMinX = claimMinX(a);
+        int aMaxX = claimMaxX(a);
+        int aMinZ = claimMinZ(a);
+        int aMaxZ = claimMaxZ(a);
+
+        int bMinX = claimMinX(b);
+        int bMaxX = claimMaxX(b);
+        int bMinZ = claimMinZ(b);
+        int bMaxZ = claimMaxZ(b);
+
+        boolean overlapsOnX = rangesOverlap(aMinX, aMaxX, bMinX, bMaxX);
+        boolean overlapsOnZ = rangesOverlap(aMinZ, aMaxZ, bMinZ, bMaxZ);
+
+        // If overlap protection is disabled, two overlapping claims owned by
+        // the same player still form one connected territory.
+        if (overlapsOnX && overlapsOnZ) {
+            return true;
+        }
+
+        int gapOnX = rangeGap(aMinX, aMaxX, bMinX, bMaxX);
+        int gapOnZ = rangeGap(aMinZ, aMaxZ, bMinZ, bMaxZ);
+
+        // Side connection only: the perpendicular ranges must overlap. This
+        // intentionally prevents diagonal/corner-only claims from connecting.
+        if (overlapsOnZ && gapOnX <= CLAIM_CONNECTION_GAP_TOLERANCE) {
+            return true;
+        }
+
+        return overlapsOnX && gapOnZ <= CLAIM_CONNECTION_GAP_TOLERANCE;
     }
 
     private static boolean rangesOverlap(int aMin, int aMax, int bMin, int bMax) {
         return aMin <= bMax && bMin <= aMax;
+    }
+
+    /**
+     * Number of completely unclaimed blocks between two inclusive ranges.
+     * Returns 0 for overlapping or directly adjacent ranges.
+     */
+    private static int rangeGap(int aMin, int aMax, int bMin, int bMax) {
+        if (rangesOverlap(aMin, aMax, bMin, bMax)) {
+            return 0;
+        }
+
+        if (aMax < bMin) {
+            return Math.max(0, bMin - aMax - 1);
+        }
+
+        return Math.max(0, aMin - bMax - 1);
     }
 
     private static int claimMinX(TerritoryClaim claim) {
@@ -1175,6 +1352,14 @@ public final class TerritoryProtectionManager {
             ServerPlayer player,
             BlockPos pos
     ) {
+        // A placement hint is visual-only. Never force-load a remote chunk just
+        // to discover its surface height; if the suggested area is not loaded,
+        // skip this marker until the player actually approaches it.
+        BlockPos probe = new BlockPos(pos.getX(), player.blockPosition().getY(), pos.getZ());
+        if (!world.hasChunkAt(probe)) {
+            return;
+        }
+
         int surfaceY = world.getHeight(
                 Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
                 pos.getX(),
