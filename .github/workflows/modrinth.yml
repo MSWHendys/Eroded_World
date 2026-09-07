@@ -58,7 +58,7 @@ jobs:
           changelog: ${{ github.event.release.body }}
 
           game-versions: |
-            1.21.8
+            1.21.10
 
           loaders: |
             fabric
