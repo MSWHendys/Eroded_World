@@ -3,6 +3,7 @@ package cz.mcsworld.eroded.death.block;
 import cz.mcsworld.eroded.death.DeathChestProtection;
 import cz.mcsworld.eroded.death.DeathChestState;
 import cz.mcsworld.eroded.death.gui.DeathInventoryScreenFactory;
+import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -52,7 +53,22 @@ public class DeathEnderChestBlock extends Block {
             return InteractionResult.CONSUME;
         }
 
-        sp.openMenu(new DeathInventoryScreenFactory(sw, pos));
+        UUID sessionToken = st.tryOpen(pos, sp.getUUID());
+        if (sessionToken == null) {
+            sp.sendOverlayMessage(
+                    Component.translatable("eroded.death.chest.in_use")
+            );
+            return InteractionResult.CONSUME;
+        }
+
+        var opened = sp.openMenu(
+                new DeathInventoryScreenFactory(sw, pos, sessionToken)
+        );
+
+        if (opened.isEmpty()) {
+            st.releaseOpen(pos, sessionToken);
+        }
+
         return InteractionResult.CONSUME;
     }
 }

@@ -1,70 +1,66 @@
 package cz.mcsworld.eroded.config.combat;
 
-import me.shedaniel.autoconfig.AutoConfig;
-import me.shedaniel.autoconfig.ConfigData;
-import me.shedaniel.autoconfig.annotation.Config;
-import me.shedaniel.autoconfig.annotation.ConfigEntry;
+import cz.mcsworld.eroded.config.ConfigValidation;
+import cz.mcsworld.eroded.config.ConfigValidationException;
+import cz.mcsworld.eroded.config.ErodedConfig;
+import cz.mcsworld.eroded.config.ErodedConfigs;
 
-@Config(name = "ErodedWorld/combat")
-public class CombatConfig implements ConfigData {
+public class CombatConfig implements ErodedConfig {
 
-    @ConfigEntry.Gui.Tooltip
     public boolean enabled = true;
 
-    @ConfigEntry.Gui.Tooltip
     public boolean debug = false;
 
-    @ConfigEntry.Gui.CollapsibleObject
     public Sprint sprint = new Sprint();
 
-    @ConfigEntry.Gui.CollapsibleObject
     public Dodge dodge = new Dodge();
 
     public static CombatConfig get() {
-        return AutoConfig
-                .getConfigHolder(CombatConfig.class)
-                .getConfig();
+        return ErodedConfigs.COMBAT;
+    }
+
+    @Override
+    public void validatePostLoad() throws ConfigValidationException {
+        ConfigValidation.notNull(sprint, "combat.sprint");
+        ConfigValidation.notNull(dodge, "combat.dodge");
+
+        ConfigValidation.min(sprint.drainIntervalTicks, 1, "combat.sprint.drainIntervalTicks");
+        ConfigValidation.min(sprint.energyPerInterval, 0, "combat.sprint.energyPerInterval");
+        ConfigValidation.min(sprint.minEnergyToSprint, 0, "combat.sprint.minEnergyToSprint");
+
+        ConfigValidation.min(dodge.cooldownTicks, 0, "combat.dodge.cooldownTicks");
+        ConfigValidation.min(dodge.energyCost, 0, "combat.dodge.energyCost");
+        ConfigValidation.range(dodge.maxDistance, 0.0, 16.0, "combat.dodge.maxDistance");
+        ConfigValidation.range(dodge.stepSize, 0.05, 4.0, "combat.dodge.stepSize");
     }
 
     public static class Sprint {
 
-        @ConfigEntry.Gui.Tooltip
         public boolean enabled = true;
 
-        @ConfigEntry.Gui.Tooltip
         public int drainIntervalTicks = 10;
 
-        @ConfigEntry.Gui.Tooltip
         public int energyPerInterval = 1;
 
-        @ConfigEntry.Gui.Tooltip
         public int minEnergyToSprint = 2;
 
-        @ConfigEntry.Gui.Tooltip
         public boolean stopSprintWhenEmpty = true;
     }
 
     public static class Dodge {
 
-        @ConfigEntry.Gui.Tooltip
         public boolean enabled = true;
 
-        @ConfigEntry.Gui.Tooltip
         public int cooldownTicks = 60;
 
-        @ConfigEntry.Gui.Tooltip
         public int energyCost = 15;
 
-        @ConfigEntry.Gui.Tooltip
         public double maxDistance = 2.8;
 
-        @ConfigEntry.Gui.Tooltip
         public double stepSize = 0.25;
 
-        @ConfigEntry.Gui.Tooltip
         public boolean allowBackward = true;
 
-        @ConfigEntry.Gui.Tooltip
         public boolean allowSideways = true;
     }
 }

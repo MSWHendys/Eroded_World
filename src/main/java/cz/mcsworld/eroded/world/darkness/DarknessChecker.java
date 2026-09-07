@@ -1,5 +1,6 @@
 package cz.mcsworld.eroded.world.darkness;
 
+import cz.mcsworld.eroded.config.darkness.DarknessConfigs;
 import cz.mcsworld.eroded.network.SafeNetworkUtil;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.server.MinecraftServer;
@@ -27,8 +28,10 @@ public final class DarknessChecker {
         tickCounter++;
         if (tickCounter % 20 != 0) return;
 
+        boolean enabled = DarknessConfigs.get().enabled;
+
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-            boolean inDarkness = isInDangerDarkness(player);
+            boolean inDarkness = enabled && isInDangerDarkness(player);
 
             UUID id = player.getUUID();
             boolean last = LAST_STATE.getOrDefault(id, false);

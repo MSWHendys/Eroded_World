@@ -36,5 +36,12 @@
         ]
       }
     }
-  }
+  },
+  "requirements": [
+    [
+      "has_cobblestone",
+      "has_lapis_lazuli",
+      "has_diamond"
+    ]
+  ]
 }

@@ -1,6 +1,8 @@
 package cz.mcsworld.eroded.death;
 
 import cz.mcsworld.eroded.death.block.ErodedBlocks;
+import java.util.ArrayList;
+import java.util.List;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -20,30 +22,41 @@ public final class DeathChestParticles {
     private static void onTick(MinecraftServer server) {
         tick++;
 
-        for (ServerLevel world : server.getAllLevels()) {
-            DeathChestState state = DeathChestState.get(world);
+        // Particles are emitted only twice per second, so scanning every death
+        // chest on the nine ticks in between is wasted work.
+        if (tick % 10 != 0) {
+            return;
+        }
 
-            var it = state.all().iterator();
-            while (it.hasNext()) {
-                DeathChestState.Entry e = it.next();
+        for (ServerLevel world : server.getAllLevels()) {
+            DeathChestState state = DeathChestState.getIfPresent(world);
+            if (state == null) {
+                continue;
+            }
+
+            var entries = state.all();
+            if (entries.isEmpty()) {
+                continue;
+            }
+
+            List<BlockPos> stale = new ArrayList<>();
+
+            for (DeathChestState.Entry e : entries) {
                 BlockPos pos = e.pos();
 
-                if (!world.getBlockState(pos).is(ErodedBlocks.DEATH_ENDER_CHEST)) {
-
-                    DeathHologramHandler.removeById(
-                            world,
-                            e.hologramId()
-                    );
-
-                    it.remove();
-                    state.setDirty();
-
+                // Never load a remote chunk just to validate/particle a death
+                // chest. Its physical block is checked once the chunk is loaded.
+                if (!world.hasChunkAt(pos)) {
                     continue;
                 }
 
-                if (!world.hasChunkAt(pos)) continue;
+                if (!world.getBlockState(pos).is(ErodedBlocks.DEATH_ENDER_CHEST)) {
+                    DeathHologramHandler.removeAt(world, pos, e.hologramId());
+                    stale.add(pos);
+                    continue;
+                }
 
-                if (tick % 10 == 0 && state.isProtected(pos)) {
+                if (state.isProtected(pos)) {
                     world.sendParticles(
                             ParticleTypes.SMOKE,
                             pos.getX() + 0.5,
@@ -54,6 +67,10 @@ public final class DeathChestParticles {
                             0.0
                     );
                 }
+            }
+
+            for (BlockPos pos : stale) {
+                state.remove(pos);
             }
         }
     }

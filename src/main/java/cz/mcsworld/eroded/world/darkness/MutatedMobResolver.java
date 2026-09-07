@@ -20,15 +20,19 @@ public final class MutatedMobResolver {
         ChunkPos cp = new ChunkPos(chunkX, chunkZ);
 
         TerritoryWorldState worldState =
-                TerritoryWorldState.get(world);
+                TerritoryWorldState.getIfPresent(world);
+
+        if (worldState == null) return false;
 
         TerritoryCellKey key =
                 TerritoryCellKey.fromChunk(cp.x(), cp.z());
 
         TerritoryCell cell =
-                worldState.getOrCreateCell(key);
+                worldState.getCell(key);
 
-        long tick = world.getServer().getTickCount();
+        if (cell == null) return false;
+
+        long tick = world.getGameTime();
 
         float threat =
                 TerritoryThreatResolver.computeThreat(cell, tick);

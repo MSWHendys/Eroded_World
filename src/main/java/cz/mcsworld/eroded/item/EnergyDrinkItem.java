@@ -1,6 +1,6 @@
 package cz.mcsworld.eroded.item;
 
-import cz.mcsworld.eroded.energy.EnergySyncHandler;
+import cz.mcsworld.eroded.config.energy.EnergyConfig;
 import cz.mcsworld.eroded.skills.SkillData;
 import cz.mcsworld.eroded.skills.SkillManager;
 import net.minecraft.ChatFormatting;
@@ -28,6 +28,9 @@ public class EnergyDrinkItem extends Item {
     public @NotNull InteractionResult use(@NotNull Level world, @NotNull Player user, @NotNull InteractionHand hand) {
 
         if (user instanceof ServerPlayer player) {
+            if (!EnergyConfig.get().server.enabled) {
+                return InteractionResult.FAIL;
+            }
             SkillData data = SkillManager.get(player);
 
             if (data.getEnergy() >= data.getMaxEnergy()) {
@@ -43,6 +46,9 @@ public class EnergyDrinkItem extends Item {
     public @NotNull ItemStack finishUsingItem(@NotNull ItemStack stack, @NotNull Level world, @NotNull LivingEntity user) {
 
         if (user instanceof ServerPlayer player) {
+            if (!EnergyConfig.get().server.enabled) {
+                return stack;
+            }
             SkillData data = SkillManager.get(player);
 
             if (data.getEnergy() >= data.getMaxEnergy()) {
@@ -51,8 +57,6 @@ public class EnergyDrinkItem extends Item {
 
             data.setEnergy(data.getMaxEnergy());
             SkillManager.save(player);
-
-            EnergySyncHandler.forceSync(player);
 
             CriteriaTriggers.CONSUME_ITEM.trigger(player, stack);
         }

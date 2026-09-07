@@ -76,12 +76,14 @@ public final class TerritoryDebugOverlay {
         int chunkX = SectionPos.blockToSectionCoord(player.getBlockX());
         int chunkZ = SectionPos.blockToSectionCoord(player.getBlockZ());
 
-        TerritoryWorldState state = TerritoryWorldState.get(world);
-        TerritoryCell cell = state.getOrCreateCell(TerritoryCellKey.fromChunk(chunkX, chunkZ));
+        TerritoryWorldState state = TerritoryWorldState.getIfPresent(world);
+        TerritoryCell cell = state == null
+                ? new TerritoryCell()
+                : state.copyCellOrEmpty(TerritoryCellKey.fromChunk(chunkX, chunkZ));
 
         float threat = TerritoryThreatResolver.computeThreat(
                 cell,
-                world.getServer().getTickCount()
+                world.getGameTime()
         );
 
         String predictedKey = (avgCg < craftingCfg.qualityPoorToStandard)

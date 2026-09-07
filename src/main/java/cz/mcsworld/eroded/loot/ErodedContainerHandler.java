@@ -37,7 +37,6 @@ public class ErodedContainerHandler {
             }
 
             if (be instanceof BarrelBlockEntity barrel) {
-
                 ErodedLootManager.handleOpen(player, (ServerLevel) world, pos, barrel);
             }
 

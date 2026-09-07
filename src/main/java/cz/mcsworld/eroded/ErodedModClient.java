@@ -15,13 +15,14 @@ import cz.mcsworld.eroded.client.input.DodgeInputHandler;
 import cz.mcsworld.eroded.client.screen.TerritoryModuleScreen;
 import cz.mcsworld.eroded.client.ui.EnergyWarningClientHandler;
 import cz.mcsworld.eroded.config.darkness.DarknessConfigs;
+import cz.mcsworld.eroded.config.ErodedConfigs;
 import cz.mcsworld.eroded.core.ErodedScreenHandlers;
 import cz.mcsworld.eroded.gui.ErodedCompassTooltip;
 import cz.mcsworld.eroded.gui.ErodedTooltip;
 import cz.mcsworld.eroded.network.*;
 import cz.mcsworld.eroded.visuals.darkness.DarknessDebugOverlay;
-import me.shedaniel.autoconfig.AutoConfig;
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import cz.mcsworld.eroded.gui.ErodedSpecialItemTooltip;
@@ -35,16 +36,23 @@ import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 
 
 public class ErodedModClient implements ClientModInitializer {
-    private static long lastConfigSave = 0;
-    private static final long SAVE_COOLDOWN_MS = 2000;
+    private static final long SOUND_CONFIG_SAVE_DEBOUNCE_MS = 2000L;
+    private static boolean soundConfigSavePending = false;
+    private static long soundConfigSaveDueAtMs = 0L;
 
-    @Deprecated
+    private static void flushPendingSoundConfigSave() {
+        if (!soundConfigSavePending) return;
+
+        ErodedConfigs.saveDarkness();
+        soundConfigSavePending = false;
+        soundConfigSaveDueAtMs = 0L;
+    }
+
     @Override
     public void onInitializeClient() {
 
         EnergyHud.register();
         DarknessDebugOverlay.register();
-        EnergyScreenOverlay.register();
         EnergyScreenOverlay.register();
         MenuScreens.register(
                 ErodedScreenHandlers.TERRITORY_MODULE,
@@ -87,11 +95,34 @@ public class ErodedModClient implements ClientModInitializer {
 
         ClientPlayNetworking.registerGlobalReceiver(
                 EnergySyncPacket.ID,
-                (payload, context) -> ClientEnergyData.update(
-                        payload.energy(),
-                        payload.maxEnergy(),
-                        payload.immunitySeconds()
-                )
+                (payload, context) -> context.client().execute(() -> {
+                    boolean hadEnergyState = ClientEnergyData.isInitialized();
+                    int previousEnergy = ClientEnergyData.getEnergy();
+
+                    ClientEnergyData.update(
+                            payload.enabled(),
+                            payload.energy(),
+                            payload.maxEnergy(),
+                            payload.immunitySeconds(),
+                            payload.miningEnabled(),
+                            payload.miningSpeedScalingEnabled(),
+                            payload.miningAllowAtZero(),
+                            payload.miningFullSpeedFromPercent(),
+                            payload.miningReducedSpeedFromPercent(),
+                            payload.miningReducedSpeedPercent(),
+                            payload.miningCriticalSpeedPercent()
+                    );
+
+                    if (!payload.enabled()) {
+                        EnergyHud.resetWarning();
+                        EnergyScreenOverlay.resetEnergyState();
+                    } else if (hadEnergyState && payload.energy() > previousEnergy) {
+                        // Energy warnings describe a worsening transition.
+                        // Once Energy rises again, an old warning is no longer valid.
+                        EnergyHud.resetWarning();
+                        EnergyScreenOverlay.resetWarning();
+                    }
+                })
         );
 
 
@@ -151,6 +182,22 @@ public class ErodedModClient implements ClientModInitializer {
         );
 
         ClientPlayNetworking.registerGlobalReceiver(
+                HudPositionSyncPacket.ID,
+                (payload, context) -> context.client().execute(() -> {
+                    var hud = cz.mcsworld.eroded.config.energy.EnergyConfig.get().client.hud;
+
+                    if (hud.hudPosition != payload.position()) {
+                        hud.hudPosition = payload.position();
+                        ErodedConfigs.saveEnergy();
+                    }
+
+                    // Always preview the requested position, even when Energy is full
+                    // or the player selected the position that was already active.
+                    EnergyHud.showPositionPreview();
+                })
+        );
+
+        ClientPlayNetworking.registerGlobalReceiver(
                 SoundTuningSyncPacket.ID,
                 (payload, context) -> context.client().execute(() -> {
 
@@ -171,12 +218,13 @@ public class ErodedModClient implements ClientModInitializer {
                     }
 
                     if (changed) {
-                        long now = System.currentTimeMillis();
-
-                        if (now - lastConfigSave > SAVE_COOLDOWN_MS) {
-                            AutoConfig.getConfigHolder(DarknessConfigs.class).save();
-                            lastConfigSave = now;
-                        }
+                        // True debounce: always persist the latest values after
+                        // the burst quiets down. The old cooldown could leave a
+                        // change only in RAM forever when it arrived inside the
+                        // 2-second window and no later packet followed.
+                        soundConfigSavePending = true;
+                        soundConfigSaveDueAtMs = System.currentTimeMillis()
+                                + SOUND_CONFIG_SAVE_DEBOUNCE_MS;
                     }
                 })
         );
@@ -186,6 +234,19 @@ public class ErodedModClient implements ClientModInitializer {
                 cz.mcsworld.eroded.client.data.DarknessClientData.updateLightLevel(client);
             }
         });
+
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            if (soundConfigSavePending
+                    && System.currentTimeMillis() >= soundConfigSaveDueAtMs) {
+                flushPendingSoundConfigSave();
+            }
+        });
+
+        // Do not lose a command-driven sound preference if the client closes
+        // during the debounce window.
+        ClientLifecycleEvents.CLIENT_STOPPING.register(client ->
+                flushPendingSoundConfigSave()
+        );
 
         ClientPlayNetworking.registerGlobalReceiver(
                 TerritoryModuleSyncPayload.ID,

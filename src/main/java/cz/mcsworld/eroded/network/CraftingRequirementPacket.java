@@ -8,13 +8,15 @@ import org.jetbrains.annotations.NotNull;
 
 public record CraftingRequirementPacket(String key) implements CustomPacketPayload {
 
+    public static final int MAX_KEY_LENGTH = 128;
+
     public static final Type<@NotNull CraftingRequirementPacket> ID =
             new Type<>(Identifier.fromNamespaceAndPath("eroded", "crafting_requirement"));
 
     public static final StreamCodec<@NotNull RegistryFriendlyByteBuf, @NotNull CraftingRequirementPacket> CODEC =
             StreamCodec.ofMember(
-                    (packet, buf) -> buf.writeUtf(packet.key()),
-                    buf -> new CraftingRequirementPacket(buf.readUtf())
+                    (packet, buf) -> buf.writeUtf(packet.key(), MAX_KEY_LENGTH),
+                    buf -> new CraftingRequirementPacket(buf.readUtf(MAX_KEY_LENGTH))
             );
 
     @Override

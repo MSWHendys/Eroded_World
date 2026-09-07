@@ -1,169 +1,157 @@
 package cz.mcsworld.eroded.config.death;
 
-import me.shedaniel.autoconfig.AutoConfig;
-import me.shedaniel.autoconfig.ConfigData;
-import me.shedaniel.autoconfig.annotation.Config;
-import me.shedaniel.autoconfig.annotation.ConfigEntry;
+import cz.mcsworld.eroded.config.ConfigValidation;
+import cz.mcsworld.eroded.config.ConfigValidationException;
+import cz.mcsworld.eroded.config.ErodedConfig;
+import cz.mcsworld.eroded.config.ErodedConfigs;
 
-@Config(name = "ErodedWorld/death")
-public class DeathConfig implements ConfigData {
+public class DeathConfig implements ErodedConfig {
 
-    @ConfigEntry.Gui.CollapsibleObject
     public Chest chest = new Chest();
 
-    @ConfigEntry.Gui.CollapsibleObject
     public Protection protection = new Protection();
 
-    @ConfigEntry.Gui.CollapsibleObject
     public RespawnProtection respawnProtection = new RespawnProtection();
 
-    @ConfigEntry.Gui.CollapsibleObject
     public Compass compass = new Compass();
 
-    @ConfigEntry.Gui.CollapsibleObject
     public CompassWeapon compassWeapon = new CompassWeapon();
 
-    @ConfigEntry.Gui.CollapsibleObject
     public Hologram hologram = new Hologram();
 
     public static DeathConfig get() {
-        return AutoConfig
-                .getConfigHolder(DeathConfig.class)
-                .getConfig();
+        return ErodedConfigs.DEATH;
+    }
+
+    @Override
+    public void validatePostLoad() throws ConfigValidationException {
+        ConfigValidation.notNull(chest, "death.chest");
+        ConfigValidation.notNull(protection, "death.protection");
+        ConfigValidation.notNull(respawnProtection, "death.respawnProtection");
+        ConfigValidation.notNull(compass, "death.compass");
+        ConfigValidation.notNull(compass.heartbeat, "death.compass.heartbeat");
+        ConfigValidation.notNull(compass.stress, "death.compass.stress");
+        ConfigValidation.notNull(compass.darknessBreak, "death.compass.darknessBreak");
+        ConfigValidation.notNull(compassWeapon, "death.compassWeapon");
+        ConfigValidation.notNull(hologram, "death.hologram");
+
+        ConfigValidation.min(chest.protectionTicks, 0, "death.chest.protectionTicks");
+        ConfigValidation.min(protection.minMinutes, 0, "death.protection.minMinutes");
+        ConfigValidation.require(protection.maxMinutes >= protection.minMinutes, "death.protection.maxMinutes", "must be >= minMinutes");
+        ConfigValidation.min(protection.minutesPerBlock, 0.0, "death.protection.minutesPerBlock");
+        ConfigValidation.min(respawnProtection.durationTicks, 0, "death.respawnProtection.durationTicks");
+        ConfigValidation.range(respawnProtection.clearTargetRadius, 0.0, 128.0, "death.respawnProtection.clearTargetRadius");
+        ConfigValidation.min(compass.heartbeat.minInterval, 1, "death.compass.heartbeat.minInterval");
+        ConfigValidation.require(compass.heartbeat.maxInterval >= compass.heartbeat.minInterval, "death.compass.heartbeat.maxInterval", "must be >= minInterval");
+        ConfigValidation.range(compass.heartbeat.dropCleanupRadius, 0.0, 128.0, "death.compass.heartbeat.dropCleanupRadius");
+        ConfigValidation.min(compass.stress.minDistance, 0.0, "death.compass.stress.minDistance");
+        ConfigValidation.require(compass.stress.maxDistance >= compass.stress.minDistance && Double.isFinite(compass.stress.maxDistance), "death.compass.stress.maxDistance", "must be finite and >= minDistance");
+        ConfigValidation.min(compass.darknessBreak.durationTicks, 0, "death.compass.darknessBreak.durationTicks");
+        ConfigValidation.min(compass.darknessBreak.cooldownTicks, 0, "death.compass.darknessBreak.cooldownTicks");
+        ConfigValidation.range(compass.darknessBreak.maxDarkness, 0.0f, 1.0f, "death.compass.darknessBreak.maxDarkness");
+        ConfigValidation.min(compassWeapon.damage, 0.0f, "death.compassWeapon.damage");
+        ConfigValidation.min(compassWeapon.cooldownTicks, 0, "death.compassWeapon.cooldownTicks");
+        ConfigValidation.finite(hologram.rotationSpeed, "death.hologram.rotationSpeed");
+        ConfigValidation.finite(hologram.bobbingSpeed, "death.hologram.bobbingSpeed");
+        ConfigValidation.min(hologram.bobbingAmplitude, 0.0f, "death.hologram.bobbingAmplitude");
     }
 
     public static class Chest {
 
-        @ConfigEntry.Gui.Tooltip
         public int protectionTicks = 6000;
     }
 
     public static class Protection {
 
-        @ConfigEntry.Gui.Tooltip
         public boolean distanceBased = true;
 
-        @ConfigEntry.Gui.Tooltip
         public int minMinutes = 3;
 
-        @ConfigEntry.Gui.Tooltip
         public int maxMinutes = 20;
 
-        @ConfigEntry.Gui.Tooltip
         public double minutesPerBlock = 0.01;
 
-        @ConfigEntry.Gui.Tooltip
         public boolean useSpawnIfNoBed = true;
     }
 
     public static class RespawnProtection {
 
-        @ConfigEntry.Gui.Tooltip
         public boolean enabled = true;
 
-        @ConfigEntry.Gui.Tooltip
         public int durationTicks = 600;
 
-        @ConfigEntry.Gui.Tooltip
         public double clearTargetRadius = 12.0;
 
-        @ConfigEntry.Gui.Tooltip
         public boolean preventDamage = true;
 
-        @ConfigEntry.Gui.Tooltip
         public boolean clearMobTargets = true;
 
-        @ConfigEntry.Gui.Tooltip
         public boolean cancelOnAttack = true;
 
-        @ConfigEntry.Gui.Tooltip
         public boolean showMessage = true;
     }
 
     public static class Compass {
 
-        @ConfigEntry.Gui.CollapsibleObject
         public Heartbeat heartbeat = new Heartbeat();
 
-        @ConfigEntry.Gui.CollapsibleObject
         public Stress stress = new Stress();
 
-        @ConfigEntry.Gui.CollapsibleObject
         public DarknessBreak darknessBreak = new DarknessBreak();
 
         public static class Heartbeat {
 
-            @ConfigEntry.Gui.Tooltip
             public int minInterval = 40;
 
-            @ConfigEntry.Gui.Tooltip
             public int maxInterval = 120;
 
-            @ConfigEntry.Gui.Tooltip
             public double dropCleanupRadius = 2.5;
         }
 
         public static class Stress {
 
-            @ConfigEntry.Gui.Tooltip
             public double minDistance = 8.0;
 
-            @ConfigEntry.Gui.Tooltip
             public double maxDistance = 128.0;
         }
 
         public static class DarknessBreak {
 
-            @ConfigEntry.Gui.Tooltip
             public boolean enabled = true;
 
-            @ConfigEntry.Gui.Tooltip
             public int durationTicks = 160;
 
-            @ConfigEntry.Gui.Tooltip
             public int cooldownTicks = 600;
 
-            @ConfigEntry.Gui.Tooltip
             public float maxDarkness = 0.25F;
 
-            @ConfigEntry.Gui.Tooltip
             public boolean requireValidTarget = true;
         }
     }
 
     public static class CompassWeapon {
 
-        @ConfigEntry.Gui.Tooltip
         public boolean enabled = true;
 
-        @ConfigEntry.Gui.Tooltip
         public float damage = 8.0F;
 
-        @ConfigEntry.Gui.Tooltip
         public int cooldownTicks = 13;
 
-        @ConfigEntry.Gui.Tooltip
         public boolean damageHostileMobs = true;
 
-        @ConfigEntry.Gui.Tooltip
         public boolean damagePlayers = true;
 
-        @ConfigEntry.Gui.Tooltip
         public boolean damageOtherLivingEntities = false;
 
-        @ConfigEntry.Gui.Tooltip
         public boolean requireActiveDeathMemory = true;
     }
 
     public static class Hologram {
 
-        @ConfigEntry.Gui.Tooltip
         public float rotationSpeed = 3.0f;
 
-        @ConfigEntry.Gui.Tooltip
         public float bobbingSpeed = 0.1f;
 
-        @ConfigEntry.Gui.Tooltip
         public float bobbingAmplitude = 0.05f;
     }
 }
