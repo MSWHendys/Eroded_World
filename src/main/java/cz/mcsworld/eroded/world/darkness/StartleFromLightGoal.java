@@ -16,18 +16,18 @@ public final class StartleFromLightGoal extends Goal {
     private BlockPos lightPos;
     private int ticksLeft;
 
-    private final int escapeDistance;
     private final double speed;
 
-    public StartleFromLightGoal(Monster mob, int escapeDistance, double speed) {
+    public StartleFromLightGoal(Monster mob, double speed) {
         this.mob = mob;
-        this.escapeDistance = escapeDistance;
         this.speed = speed;
         this.setFlags(EnumSet.of(Flag.MOVE, Flag.LOOK));
     }
 
     @Override
     public boolean canUse() {
+        var root = DarknessConfigs.get();
+        if (!root.enabled || !root.server.mobLightFearEnabled) return false;
         if (!mob.isAlive()) return false;
         if (!(mob.level() instanceof ServerLevel world)) return false;
 
@@ -56,7 +56,9 @@ public final class StartleFromLightGoal extends Goal {
 
     @Override
     public boolean canContinueToUse() {
-        return mob.isAlive() && ticksLeft-- > 0;
+        var root = DarknessConfigs.get();
+        return root.enabled && root.server.mobLightFearEnabled
+                && mob.isAlive() && ticksLeft-- > 0;
     }
 
     @Override
@@ -76,6 +78,7 @@ public final class StartleFromLightGoal extends Goal {
         Vec3 escape = DarknessLightResolver.escapeFrom(pos, lightPos);
         if (escape.lengthSqr() < 0.0001) return;
 
+        int escapeDistance = DarknessConfigs.get().server.escapeDistance;
         BlockPos target = pos.offset(
                 (int) Math.round(escape.x * escapeDistance),
                 0,

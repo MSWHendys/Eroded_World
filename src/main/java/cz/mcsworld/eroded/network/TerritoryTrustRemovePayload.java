@@ -14,6 +14,9 @@ public record TerritoryTrustRemovePayload(
         boolean connectedArea
 ) implements CustomPacketPayload {
 
+    public static final int MAX_UUID_LENGTH = 36;
+    public static final int MAX_TARGET_NAME_LENGTH = 16;
+
     public static final Type<TerritoryTrustRemovePayload> ID =
             new Type<>(ResourceLocation.fromNamespaceAndPath(ErodedMod.MOD_ID, "territory_trust_remove"));
 
@@ -29,16 +32,16 @@ public record TerritoryTrustRemovePayload(
 
     private void write(RegistryFriendlyByteBuf buf) {
         BlockPos.STREAM_CODEC.encode(buf, anchorPos);
-        buf.writeUtf(targetUuid);
-        buf.writeUtf(targetName);
+        buf.writeUtf(targetUuid, MAX_UUID_LENGTH);
+        buf.writeUtf(targetName, MAX_TARGET_NAME_LENGTH);
         buf.writeBoolean(connectedArea);
     }
 
     private static TerritoryTrustRemovePayload read(RegistryFriendlyByteBuf buf) {
         return new TerritoryTrustRemovePayload(
                 BlockPos.STREAM_CODEC.decode(buf),
-                buf.readUtf(),
-                buf.readUtf(),
+                buf.readUtf(MAX_UUID_LENGTH),
+                buf.readUtf(MAX_TARGET_NAME_LENGTH),
                 buf.readBoolean()
         );
     }

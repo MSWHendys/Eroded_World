@@ -10,42 +10,31 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.ItemOwner;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
 @Environment(EnvType.CLIENT)
 public final class ErodedDeathCompassAngle implements RangeSelectItemModelProperty {
 
-    public static final MapCodec<ErodedDeathCompassAngle> MAP_CODEC =
-            MapCodec.unit(new ErodedDeathCompassAngle());
+    public static final MapCodec<ErodedDeathCompassAngle> MAP_CODEC = MapCodec.unit(new ErodedDeathCompassAngle());
 
     @Override
-    public float get(ItemStack stack, @Nullable ClientLevel world, @Nullable ItemOwner context, int seed) {
-        if (world == null || context == null) {
-            return 0.0F;
-        }
+    public float get(ItemStack stack, @Nullable ClientLevel world, @Nullable ItemOwner owner, int seed) {
+        if (owner == null || world == null) return 0.0F;
 
         if (!ErodedCompassClientData.isActive()) {
             return 0.0F;
         }
 
         BlockPos target = ErodedCompassClientData.getTarget();
-        if (target == null) {
-            return 0.0F;
-        }
+        if (target == null) return 0.0F;
 
-        Vec3 entityPos = context.position();
+        double dx = (target.getX() + 0.5) - owner.position().x;
+        double dz = (target.getZ() + 0.5) - owner.position().z;
 
-        double dx = (target.getX() + 0.5) - entityPos.x;
-        double dz = (target.getZ() + 0.5) - entityPos.z;
+        double angleToTarget = (Math.atan2(dz, dx) / (Math.PI * 2.0));
+        double playerYaw = Mth.positiveModulo(owner.getVisualRotationYInDegrees() / 360.0, 1.0);
 
-        double angleToTarget = Math.atan2(dz, dx) / (Math.PI * 2.0);
-        double playerYaw = Mth.positiveModulo(context.getVisualRotationYInDegrees() / 360.0, 1.0);
-
-        return (float) Mth.positiveModulo(
-                0.5 - (playerYaw - 0.25 - angleToTarget) + 0.5F,
-                1.0
-        );
+        return (float) Mth.positiveModulo(0.5 - (playerYaw - 0.25 - angleToTarget) + 0.5f, 1.0);
     }
 
     @Override

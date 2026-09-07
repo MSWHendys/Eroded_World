@@ -41,6 +41,32 @@ public class SkillData {
 
     private long immunityUntilMs = 0;
 
+    // Persistent deterministic mining-work accumulator. It stores weighted
+    // work units, not Energy, so partial mining progress survives relogs.
+    private int miningWorkProgress = 0;
+
+
+    public int getMiningWorkProgress() {
+        return miningWorkProgress;
+    }
+
+    public void setMiningWorkProgress(int value) {
+        miningWorkProgress = Math.max(0, value);
+    }
+
+    /**
+     * Adds weighted mining work and returns how many whole Energy points
+     * became due. The remainder is kept for the next mined block.
+     */
+    public int addMiningWork(int workUnits, int workUnitsPerEnergy) {
+        if (workUnits <= 0 || workUnitsPerEnergy <= 0) return 0;
+
+        long total = (long) miningWorkProgress + workUnits;
+        int cost = (int) Math.min(Integer.MAX_VALUE, total / workUnitsPerEnergy);
+        miningWorkProgress = (int) (total % workUnitsPerEnergy);
+        return cost;
+    }
+
     public enum EnergyState {
         NORMAL,
         TIRED,
@@ -61,6 +87,9 @@ public class SkillData {
 
     private EnergyState calculateEnergyState() {
         var root = EnergyConfig.get();
+        if (!root.server.enabled) {
+            return EnergyState.NORMAL;
+        }
         var cfg = root.server.thresholds;
         if (collapsed) {
             return EnergyState.EMPTY;
@@ -107,19 +136,72 @@ public class SkillData {
     }
 
     public void setImmunity(int seconds) {
+        if (!EnergyConfig.get().server.enabled) return;
         this.immunityUntilMs = System.currentTimeMillis() + (seconds * 1000L);
     }
 
+    public long getImmunityUntilMs() {
+        if (immunityUntilMs <= System.currentTimeMillis()) {
+            immunityUntilMs = 0L;
+        }
+        return immunityUntilMs;
+    }
+
+    public boolean isCollapsed() {
+        regenerateEnergy();
+        return collapsed;
+    }
+
+    public long getCollapseUntilMs() {
+        regenerateEnergy();
+        return collapsed ? collapseUntilMs : 0L;
+    }
+
+    /**
+     * Restores the persisted time-based energy state after login/restart.
+     * Expired timers are normalized immediately so a reconnect cannot bypass
+     * collapse and an old timer cannot leave the player stuck at zero energy.
+     */
+    public void restoreTemporalState(boolean wasCollapsed, long persistedCollapseUntilMs, long persistedImmunityUntilMs) {
+        long now = System.currentTimeMillis();
+
+        immunityUntilMs = persistedImmunityUntilMs > now
+                ? persistedImmunityUntilMs
+                : 0L;
+
+        if (wasCollapsed && persistedCollapseUntilMs > now) {
+            collapsed = true;
+            collapseUntilMs = persistedCollapseUntilMs;
+            immunityUntilMs = 0L;
+        } else {
+            collapsed = false;
+            collapseUntilMs = 0L;
+
+            // If a persisted collapse elapsed while the player/server was
+            // offline, finish the same recovery that regenerateEnergy() would
+            // have performed online.
+            if (wasCollapsed && energy <= 0) {
+                energy = Math.min(getMaxEnergy(), 1);
+            }
+        }
+
+        lastRegenTime = now;
+        lastEnergyState = calculateEnergyState();
+    }
+
     public boolean isImmune() {
-        return System.currentTimeMillis() < immunityUntilMs;
+        return EnergyConfig.get().server.enabled
+                && System.currentTimeMillis() < immunityUntilMs;
     }
 
     public long getImmunityRemainingMs() {
+        if (!EnergyConfig.get().server.enabled) return 0;
         return Math.max(0, immunityUntilMs - System.currentTimeMillis());
     }
 
 
     public boolean hasEnoughEnergy(int amount) {
+        if (!EnergyConfig.get().server.enabled) return true;
         regenerateEnergy();
 
         if (isImmune() && !collapsed) return true;
@@ -127,6 +209,7 @@ public class SkillData {
     }
 
     public boolean canAffordEnergy(int amount) {
+        if (!EnergyConfig.get().server.enabled) return true;
         regenerateEnergy();
         if (isImmune() && !collapsed) return true;
         return !collapsed && energy >= amount;
@@ -140,6 +223,7 @@ public class SkillData {
 
     public void consumeEnergy(int amount) {
 
+        if (!EnergyConfig.get().server.enabled) return;
         if (isImmune()) return;
 
         if (collapsed || amount <= 0) return;
@@ -155,6 +239,7 @@ public class SkillData {
     }
 
     public void addEnergy(int amount) {
+        if (!EnergyConfig.get().server.enabled) return;
         regenerateEnergy();
         if (amount <= 0) return;
 
@@ -162,6 +247,7 @@ public class SkillData {
 
         if (energy > 0) {
             collapsed = false;
+            collapseUntilMs = 0L;
         }
 
         lastEnergyState = calculateEnergyState();
@@ -169,7 +255,16 @@ public class SkillData {
 
     public void setEnergy(int value) {
         energy = Math.max(0, Math.min(getMaxEnergy(), value));
-        collapsed = false;
+
+        // Part 8B.1: zero Energy must have one meaning regardless of how it
+        // was reached. Previously /eroded energy <player> 0 explicitly cleared
+        // collapse, while normal Energy consumption entered collapse.
+        if (EnergyConfig.get().server.enabled && energy == 0) {
+            enterCollapse();
+        } else {
+            collapsed = false;
+            collapseUntilMs = 0L;
+        }
 
         lastEnergyState = calculateEnergyState();
     }
@@ -177,13 +272,18 @@ public class SkillData {
     public void setEnergyAfterDeath(float ratio) {
         int target = Math.max(0, (int) (getMaxEnergy() * ratio));
         setEnergy(target);
+        // Death ends temporary adrenaline protection. Otherwise a player could
+        // die and respawn with the old energy-drain immunity still active.
+        immunityUntilMs = 0L;
     }
 
     public void initialize() {
         energy = getMaxEnergy();
         collapsed = false;
+        collapseUntilMs = 0L;
         lastRegenTime = System.currentTimeMillis();
-        immunityUntilMs = 0;
+        immunityUntilMs = 0L;
+        miningWorkProgress = 0;
 
         lastEnergyState = calculateEnergyState();
     }
@@ -196,10 +296,28 @@ public class SkillData {
         immunityUntilMs = 0;
     }
 
+    public void pauseRegenerationClock() {
+        lastRegenTime = System.currentTimeMillis();
+    }
+
     private void regenerateEnergy() {
         var root = EnergyConfig.get();
-        var cfg = root.server.regen;
         long now = System.currentTimeMillis();
+
+        if (!root.server.enabled) {
+            lastRegenTime = now;
+            return;
+        }
+
+        var cfg = root.server.regen;
+
+        // A zero-Energy state must never remain as a normal walking state.
+        // This also normalizes old saves or Energy set to 0 while the master
+        // switch was disabled once Energy is enabled again.
+        if (!collapsed && energy <= 0) {
+            enterCollapse();
+            return;
+        }
 
         if (collapsed) {
             if (now < collapseUntilMs) {
@@ -207,11 +325,15 @@ public class SkillData {
             }
             energy = 1;
             collapsed = false;
+            collapseUntilMs = 0L;
             lastRegenTime = now;
             return;
         }
 
-        if (!cfg.passiveRegenEnabled) return;
+        if (!cfg.passiveRegenEnabled) {
+            lastRegenTime = now;
+            return;
+        }
 
         long intervalMs = cfg.regenIntervalSeconds * 1000L;
         long elapsed = now - lastRegenTime;

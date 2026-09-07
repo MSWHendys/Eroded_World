@@ -48,6 +48,11 @@ public final class SkillPersistentState extends SavedData {
 
         if (record != null) {
             SkillDataRecord.applyToSkillData(data, record);
+        } else {
+            // The old energy-only persistence used a max-energy fallback for
+            // first-time players. Once SkillPersistentState becomes the sole
+            // authority we must preserve that behaviour here explicitly.
+            data.initialize();
         }
 
         return data;

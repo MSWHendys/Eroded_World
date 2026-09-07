@@ -1,8 +1,6 @@
 package cz.mcsworld.eroded.death;
 
 import cz.mcsworld.eroded.core.ErodedItems;
-import cz.mcsworld.eroded.skills.SkillData;
-import cz.mcsworld.eroded.skills.SkillManager;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
@@ -23,10 +21,6 @@ public final class TraumaEffectHandler {
                 (oldPlayer, newPlayer, alive) -> {
 
                     if (alive) return;
-
-                    SkillData data = SkillManager.get(newPlayer);
-                    data.setEnergyAfterDeath(0.35f);
-                    SkillManager.save(newPlayer);
 
                     newPlayer.addEffect(
                             new MobEffectInstance(

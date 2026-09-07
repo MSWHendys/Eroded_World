@@ -14,6 +14,7 @@
     "CraftingResultSlotAccessor",
     "ItemMixin",
     "PlayerBlockBreakMixin",
+    "PlayerMiningSpeedMixin",
     "ExplosionProtectionMixin",
     "PlayerBlockPlaceMixin",
     "BucketProtectionMixin",
@@ -36,13 +37,14 @@
     "FarmlandBlockInvoker",
     "FarmlandTrampleProtectionMixin",
     "TurtleEggProtectionMixin",
-    "VehicleDamageProtectionMixin"
-
+    "VehicleDamageProtectionMixin",
+    "PlayerDeathInventoryMixin"
   ],
   "client": [
     "InGameHudMixin",
     "client.NumericPropertiesMixin",
-    "client.HeldItemRendererMixin"
+    "client.HeldItemRendererMixin",
+    "client.PlayerMiningSpeedClientMixin"
   ],
   "server": []
 }

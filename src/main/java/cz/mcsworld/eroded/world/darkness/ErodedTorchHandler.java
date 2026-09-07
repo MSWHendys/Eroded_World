@@ -6,34 +6,15 @@ import cz.mcsworld.eroded.item.ErodedTorchItem;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LightLayer;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.LightBlock;
-import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 public final class ErodedTorchHandler {
-
-    private static final Map<UUID, LastLight> LAST_LIGHT =
-            new ConcurrentHashMap<>();
-
-    private ErodedTorchHandler() {
-    }
-
-    private record LastLight(
-            ResourceKey<Level> worldKey,
-            BlockPos pos
-    ) {
-    }
 
     public static void register() {
         ServerTickEvents.END_SERVER_TICK.register(ErodedTorchHandler::onTick);
@@ -84,11 +65,16 @@ public final class ErodedTorchHandler {
         ItemStack torch = getHeldTorch(player);
         boolean held = !torch.isEmpty();
 
+        if (!systemEnabled) {
+            cleanup(uuid, server);
+            return;
+        }
+
         if (rechargeTick) {
             rechargeInventory(player);
         }
 
-        if (!systemEnabled || !held) {
+        if (!held) {
             cleanup(uuid, server);
             return;
         }
@@ -133,49 +119,22 @@ public final class ErodedTorchHandler {
         }
 
         BlockPos playerPos = player.blockPosition();
-        BlockPos wantedPos = findLightPos(world, playerPos);
+        BlockPos wantedPos = findLightPos(world, playerPos, uuid);
 
         if (wantedPos == null) {
             cleanup(uuid, server);
             return;
         }
 
-        LastLight oldLight = LAST_LIGHT.get(uuid);
-
-        if (oldLight != null) {
-            if (oldLight.worldKey().equals(world.dimension())) {
-                BlockPos oldPos = oldLight.pos();
-
-                if (player.distanceToSqr(
-                        oldPos.getX() + 0.5D,
-                        oldPos.getY() + 0.5D,
-                        oldPos.getZ() + 0.5D
-                ) < 2.25D) {
-
-                    if (world.getBlockState(oldPos).is(Blocks.LIGHT)) {
-                        return;
-                    }
-
-                    if (world.isEmptyBlock(oldPos)) {
-                        placeLightAt(world, oldPos);
-                        return;
-                    }
-                }
-            }
-
+        int lightLevel = Mth.clamp(cfg.placedLightLevel, 1, 15);
+        if (!DynamicLightManager.ensure(
+                world,
+                wantedPos,
+                uuid,
+                DynamicLightManager.Source.ERODED_TORCH,
+                lightLevel
+        )) {
             cleanup(uuid, server);
-        }
-
-        if (canPlaceLightAt(world, wantedPos)) {
-            placeLightAt(world, wantedPos);
-
-            LAST_LIGHT.put(
-                    uuid,
-                    new LastLight(
-                            world.dimension(),
-                            wantedPos.immutable()
-                    )
-            );
         }
     }
     private static boolean isTorchEnvironmentActive(
@@ -334,101 +293,41 @@ public final class ErodedTorchHandler {
 
     private static BlockPos findLightPos(
             ServerLevel world,
-            BlockPos playerPos
+            BlockPos playerPos,
+            UUID uuid
     ) {
-        if (canPlaceLightAt(world, playerPos.above())) {
+        if (DynamicLightManager.canUse(
+                world, playerPos.above(), uuid, DynamicLightManager.Source.ERODED_TORCH)) {
             return playerPos.above().immutable();
         }
 
-        if (canPlaceLightAt(world, playerPos)) {
+        if (DynamicLightManager.canUse(
+                world, playerPos, uuid, DynamicLightManager.Source.ERODED_TORCH)) {
             return playerPos.immutable();
         }
 
         return null;
     }
 
-    private static boolean canPlaceLightAt(
-            ServerLevel world,
-            BlockPos pos
-    ) {
-        return world.isEmptyBlock(pos)
-                || world.getBlockState(pos).is(Blocks.LIGHT);
-    }
-
-    private static void placeLightAt(
-            ServerLevel world,
-            BlockPos pos
-    ) {
-        if (!canPlaceLightAt(world, pos)) {
-            return;
-        }
-
-        int lightLevel = Mth.clamp(
-                DarknessConfigs.get()
-                        .server
-                        .erodedTorch
-                        .placedLightLevel,
-                1,
-                15
-        );
-
-        world.setBlock(
-                pos,
-                Blocks.LIGHT
-                        .defaultBlockState()
-                        .setValue(LightBlock.LEVEL, lightLevel),
-                Block.UPDATE_ALL
-        );
-    }
-
-    private static void removeLightAt(
-            ServerLevel world,
-            BlockPos pos
-    ) {
-        if (world != null
-                && world.getBlockState(pos).is(Blocks.LIGHT)) {
-
-            world.setBlock(
-                    pos,
-                    Blocks.AIR.defaultBlockState(),
-                    Block.UPDATE_ALL
-            );
-        }
-    }
-
     public static void cleanup(
             UUID uuid,
             MinecraftServer server
     ) {
-        LastLight lastLight = LAST_LIGHT.remove(uuid);
-
-        if (lastLight == null) {
-            return;
-        }
-
-        ServerLevel world = server.getLevel(lastLight.worldKey());
-
-        if (world != null) {
-            removeLightAt(
-                    world,
-                    lastLight.pos()
-            );
-        }
+        DynamicLightManager.release(
+                uuid,
+                DynamicLightManager.Source.ERODED_TORCH,
+                server
+        );
     }
 
     public static void cleanup(
             UUID uuid,
             ServerLevel fallbackWorld
     ) {
-        LastLight lastLight = LAST_LIGHT.remove(uuid);
-
-        if (lastLight != null
-                && fallbackWorld.dimension().equals(lastLight.worldKey())) {
-
-            removeLightAt(
-                    fallbackWorld,
-                    lastLight.pos()
-            );
-        }
+        DynamicLightManager.release(
+                uuid,
+                DynamicLightManager.Source.ERODED_TORCH,
+                fallbackWorld.getServer()
+        );
     }
 }

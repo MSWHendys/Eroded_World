@@ -6,19 +6,6 @@
     ]
   },
   "criteria": {
-    "level_10": {
-      "trigger": "minecraft:location",
-      "conditions": {
-        "player": {
-          "type_specific": {
-            "type": "player",
-            "level": {
-              "min": 10
-            }
-          }
-        }
-      }
-    },
     "has_sugar": {
       "trigger": "minecraft:inventory_changed",
       "conditions": {
@@ -69,5 +56,14 @@
         ]
       }
     }
-  }
+  },
+  "requirements": [
+    [
+      "has_sugar",
+      "has_water_bucket",
+      "has_glass",
+      "light_blue_dye",
+      "golden_apple"
+    ]
+  ]
 }

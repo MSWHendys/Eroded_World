@@ -1,5 +1,6 @@
 package cz.mcsworld.eroded.mixin;
 
+import cz.mcsworld.eroded.config.energy.EnergyConfig;
 import cz.mcsworld.eroded.skills.SkillData;
 import cz.mcsworld.eroded.skills.SkillManager;
 import net.minecraft.core.component.DataComponents;
@@ -31,6 +32,7 @@ public abstract class ItemMixin {
     ) {
         if (world.isClientSide()) return;
         if (!(player instanceof ServerPlayer sp)) return;
+        if (!EnergyConfig.get().server.enabled) return;
 
         ItemStack stack = player.getItemInHand(hand);
 

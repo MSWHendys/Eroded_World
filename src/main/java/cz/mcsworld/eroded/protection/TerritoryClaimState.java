@@ -1,8 +1,8 @@
 package cz.mcsworld.eroded.protection;
 
 import com.mojang.serialization.Codec;
-import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
@@ -34,8 +34,16 @@ public final class TerritoryClaimState extends SavedData {
         return world.getDataStorage().computeIfAbsent(TYPE);
     }
 
-    public Collection<TerritoryClaim> all() {
-        return claims.values();
+    /**
+     * Returns an immutable snapshot of the current claims.
+     *
+     * <p>Never expose {@link Map#values()} here. Several protection paths may
+     * discover and remove stale claims while iterating. Returning the live
+     * values view makes those perfectly valid cleanups throw
+     * ConcurrentModificationException.</p>
+     */
+    public List<TerritoryClaim> all() {
+        return List.copyOf(claims.values());
     }
 
     public TerritoryClaim getByAnchor(BlockPos pos) {

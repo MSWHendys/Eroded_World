@@ -51,9 +51,10 @@ public final class TerritoryEcosystemTicker {
         List<ServerPlayer> players = world.players();
         if (players.isEmpty()) return;
 
-        long tick = world.getServer().getTickCount();
+        long tick = world.getGameTime();
         RandomSource random = world.getRandom();
-        TerritoryWorldState state = TerritoryWorldState.get(world);
+        TerritoryWorldState state = TerritoryWorldState.getIfPresent(world);
+        if (state == null) return;
 
         int radius = Math.max(8, cfg.ecosystemVisibleRadiusBlocks);
         int maxPlayers = Math.max(1, cfg.ecosystemMaxPlayersPerSlice);
@@ -82,7 +83,8 @@ public final class TerritoryEcosystemTicker {
             ServerPlayer player = players.get(idx);
             ChunkPos cp = new ChunkPos(player.blockPosition());
             TerritoryCellKey key = TerritoryCellKey.fromChunk(cp.x, cp.z);
-            TerritoryCell cell = state.getOrCreateCell(key);
+            TerritoryCell cell = state.getCell(key);
+            if (cell == null) continue;
 
             float threat = TerritoryThreatResolver.computeThreat(cell, tick);
             int pollution = cell.getPollution(tick);
@@ -213,6 +215,9 @@ public final class TerritoryEcosystemTicker {
             int y = minY + random.nextInt(maxY - minY + 1);
 
             BlockPos checkPos = new BlockPos(x, y, z);
+            if (!world.hasChunkAt(checkPos)) {
+                continue;
+            }
             BlockState state = world.getBlockState(checkPos);
 
             if (state.is(BlockTags.LEAVES)) {
@@ -225,6 +230,11 @@ public final class TerritoryEcosystemTicker {
     private static BlockPos randomSurfaceNearPlayer(ServerLevel world, BlockPos center, int radius, RandomSource random) {
         int x = center.getX() + random.nextInt(radius * 2 + 1) - radius;
         int z = center.getZ() + random.nextInt(radius * 2 + 1) - radius;
+
+        BlockPos probe = new BlockPos(x, center.getY(), z);
+        if (!world.hasChunkAt(probe)) {
+            return null;
+        }
 
         int y = world.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
         if (y < world.getMinY()) return null;

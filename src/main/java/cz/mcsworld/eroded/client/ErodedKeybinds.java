@@ -10,10 +10,11 @@ import org.lwjgl.glfw.GLFW;
 
 public final class ErodedKeybinds {
 
-    private static KeyMapping DEBUG_KEY;
+    private static final KeyMapping.Category CATEGORY = KeyMapping.Category.register(
+            ResourceLocation.fromNamespaceAndPath("eroded", "main")
+    );
 
-    private static final KeyMapping.Category ERODED_CATEGORY =
-            KeyMapping.Category.register(ResourceLocation.fromNamespaceAndPath("eroded", "eroded"));
+    private static KeyMapping DEBUG_KEY;
 
     public static void register() {
 
@@ -22,14 +23,16 @@ public final class ErodedKeybinds {
                         "key.eroded.debug",
                         InputConstants.Type.KEYSYM,
                         GLFW.GLFW_KEY_F6,
-                        ERODED_CATEGORY
+                        CATEGORY
                 )
         );
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
 
             while (DEBUG_KEY.consumeClick()) {
+
                 ErodedDebug.territoryOverlay = !ErodedDebug.territoryOverlay;
+
             }
 
         });

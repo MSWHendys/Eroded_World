@@ -13,6 +13,8 @@ public record TerritoryTrustAddPayload(
         boolean connectedArea
 ) implements CustomPacketPayload {
 
+    public static final int MAX_PLAYER_NAME_LENGTH = 16;
+
     public static final Type<TerritoryTrustAddPayload> ID =
             new Type<>(ResourceLocation.fromNamespaceAndPath(ErodedMod.MOD_ID, "territory_trust_add"));
 
@@ -28,14 +30,14 @@ public record TerritoryTrustAddPayload(
 
     private void write(RegistryFriendlyByteBuf buf) {
         BlockPos.STREAM_CODEC.encode(buf, anchorPos);
-        buf.writeUtf(playerName);
+        buf.writeUtf(playerName, MAX_PLAYER_NAME_LENGTH);
         buf.writeBoolean(connectedArea);
     }
 
     private static TerritoryTrustAddPayload read(RegistryFriendlyByteBuf buf) {
         return new TerritoryTrustAddPayload(
                 BlockPos.STREAM_CODEC.decode(buf),
-                buf.readUtf(),
+                buf.readUtf(MAX_PLAYER_NAME_LENGTH),
                 buf.readBoolean()
         );
     }
