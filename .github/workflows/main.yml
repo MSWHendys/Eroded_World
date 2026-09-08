@@ -12,11 +12,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Java 21
+      - name: Setup Java 25
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 21
+          java-version: 25
 
       - name: Make gradlew executable
         run: chmod +x ./gradlew
@@ -50,11 +50,11 @@ jobs:
         uses: itsmeow/curseforge-upload@v3
         with:
           token: ${{ secrets.CURSEFORGE_TOKEN }}
-          project_id: 1460705
+          project_id: 1460705f
           game_endpoint: minecraft
           file_path: ${{ steps.findjar.outputs.jar_path }}
           release_type: ${{ steps.releasetype.outputs.type }}
           changelog: ${{ github.event.release.body }}
           changelog_type: markdown
-          game_versions: "Minecraft 1.21:1.21.6,Minecraft 1.21:1.21.7,Minecraft 1.21:1.21.8,Fabric,Client,Server,Java 21"
+          game_versions: "Minecraft 26.3-pre-2,Fabric,Client,Server,Java 25"
 
