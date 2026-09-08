@@ -14,7 +14,7 @@ public final class SafeNetworkUtil {
         if (player.hasDisconnected()) return;
         if (player.connection == null) return;
 
-        var server = player.getServer();
+        var server = player.level().getServer();
         if (server == null) return;
 
         if (server.isSameThread()) {

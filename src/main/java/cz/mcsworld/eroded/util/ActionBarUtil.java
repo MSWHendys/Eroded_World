@@ -7,6 +7,6 @@ public class ActionBarUtil {
 
     public static void send(ServerPlayer player, Component text) {
 
-        player.displayClientMessage(text, true);
+        player.sendSystemMessage(text, true);
     }
 }

@@ -10,6 +10,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.LanternBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import org.jetbrains.annotations.NotNull;
 
 public class ErodedLampBlock extends LanternBlock {
     public ErodedLampBlock(Properties settings) {
@@ -17,13 +18,13 @@ public class ErodedLampBlock extends LanternBlock {
     }
 
     @Override
-    protected void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify) {
-        if (!world.isClientSide && world instanceof ServerLevel serverWorld) {
+    protected void onPlace(@NotNull BlockState state, Level world, @NotNull BlockPos pos, @NotNull BlockState oldState, boolean notify) {
+        if (!world.isClientSide() && world instanceof ServerLevel serverWorld) {
 
             world.playSound(null, pos, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.BLOCKS, 1.0f, 1.2f);
 
             AABB area = new AABB(pos).inflate(8.0);
-            world.getEntitiesOfClass(Monster.class, area, mob -> true).forEach(mob -> {
+            world.getEntitiesOfClass(Monster.class, area,mob -> true).forEach(mob -> {
                 serverWorld.sendParticles(ParticleTypes.SOUL, mob.getX(), mob.getY() + 1, mob.getZ(), 10, 0.2, 0.5, 0.2, 0.05);
                 mob.discard();
             });

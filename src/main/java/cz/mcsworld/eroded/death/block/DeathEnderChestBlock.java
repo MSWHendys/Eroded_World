@@ -14,6 +14,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
+import org.jetbrains.annotations.NotNull;
 
 public class DeathEnderChestBlock extends Block {
 
@@ -22,14 +23,14 @@ public class DeathEnderChestBlock extends Block {
     }
 
     @Override
-    protected InteractionResult useWithoutItem(
-            BlockState state,
+    protected @NotNull InteractionResult useWithoutItem(
+            @NotNull BlockState state,
             Level world,
-            BlockPos pos,
-            Player player,
-            BlockHitResult hit
+            @NotNull BlockPos pos,
+            @NotNull Player player,
+            @NotNull BlockHitResult hit
     ) {
-        if (world.isClientSide) return InteractionResult.SUCCESS;
+        if (world.isClientSide()) return InteractionResult.SUCCESS;
         if (!(player instanceof ServerPlayer sp)) return InteractionResult.PASS;
         if (!(world instanceof ServerLevel sw)) return InteractionResult.PASS;
 
@@ -37,9 +38,8 @@ public class DeathEnderChestBlock extends Block {
         DeathChestState.Entry e = st.get(pos);
 
         if (e == null) {
-            sp.displayClientMessage(
-                    Component.translatable("eroded.death.chest.empty"),
-                    true
+            sp.sendOverlayMessage(
+                    Component.translatable("eroded.death.chest.empty")
             );
             return InteractionResult.CONSUME;
         }
@@ -47,18 +47,16 @@ public class DeathEnderChestBlock extends Block {
         if (!e.owner().equals(sp.getUUID())
                 && DeathChestProtection.isProtected(sw, pos)) {
 
-            sp.displayClientMessage(
-                    Component.translatable("eroded.death.chest.not_owner"),
-                    true
+            sp.sendOverlayMessage(
+                    Component.translatable("eroded.death.chest.not_owner")
             );
             return InteractionResult.CONSUME;
         }
 
         UUID sessionToken = st.tryOpen(pos, sp.getUUID());
         if (sessionToken == null) {
-            sp.displayClientMessage(
-                    Component.translatable("eroded.death.chest.in_use"),
-                    true
+            sp.sendOverlayMessage(
+                    Component.translatable("eroded.death.chest.in_use")
             );
             return InteractionResult.CONSUME;
         }

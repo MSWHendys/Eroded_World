@@ -7,6 +7,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.TooltipDisplay;
+import org.jetbrains.annotations.NotNull;
 
 public class TerritoryModuleItem extends Item {
 
@@ -16,11 +17,11 @@ public class TerritoryModuleItem extends Item {
 
     @Override
     public void appendHoverText(
-            ItemStack stack,
-            Item.TooltipContext context,
-            TooltipDisplay displayComponent,
+            @NotNull ItemStack stack,
+            Item.@NotNull TooltipContext context,
+            @NotNull TooltipDisplay displayComponent,
             Consumer<Component> textConsumer,
-            TooltipFlag type
+            @NotNull TooltipFlag type
     ) {
         textConsumer.accept(Component.translatable("tooltip.eroded.territory_module.1").withStyle(ChatFormatting.GRAY));
         textConsumer.accept(Component.translatable("tooltip.eroded.territory_module.2").withStyle(ChatFormatting.DARK_GRAY));

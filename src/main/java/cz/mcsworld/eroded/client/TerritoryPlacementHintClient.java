@@ -6,7 +6,7 @@ import cz.mcsworld.eroded.network.TerritoryPlacementHintPayload;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 
 public final class TerritoryPlacementHintClient {
@@ -14,7 +14,7 @@ public final class TerritoryPlacementHintClient {
     private static final long HOLD_DELAY_MS = 5000;
     private static final long REPEAT_INTERVAL_MS = 1000;
 
-    private static ResourceLocation currentHeldItemId = null;
+    private static Identifier currentHeldItemId = null;
     private static long holdStartedAt = 0L;
     private static long lastRequestAt = 0L;
 
@@ -46,7 +46,7 @@ public final class TerritoryPlacementHintClient {
                 return;
             }
 
-            ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(territoryStack.getItem());
+            Identifier itemId = BuiltInRegistries.ITEM.getKey(territoryStack.getItem());
             long now = System.currentTimeMillis();
 
             if (!itemId.equals(currentHeldItemId)) {

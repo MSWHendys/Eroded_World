@@ -1,6 +1,8 @@
 package cz.mcsworld.eroded.death;
 
 import cz.mcsworld.eroded.core.ErodedItems;
+
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
@@ -16,6 +18,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.component.LodestoneTracker;
 import net.minecraft.world.level.Level;
+import org.jetbrains.annotations.NotNull;
 
 public final class ErodedCompassHandler {
 
@@ -59,7 +62,7 @@ public final class ErodedCompassHandler {
             return;
         }
 
-        if (mem.isExpired(player.getServer().getTickCount()) || mem.isResolved()) {
+        if (mem.isExpired(player.level().getServer().getTickCount()) || mem.isResolved()) {
 
             removeCompass(player);
             ErodedDeathStorage.clear(player.getUUID());
@@ -79,7 +82,7 @@ public final class ErodedCompassHandler {
         long now = System.currentTimeMillis();
         ErodedDeathMemory best = null;
 
-        for (ServerLevel level : player.getServer().getAllLevels()) {
+        for (ServerLevel level : player.level().getServer().getAllLevels()) {
             DeathChestState state = DeathChestState.getIfPresent(level);
             if (state == null) continue;
 
@@ -162,13 +165,13 @@ public final class ErodedCompassHandler {
             if (stack.is(ErodedItems.DEATH_COMPASS)) {
 
                 BlockPos targetPos;
-                ResourceKey<Level> targetDimKey;
+                ResourceKey<@NotNull Level> targetDimKey;
 
                 if (currentWorld.dimension().equals(mem.getDeathDimension())) {
                     targetPos = mem.getDeathPos();
                     targetDimKey = currentWorld.dimension();
                 } else if (currentWorld.dimension().equals(Level.OVERWORLD)) {
-                    BlockPos portal = ErodedPortalMemoryState.get(player.getServer().getLevel(Level.OVERWORLD))
+                    BlockPos portal = ErodedPortalMemoryState.get(Objects.requireNonNull(player.level().getServer().getLevel(Level.OVERWORLD)))
                             .getOverworldPortal(player.getUUID());
                     targetPos = (portal != null) ? portal : mem.getDeathPos();
                     targetDimKey = Level.OVERWORLD;
@@ -185,9 +188,9 @@ public final class ErodedCompassHandler {
 
                     CompoundTag nbt = new CompoundTag();
                     nbt.putLong("ChestPos", mem.getDeathPos().asLong());
-                    nbt.putString("DeathDim", mem.getDeathDimension().location().toString());
+                    nbt.putString("DeathDim", mem.getDeathDimension().identifier().toString());
 
-                    BlockPos portal = ErodedPortalMemoryState.get(player.getServer().getLevel(Level.OVERWORLD))
+                    BlockPos portal = ErodedPortalMemoryState.get(Objects.requireNonNull(player.level().getServer().getLevel(Level.OVERWORLD)))
                             .getOverworldPortal(player.getUUID());
                     if (portal != null) nbt.putLong("PortalPos", portal.asLong());
 

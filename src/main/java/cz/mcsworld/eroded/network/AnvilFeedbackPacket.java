@@ -3,7 +3,8 @@ package cz.mcsworld.eroded.network;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
+import org.jetbrains.annotations.NotNull;
 
 public record AnvilFeedbackPacket(String key, String quality)
         implements CustomPacketPayload {
@@ -11,10 +12,10 @@ public record AnvilFeedbackPacket(String key, String quality)
     public static final int MAX_KEY_LENGTH = 128;
     public static final int MAX_QUALITY_LENGTH = 32;
 
-    public static final Type<AnvilFeedbackPacket> ID =
-            new Type<>(ResourceLocation.fromNamespaceAndPath("eroded", "anvil_feedback"));
+    public static final Type<@NotNull AnvilFeedbackPacket> ID =
+            new Type<>(Identifier.fromNamespaceAndPath("eroded", "anvil_feedback"));
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, AnvilFeedbackPacket> CODEC =
+    public static final StreamCodec<@NotNull RegistryFriendlyByteBuf, @NotNull AnvilFeedbackPacket> CODEC =
             StreamCodec.ofMember(
                     (p, buf) -> {
                         buf.writeUtf(p.key(), MAX_KEY_LENGTH);
@@ -27,7 +28,7 @@ public record AnvilFeedbackPacket(String key, String quality)
             );
 
     @Override
-    public Type<? extends CustomPacketPayload> type() {
+    public @NotNull Type<? extends @NotNull CustomPacketPayload> type() {
         return ID;
     }
 }

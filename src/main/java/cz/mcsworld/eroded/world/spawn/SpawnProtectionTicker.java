@@ -15,7 +15,7 @@ public final class SpawnProtectionTicker {
                 SpawnProtectionSystem.clearLegacyPlayerInvulnerability(handler.getPlayer())
         );
 
-        ServerTickEvents.END_WORLD_TICK.register(world -> {
+        ServerTickEvents.END_LEVEL_TICK.register(world -> {
 
             if (world.dimension() != Level.OVERWORLD) return;
             // Mob push/target cleanup is navigation work; 4 Hz is responsive

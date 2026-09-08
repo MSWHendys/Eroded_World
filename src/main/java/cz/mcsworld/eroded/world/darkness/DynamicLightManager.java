@@ -57,7 +57,7 @@ public final class DynamicLightManager {
     }
 
     public static void register() {
-        ServerChunkEvents.CHUNK_LOAD.register(DynamicLightManager::cleanupStaleInChunk);
+        ServerChunkEvents.CHUNK_LOAD.register((world, chunk, ignored) -> cleanupStaleInChunk(world, chunk));
         ServerLifecycleEvents.SERVER_STOPPING.register(DynamicLightManager::releaseAll);
     }
 
@@ -210,8 +210,8 @@ public final class DynamicLightManager {
         DynamicLightState state = DynamicLightState.getIfPresent(world);
         if (state == null) return;
 
-        int chunkX = chunk.getPos().x;
-        int chunkZ = chunk.getPos().z;
+        int chunkX = chunk.getPos().x();
+        int chunkZ = chunk.getPos().z();
 
         for (Map.Entry<Long, Integer> entry : state.snapshot().entrySet()) {
             BlockPos pos = BlockPos.of(entry.getKey());

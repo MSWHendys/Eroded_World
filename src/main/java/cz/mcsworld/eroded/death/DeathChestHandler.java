@@ -61,7 +61,7 @@ public final class DeathChestHandler {
         chestPos = findFreeChestPos(world, state, chestPos);
         if (chestPos == null) {
             LOGGER.error("Nelze najit bezpecnou pozici pro Death Chest hrace {}. Pouzije se vanilla drop.",
-                    player.getGameProfile().getName());
+                    player.getGameProfile().name());
             return false;
         }
 
@@ -117,7 +117,7 @@ public final class DeathChestHandler {
 
             LOGGER.error(
                     "Chyba pri transakcnim vytvareni Death Chest hrace {}. Inventar zustava vanilla systemu.",
-                    player.getGameProfile().getName(),
+                    player.getGameProfile().name(),
                     e
             );
             return false;
@@ -136,7 +136,7 @@ public final class DeathChestHandler {
             ErodedDeathStorage.putIfMoreValuable(player.getUUID(), memory);
         } catch (Exception e) {
             LOGGER.error("Death Chest je ulozen, ale nepodarilo se ulozit death-memory hrace {}.",
-                    player.getGameProfile().getName(), e);
+                    player.getGameProfile().name(), e);
         }
 
         try {

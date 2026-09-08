@@ -30,7 +30,7 @@ public abstract class ItemMixin {
             InteractionHand hand,
             CallbackInfoReturnable<InteractionResult> cir
     ) {
-        if (world.isClientSide) return;
+        if (world.isClientSide()) return;
         if (!(player instanceof ServerPlayer sp)) return;
         if (!EnergyConfig.get().server.enabled) return;
 

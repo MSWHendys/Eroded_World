@@ -4,15 +4,16 @@ import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
+import org.jetbrains.annotations.NotNull;
 
 public record DodgeRequestPacket(float dirX, float dirZ)
         implements CustomPacketPayload {
 
-    public static final Type<DodgeRequestPacket> ID =
-            new Type<>(ResourceLocation.fromNamespaceAndPath("eroded", "dodge_request"));
+    public static final Type<@NotNull DodgeRequestPacket> ID =
+            new Type<>(Identifier.fromNamespaceAndPath("eroded", "dodge_request"));
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, DodgeRequestPacket> CODEC =
+    public static final StreamCodec<@NotNull RegistryFriendlyByteBuf, @NotNull DodgeRequestPacket> CODEC =
             StreamCodec.ofMember(
                     (packet, buf) -> {
                         buf.writeFloat(packet.dirX());
@@ -25,11 +26,11 @@ public record DodgeRequestPacket(float dirX, float dirZ)
             );
 
     public static void register() {
-        PayloadTypeRegistry.playC2S().register(ID, CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(ID, CODEC);
     }
 
     @Override
-    public Type<? extends CustomPacketPayload> type() {
+    public @NotNull Type<? extends @NotNull CustomPacketPayload> type() {
         return ID;
     }
 }

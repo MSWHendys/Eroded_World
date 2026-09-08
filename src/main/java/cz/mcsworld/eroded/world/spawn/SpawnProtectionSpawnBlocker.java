@@ -26,7 +26,7 @@ public final class SpawnProtectionSpawnBlocker {
                 return;
             }
 
-            BlockPos spawn = world.getSharedSpawnPos();
+            BlockPos spawn = world.getRespawnData().pos();
 
             int radius = cfg.spawnProtectionRadius;
             int radiusSq = radius * radius;

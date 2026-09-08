@@ -4,14 +4,15 @@ import cz.mcsworld.eroded.skills.SkillData;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
+import org.jetbrains.annotations.NotNull;
 
 public record EnergyWarningPacket(SkillData.EnergyState state) implements CustomPacketPayload {
 
-    public static final Type<EnergyWarningPacket> ID =
-            new Type<>(ResourceLocation.fromNamespaceAndPath("eroded", "energy_warning"));
+    public static final Type<@NotNull EnergyWarningPacket> ID =
+            new Type<>(Identifier.fromNamespaceAndPath("eroded", "energy_warning"));
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, EnergyWarningPacket> CODEC =
+    public static final StreamCodec<@NotNull RegistryFriendlyByteBuf, @NotNull EnergyWarningPacket> CODEC =
             StreamCodec.ofMember(
                     (packet, buf) -> buf.writeEnum(packet.state()),
                     buf -> new EnergyWarningPacket(
@@ -20,7 +21,7 @@ public record EnergyWarningPacket(SkillData.EnergyState state) implements Custom
             );
 
     @Override
-    public Type<? extends CustomPacketPayload> type() {
+    public @NotNull Type<? extends @NotNull CustomPacketPayload> type() {
         return ID;
     }
 }

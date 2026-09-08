@@ -71,7 +71,7 @@ public final class LightStartleImpulseGoal extends Goal {
         if (escape.lengthSqr() < 0.0001) return;
 
         mob.push(escape.x * 0.35, 0.05, escape.z * 0.35);
-        mob.hasImpulse = true;
+        mob.needsSync = true;
         mob.setTarget(null);
     }
 }

@@ -18,7 +18,7 @@ public final class ErodedSpecialItemTooltip {
 
     public static void register() {
         ItemTooltipCallback.EVENT.register((stack, context, type, lines) -> {
-            if (stack == null || stack.isEmpty()) {
+            if (stack.isEmpty()) {
                 return;
             }
 

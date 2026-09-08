@@ -1,5 +1,5 @@
 plugins {
-    id 'net.fabricmc.fabric-loom-remap' version '1.15-SNAPSHOT'
+    id 'net.fabricmc.fabric-loom' version '1.17-SNAPSHOT'
     id 'maven-publish'
 }
 
@@ -11,17 +11,11 @@ base {
 }
 
 dependencies {
-    // Minecraft
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
 
-    // Mojang mappings
-    mappings loom.officialMojangMappings()
-
-    // Fabric Loader
-    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
-
-    // Fabric API
-    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+    // Fabric
+    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 }
 
 processResources {
@@ -47,7 +41,7 @@ processResources {
     }
 }
 
-def targetJavaVersion = 21
+def targetJavaVersion = 25
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = "UTF-8"
@@ -55,12 +49,8 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 java {
-    def javaVersion = JavaVersion.toVersion(targetJavaVersion)
-
-    if (JavaVersion.current() < javaVersion) {
-        toolchain {
-            languageVersion = JavaLanguageVersion.of(targetJavaVersion)
-        }
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(targetJavaVersion)
     }
 
     withSourcesJar()
@@ -87,6 +77,6 @@ publishing {
     }
 
     repositories {
-        // Sem případně přijde repozitář pro publikování.
+        // ***
     }
 }

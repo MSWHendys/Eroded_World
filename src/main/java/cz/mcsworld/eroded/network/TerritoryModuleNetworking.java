@@ -10,6 +10,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 
+
 public final class TerritoryModuleNetworking {
 
     private static final int UI_REQUESTS_PER_SECOND = 20;
@@ -20,61 +21,59 @@ public final class TerritoryModuleNetworking {
     }
 
     public static void registerPayloadTypes() {
-        PayloadTypeRegistry.playC2S().register(
+        PayloadTypeRegistry.serverboundPlay().register(
                 TerritoryModuleRequestPayload.ID,
                 TerritoryModuleRequestPayload.CODEC
         );
 
-        PayloadTypeRegistry.playC2S().register(
+        PayloadTypeRegistry.serverboundPlay().register(
                 TerritoryTrustAddPayload.ID,
                 TerritoryTrustAddPayload.CODEC
         );
 
-        PayloadTypeRegistry.playC2S().register(
+        PayloadTypeRegistry.serverboundPlay().register(
                 TerritoryTrustRemovePayload.ID,
                 TerritoryTrustRemovePayload.CODEC
         );
 
-        PayloadTypeRegistry.playC2S().register(
+        PayloadTypeRegistry.serverboundPlay().register(
                 TerritoryPermissionUpdatePayload.ID,
                 TerritoryPermissionUpdatePayload.CODEC
         );
 
-        PayloadTypeRegistry.playC2S().register(
+        PayloadTypeRegistry.serverboundPlay().register(
                 TerritoryScopeUpdatePayload.ID,
                 TerritoryScopeUpdatePayload.CODEC
         );
 
-        PayloadTypeRegistry.playC2S().register(
+        PayloadTypeRegistry.serverboundPlay().register(
                 TerritorySuggestionRequestPayload.ID,
                 TerritorySuggestionRequestPayload.CODEC
         );
 
-        PayloadTypeRegistry.playS2C().register(
+        PayloadTypeRegistry.clientboundPlay().register(
                 TerritoryModuleSyncPayload.ID,
                 TerritoryModuleSyncPayload.CODEC
         );
     }
 
     public static void registerServerReceivers() {
-        // Fabric's object payload API invokes these handlers on the logical
-        // server thread already. Do not queue another server.execute() hop: it
-        // adds latency and lets stale UI packets outlive the menu state that
-        // produced them.
+        // Keep C2S work on the logical server thread. This matches the
+        // Fabric 1.21.11 receiver pattern used by the original port.
         ServerPlayNetworking.registerGlobalReceiver(
                 TerritoryModuleRequestPayload.ID,
-                (payload, context) -> {
+                (payload, context) -> context.server().execute(() -> {
                     ServerPlayer player = context.player();
                     if (!ServerPacketGuard.allow(player, "territory_ui", UI_REQUESTS_PER_SECOND)) return;
                     if (!ServerPacketGuard.validTerritoryMenu(player, payload.anchorPos())) return;
                     if (!(player.level() instanceof ServerLevel world)) return;
                     sendSync(world, payload.anchorPos(), player);
-                }
+                })
         );
 
         ServerPlayNetworking.registerGlobalReceiver(
                 TerritoryTrustAddPayload.ID,
-                (payload, context) -> {
+                (payload, context) -> context.server().execute(() -> {
                     ServerPlayer manager = context.player();
                     if (!ServerPacketGuard.allow(manager, "territory_mutation", MUTATIONS_PER_SECOND)) return;
                     if (!ServerPacketGuard.validTerritoryMenu(manager, payload.anchorPos())) return;
@@ -90,7 +89,7 @@ public final class TerritoryModuleNetworking {
                             .getPlayerByName(playerName);
 
                     if (target == null) {
-                        manager.displayClientMessage(
+                        manager.sendSystemMessage(
                                 net.minecraft.network.chat.Component.translatable(
                                         "eroded.territory.trust.player_not_found",
                                         playerName
@@ -111,12 +110,12 @@ public final class TerritoryModuleNetworking {
                     if (changed) {
                         sendSync(world, payload.anchorPos(), manager);
                     }
-                }
+                })
         );
 
         ServerPlayNetworking.registerGlobalReceiver(
                 TerritoryTrustRemovePayload.ID,
-                (payload, context) -> {
+                (payload, context) -> context.server().execute(() -> {
                     ServerPlayer manager = context.player();
                     if (!ServerPacketGuard.allow(manager, "territory_mutation", MUTATIONS_PER_SECOND)) return;
                     if (!ServerPacketGuard.validTerritoryMenu(manager, payload.anchorPos())) return;
@@ -146,12 +145,12 @@ public final class TerritoryModuleNetworking {
                     if (changed) {
                         sendSync(world, payload.anchorPos(), manager);
                     }
-                }
+                })
         );
 
         ServerPlayNetworking.registerGlobalReceiver(
                 TerritoryPermissionUpdatePayload.ID,
-                (payload, context) -> {
+                (payload, context) -> context.server().execute(() -> {
                     ServerPlayer manager = context.player();
                     if (!ServerPacketGuard.allow(manager, "territory_mutation", MUTATIONS_PER_SECOND)) return;
                     if (!ServerPacketGuard.validTerritoryMenu(manager, payload.anchorPos())) return;
@@ -184,12 +183,12 @@ public final class TerritoryModuleNetworking {
                     if (changed) {
                         sendSync(world, payload.anchorPos(), manager);
                     }
-                }
+                })
         );
 
         ServerPlayNetworking.registerGlobalReceiver(
                 TerritoryScopeUpdatePayload.ID,
-                (payload, context) -> {
+                (payload, context) -> context.server().execute(() -> {
                     ServerPlayer manager = context.player();
                     if (!ServerPacketGuard.allow(manager, "territory_mutation", MUTATIONS_PER_SECOND)) return;
                     if (!ServerPacketGuard.validTerritoryMenu(manager, payload.anchorPos())) return;
@@ -213,12 +212,12 @@ public final class TerritoryModuleNetworking {
                     if (changed) {
                         sendSync(world, payload.anchorPos(), manager);
                     }
-                }
+                })
         );
 
         ServerPlayNetworking.registerGlobalReceiver(
                 TerritorySuggestionRequestPayload.ID,
-                (payload, context) -> {
+                (payload, context) -> context.server().execute(() -> {
                     ServerPlayer player = context.player();
                     if (!ServerPacketGuard.allow(player, "territory_suggestion", SUGGESTIONS_PER_SECOND)) return;
                     if (!ServerPacketGuard.validTerritoryMenu(player, payload.anchorPos())) return;
@@ -230,7 +229,7 @@ public final class TerritoryModuleNetworking {
                     }
 
                     sendSync(world, payload.anchorPos(), player, query);
-                }
+                })
         );
     }
 

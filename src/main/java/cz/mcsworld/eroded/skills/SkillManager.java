@@ -15,7 +15,7 @@ public class SkillManager {
     private static final Map<UUID, SkillData> CACHE = new HashMap<>();
 
     private static ServerLevel storageWorld(ServerPlayer player) {
-        return player.getServer().overworld();
+        return player.level().getServer().overworld();
     }
 
     public static SkillData get(ServerPlayer player) {

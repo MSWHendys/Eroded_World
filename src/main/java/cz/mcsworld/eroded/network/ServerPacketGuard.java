@@ -11,7 +11,7 @@ import net.minecraft.server.level.ServerPlayer;
 /**
  * Small server-thread packet guard for C2S actions exposed by Eroded World.
  *
- * Fabric's object payload receivers run on the logical server thread, so this
+ * All callers serialize access onto the logical server thread, so this
  * intentionally uses a plain HashMap. The guard is not a punishment system; it
  * simply drops abusive/redundant requests before they can trigger world scans,
  * connected-claim traversals or collision checks.
@@ -30,7 +30,7 @@ public final class ServerPacketGuard {
             return false;
         }
 
-        long second = player.getServer().getTickCount() / 20L;
+        long second = player.level().getServer().getTickCount() / 20L;
         Key key = new Key(player.getUUID(), channel);
         Window current = WINDOWS.get(key);
 

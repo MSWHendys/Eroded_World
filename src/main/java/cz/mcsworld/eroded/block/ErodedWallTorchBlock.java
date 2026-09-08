@@ -8,6 +8,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.WallTorchBlock;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
+import org.jetbrains.annotations.NotNull;
 
 public final class ErodedWallTorchBlock extends WallTorchBlock {
 
@@ -19,9 +20,9 @@ public final class ErodedWallTorchBlock extends WallTorchBlock {
 
     @Override
     public void animateTick(
-            BlockState state,
-            Level world,
-            BlockPos pos,
+            @NotNull BlockState state,
+            @NotNull Level world,
+            @NotNull BlockPos pos,
             RandomSource random
     ) {
         if (random.nextFloat() > SMOKE_CHANCE) {

@@ -15,7 +15,7 @@ public final class TerritoryPlacementHintNetworking {
     }
 
     public static void registerPayloadTypes() {
-        PayloadTypeRegistry.playC2S().register(
+        PayloadTypeRegistry.serverboundPlay().register(
                 TerritoryPlacementHintPayload.ID,
                 TerritoryPlacementHintPayload.CODEC
         );
@@ -24,7 +24,7 @@ public final class TerritoryPlacementHintNetworking {
     public static void registerServerReceivers() {
         ServerPlayNetworking.registerGlobalReceiver(
                 TerritoryPlacementHintPayload.ID,
-                (payload, context) -> {
+                (payload, context) -> context.server().execute(() -> {
                     ServerPlayer player = context.player();
 
                     if (!ServerPacketGuard.allow(player, "territory_hint", 3)) {
@@ -47,7 +47,7 @@ public final class TerritoryPlacementHintNetworking {
                             player,
                             payload.showMessage()
                     );
-                }
+                })
         );
     }
 

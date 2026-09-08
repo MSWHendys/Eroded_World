@@ -17,6 +17,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import org.jetbrains.annotations.NotNull;
 
 public class DeathInventoryScreenHandler extends AbstractContainerMenu {
 
@@ -77,10 +78,10 @@ public class DeathInventoryScreenHandler extends AbstractContainerMenu {
     }
 
     @Override
-    public void removed(Player player) {
+    public void removed(@NotNull Player player) {
         super.removed(player);
 
-        if (world.isClientSide) return;
+        if (world.isClientSide()) return;
 
         // If this is a stale menu, it must never materialize its copied items.
         if (!state.isOpenBy(pos, playerId, sessionToken)) {
@@ -131,8 +132,8 @@ public class DeathInventoryScreenHandler extends AbstractContainerMenu {
     }
 
     @Override
-    public boolean stillValid(Player player) {
-        if (world.isClientSide) {
+    public boolean stillValid(@NotNull Player player) {
+        if (world.isClientSide()) {
             return true;
         }
 
@@ -159,7 +160,7 @@ public class DeathInventoryScreenHandler extends AbstractContainerMenu {
     }
 
     @Override
-    public ItemStack quickMoveStack(Player player, int slot) {
+    public @NotNull ItemStack quickMoveStack(@NotNull Player player, int slot) {
         return ItemStack.EMPTY;
     }
 

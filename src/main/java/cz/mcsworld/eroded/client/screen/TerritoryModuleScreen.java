@@ -7,21 +7,25 @@ import cz.mcsworld.eroded.screen.TerritoryModuleScreenHandler;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
-import org.lwjgl.glfw.GLFW;
+import org.jetbrains.annotations.NotNull;
+import org.lwjgl.sdl.SDLScancode;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModuleScreenHandler> {
+public class TerritoryModuleScreen extends AbstractContainerScreen<@NotNull TerritoryModuleScreenHandler> {
 
     private static final long SUGGESTION_REQUEST_INTERVAL_MS = 250L;
 
@@ -51,10 +55,7 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
             Inventory inventory,
             Component title
     ) {
-        super(handler, inventory, title);
-
-        this.imageWidth = 340;
-        this.imageHeight = 260;
+        super(handler, inventory, title, 340, 260);
     }
 
     @Override
@@ -68,10 +69,10 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
                 new TerritoryModuleRequestPayload(this.menu.getAnchorPos())
         );
 
-        rebuildWidgets();
+        rebuildErodedWidgets();
     }
 
-    public void rebuildWidgets() {
+    private void rebuildErodedWidgets() {
         BlockPos anchorPos = this.menu.getAnchorPos();
 
         String oldText = "";
@@ -161,7 +162,7 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
                                     playerScopeModes.remove(selected.uuid());
                                     selectedTrustedUuid = null;
                                     page = Page.MAIN;
-                                    rebuildWidgets();
+                                    rebuildErodedWidgets();
                                 }
                         )
                         .bounds(this.leftPos + 24, this.topPos + 104, 100, 20)
@@ -186,7 +187,7 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
                                         );
                                     }
 
-                                    rebuildWidgets();
+                                    rebuildErodedWidgets();
                                 }
                         )
                         .bounds(this.leftPos + 231, this.topPos + 104, 85, 20)
@@ -204,7 +205,7 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
                                 Component.translatable("screen.eroded.territory_module.detail.back"),
                                 button -> {
                                     page = Page.MAIN;
-                                    rebuildWidgets();
+                                    rebuildErodedWidgets();
                                 }
                         )
                         .bounds(this.leftPos + 110, this.topPos + 220, 120, 20)
@@ -340,7 +341,7 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
                                     button -> {
                                         selectedTrustedUuid = entry.uuid();
                                         page = Page.PLAYER_DETAIL;
-                                        rebuildWidgets();
+                                        rebuildErodedWidgets();
                                     }
                             )
                             .bounds(this.leftPos + 181, buttonY, TRUSTED_NAME_BUTTON_WIDTH, 19)
@@ -366,7 +367,7 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
                                             selectedTrustedUuid = null;
                                         }
 
-                                        rebuildWidgets();
+                                        rebuildErodedWidgets();
                                     }
                             )
                             .bounds(this.leftPos + 293, buttonY, 24, 19)
@@ -376,7 +377,6 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
     }
 
     private Component trustedPlayerButtonText(ClientTerritoryModuleData.Entry entry, boolean selected) {
-
         return Component.literal((selected ? "▶ " : "") + entry.name())
                 .withStyle(selected ? ChatFormatting.YELLOW : ChatFormatting.WHITE);
     }
@@ -395,7 +395,7 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
                                 button -> {
                                     trustedScrollOffset--;
                                     clampTrustedScroll();
-                                    rebuildWidgets();
+                                    rebuildErodedWidgets();
                                 }
                         )
                         .bounds(this.leftPos + 273, this.topPos + 140, 22, 18)
@@ -408,7 +408,7 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
                                 button -> {
                                     trustedScrollOffset++;
                                     clampTrustedScroll();
-                                    rebuildWidgets();
+                                    rebuildErodedWidgets();
                                 }
                         )
                         .bounds(this.leftPos + 295, this.topPos + 140, 22, 18)
@@ -488,22 +488,42 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
     }
 
     @Override
-    public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(
+            @NotNull GuiGraphicsExtractor graphics,
+            int mouseX,
+            int mouseY,
+            float delta
+    ) {
         if (this.lastDataVersion != ClientTerritoryModuleData.version()) {
-            rebuildWidgets();
+            rebuildErodedWidgets();
         }
 
-        drawPanel(context, this.leftPos, this.topPos, this.imageWidth, this.imageHeight);
+        super.extractRenderState(graphics, mouseX, mouseY, delta);
 
-        super.render(context, mouseX, mouseY, delta);
-
-        renderModuleText(context);
+        renderModuleText(graphics);
         updateSuggestionRequest();
-
-        this.renderTooltip(context, mouseX, mouseY);
     }
 
-    private void renderModuleText(GuiGraphics context) {
+    @Override
+    public void extractBackground(
+            @NotNull GuiGraphicsExtractor graphics,
+            int mouseX,
+            int mouseY,
+            float delta
+    ) {
+        drawPanel(graphics, this.leftPos, this.topPos, this.imageWidth, this.imageHeight);
+    }
+
+    @Override
+    protected void extractLabels(
+            @NotNull GuiGraphicsExtractor graphics,
+            int mouseX,
+            int mouseY
+    ) {
+        // Vlastní text kreslíme v extractRenderState(), aby se souřadnice nezdvojily přes leftPos/topPos.
+    }
+
+    private void renderModuleText(GuiGraphicsExtractor graphics) {
         Minecraft client = Minecraft.getInstance();
 
         if (client == null || client.font == null) {
@@ -516,7 +536,7 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
         int top = this.topPos;
 
         drawText(
-                context,
+                graphics,
                 Component.translatable("screen.eroded.territory_module.title"),
                 left + 18,
                 top + 12,
@@ -524,7 +544,7 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
         );
 
         drawText(
-                context,
+                graphics,
                 Component.translatable("screen.eroded.territory_module.section.info"),
                 left + 18,
                 top + 34,
@@ -533,7 +553,7 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
 
         if (!ClientTerritoryModuleData.isFor(pos)) {
             drawText(
-                    context,
+                    graphics,
                     Component.translatable("screen.eroded.territory_module.loading"),
                     left + 24,
                     top + 52,
@@ -543,20 +563,20 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
         }
 
         if (page == Page.MAIN) {
-            renderInfoText(context, left, top);
-            renderMainText(context, left, top);
+            renderInfoText(graphics, left, top);
+            renderMainText(graphics, left, top);
         } else {
-            renderPlayerInfoText(context, left, top);
-            renderPlayerDetailText(context, left, top);
+            renderPlayerInfoText(graphics, left, top);
+            renderPlayerDetailText(graphics, left, top);
         }
     }
 
-    private void renderPlayerInfoText(GuiGraphics context, int left, int top) {
+    private void renderPlayerInfoText(GuiGraphicsExtractor graphics, int left, int top) {
         ClientTerritoryModuleData.Entry selected = selectedTrustedEntry();
 
         if (selected == null) {
             drawText(
-                    context,
+                    graphics,
                     Component.translatable("screen.eroded.territory_module.permissions.no_player"),
                     left + 24,
                     top + 52,
@@ -568,7 +588,7 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
         boolean selectedScope = selectedPlayerConnectedAreaMode();
 
         drawText(
-                context,
+                graphics,
                 Component.translatable(
                         "screen.eroded.territory_module.permissions.player",
                         Component.literal(selected.name()).withStyle(ChatFormatting.GREEN)
@@ -579,7 +599,7 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
         );
 
         drawText(
-                context,
+                graphics,
                 Component.translatable(
                         "screen.eroded.territory_module.permissions.scope",
                         Component.translatable(
@@ -594,7 +614,7 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
         );
     }
 
-    private void renderInfoText(GuiGraphics context, int left, int top) {
+    private void renderInfoText(GuiGraphicsExtractor graphics, int left, int top) {
         String owner = ClientTerritoryModuleData.ownerName();
         boolean active = ClientTerritoryModuleData.active();
 
@@ -617,7 +637,7 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
         BlockPos pos = this.menu.getAnchorPos();
 
         drawText(
-                context,
+                graphics,
                 Component.translatable("screen.eroded.territory_module.owner", owner),
                 left + 24,
                 top + 48,
@@ -625,7 +645,7 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
         );
 
         drawText(
-                context,
+                graphics,
                 Component.translatable(
                         "screen.eroded.territory_module.anchor",
                         pos.getX(),
@@ -638,7 +658,7 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
         );
 
         drawText(
-                context,
+                graphics,
                 Component.translatable(
                         "screen.eroded.territory_module.area",
                         connectedWidth,
@@ -650,7 +670,7 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
         );
 
         drawText(
-                context,
+                graphics,
                 Component.translatable(
                         "screen.eroded.territory_module.anchors",
                         connectedClaimCount
@@ -661,7 +681,7 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
         );
 
         drawText(
-                context,
+                graphics,
                 Component.translatable(
                         active
                                 ? "screen.eroded.territory_module.status.active"
@@ -673,9 +693,9 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
         );
     }
 
-    private void renderMainText(GuiGraphics context, int left, int top) {
+    private void renderMainText(GuiGraphicsExtractor graphics, int left, int top) {
         drawText(
-                context,
+                graphics,
                 Component.translatable("screen.eroded.territory_module.section.add_player"),
                 left + 18,
                 top + 88,
@@ -683,7 +703,7 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
         );
 
         drawText(
-                context,
+                graphics,
                 Component.translatable("screen.eroded.territory_module.section.available"),
                 left + 24,
                 top + 144,
@@ -691,7 +711,7 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
         );
 
         drawText(
-                context,
+                graphics,
                 Component.translatable("screen.eroded.territory_module.section.trusted"),
                 left + 181,
                 top + 144,
@@ -700,7 +720,7 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
 
         if (ClientTerritoryModuleData.suggestions().isEmpty()) {
             drawText(
-                    context,
+                    graphics,
                     Component.translatable("screen.eroded.territory_module.no_available"),
                     left + 24,
                     top + 164,
@@ -710,7 +730,7 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
 
         if (ClientTerritoryModuleData.trusted().isEmpty()) {
             drawText(
-                    context,
+                    graphics,
                     Component.translatable("screen.eroded.territory_module.no_trusted"),
                     left + 181,
                     top + 164,
@@ -719,11 +739,11 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
         }
     }
 
-    private void renderPlayerDetailText(GuiGraphics context, int left, int top) {
+    private void renderPlayerDetailText(GuiGraphicsExtractor graphics, int left, int top) {
         ClientTerritoryModuleData.Entry selected = selectedTrustedEntry();
 
         drawText(
-                context,
+                graphics,
                 Component.translatable("screen.eroded.territory_module.section.permissions"),
                 left + 18,
                 top + 88,
@@ -732,7 +752,7 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
 
         if (selected == null) {
             drawText(
-                    context,
+                    graphics,
                     Component.translatable("screen.eroded.territory_module.permissions.no_player"),
                     left + 24,
                     top + 106,
@@ -741,8 +761,8 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
         }
     }
 
-    private void drawPanel(GuiGraphics context, int left, int top, int width, int height) {
-        context.fill(
+    private void drawPanel(GuiGraphicsExtractor graphics, int left, int top, int width, int height) {
+        graphics.fill(
                 left,
                 top,
                 left + width,
@@ -750,7 +770,7 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
                 0xEE0B0D10
         );
 
-        context.renderOutline(
+        graphics.outline(
                 left,
                 top,
                 width,
@@ -758,7 +778,7 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
                 0xFF6B6B6B
         );
 
-        context.renderOutline(
+        graphics.outline(
                 left + 3,
                 top + 3,
                 width - 6,
@@ -766,7 +786,7 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
                 0xFF222832
         );
 
-        context.fill(
+        graphics.fill(
                 left + 14,
                 top + 30,
                 left + width - 14,
@@ -774,7 +794,7 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
                 0xAA141922
         );
 
-        context.fill(
+        graphics.fill(
                 left + 14,
                 top + 84,
                 left + width - 14,
@@ -782,7 +802,7 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
                 0xAA141922
         );
 
-        context.fill(
+        graphics.fill(
                 left + 14,
                 top + 138,
                 left + width - 14,
@@ -791,7 +811,7 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
         );
 
         if (page == Page.MAIN) {
-            context.fill(
+            graphics.fill(
                     left + 170,
                     top + 142,
                     left + 171,
@@ -801,14 +821,14 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
         }
     }
 
-    private void drawText(GuiGraphics context, Component text, int x, int y, int color) {
+    private void drawText(GuiGraphicsExtractor graphics, Component text, int x, int y, int color) {
         Minecraft client = Minecraft.getInstance();
 
         if (client == null || client.font == null) {
             return;
         }
 
-        context.drawString(
+        graphics.text(
                 client.font,
                 text,
                 x,
@@ -865,7 +885,7 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
             }
 
             clampTrustedScroll();
-            rebuildWidgets();
+            rebuildErodedWidgets();
             return true;
         }
 
@@ -873,58 +893,42 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
     }
 
     @Override
-    protected void renderBg(
-            GuiGraphics context,
-            float delta,
-            int mouseX,
-            int mouseY
-    ) {
-    }
-
-    @Override
-    protected void renderLabels(
-            GuiGraphics context,
-            int mouseX,
-            int mouseY
-    ) {
-    }
-
-    @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+    public boolean keyPressed(KeyEvent input) {
+        int keyCode = input.key();
         if (this.playerNameField != null && this.playerNameField.isFocused()) {
-            if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
+            if (keyCode == SDLScancode.SDL_SCANCODE_ESCAPE) {
                 this.playerNameField.setFocused(false);
                 return true;
             }
 
-            if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) {
+            if (keyCode == SDLScancode.SDL_SCANCODE_RETURN || keyCode == SDLScancode.SDL_SCANCODE_KP_ENTER) {
                 addPlayerFromField(this.menu.getAnchorPos());
                 return true;
             }
 
-            if (this.playerNameField.keyPressed(keyCode, scanCode, modifiers)) {
+            if (this.playerNameField.keyPressed(input)) {
                 return true;
             }
 
             return true;
         }
 
-        if (keyCode == GLFW.GLFW_KEY_ESCAPE && page == Page.PLAYER_DETAIL) {
+        if (keyCode == SDLScancode.SDL_SCANCODE_ESCAPE && page == Page.PLAYER_DETAIL) {
             page = Page.MAIN;
-            rebuildWidgets();
+            rebuildErodedWidgets();
             return true;
         }
 
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return super.keyPressed(input);
     }
 
     @Override
-    public boolean charTyped(char chr, int modifiers) {
+    public boolean charTyped(CharacterEvent input) {
         if (this.playerNameField != null && this.playerNameField.isFocused()) {
-            return this.playerNameField.charTyped(chr, modifiers);
+            return this.playerNameField.charTyped(input);
         }
 
-        return super.charTyped(chr, modifiers);
+        return super.charTyped(input);
     }
 
     private boolean selectedPlayerConnectedAreaMode() {
@@ -950,6 +954,7 @@ public class TerritoryModuleScreen extends AbstractContainerScreen<TerritoryModu
                         : "screen.eroded.territory_module.scope.anchor"
         ).withStyle(connectedMode ? ChatFormatting.AQUA : ChatFormatting.GOLD);
     }
+
     private void syncPlayerScopeModesFromDataIfNeeded() {
         if (lastScopeSyncVersion == ClientTerritoryModuleData.version()) {
             return;

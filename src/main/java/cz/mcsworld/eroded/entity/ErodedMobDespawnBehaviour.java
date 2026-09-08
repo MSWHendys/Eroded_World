@@ -28,13 +28,13 @@ public final class ErodedMobDespawnBehaviour {
      *         handle despawn normally.
      */
     public static boolean handleDespawn(Mob mob) {
-        boolean territorySpawn = mob.getTags().contains(TAG_TERRITORY_SPAWN);
+        boolean territorySpawn = mob.entityTags().contains(TAG_TERRITORY_SPAWN);
 
         // Migration for mobs saved by versions before Part 6. TerritoryMobSpawnHandler
         // was the only code path that called setPersistenceRequired() for Eroded mobs.
         boolean legacyTerritorySpawn = !territorySpawn
                 && mob.isPersistenceRequired()
-                && mob.getTags().contains(ErodedMobSunBehaviour.TAG_ERODED);
+                && mob.entityTags().contains(ErodedMobSunBehaviour.TAG_ERODED);
 
         if (!territorySpawn && !legacyTerritorySpawn) {
             return false;

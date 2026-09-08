@@ -4,7 +4,8 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
+import org.jetbrains.annotations.NotNull;
 
 public record EnergySyncPacket(
         boolean enabled,
@@ -20,10 +21,10 @@ public record EnergySyncPacket(
         int miningCriticalSpeedPercent
 ) implements CustomPacketPayload {
 
-    public static final Type<EnergySyncPacket> ID =
-            new Type<>(ResourceLocation.fromNamespaceAndPath("eroded", "energy_sync"));
+    public static final Type<@NotNull EnergySyncPacket> ID =
+            new Type<>(Identifier.fromNamespaceAndPath("eroded", "energy_sync"));
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, EnergySyncPacket> CODEC =
+    public static final StreamCodec<@NotNull RegistryFriendlyByteBuf, @NotNull EnergySyncPacket> CODEC =
             StreamCodec.composite(
                     ByteBufCodecs.BOOL, EnergySyncPacket::enabled,
                     ByteBufCodecs.VAR_INT, EnergySyncPacket::energy,
@@ -40,7 +41,7 @@ public record EnergySyncPacket(
             );
 
     @Override
-    public Type<? extends CustomPacketPayload> type() {
+    public @NotNull Type<? extends @NotNull CustomPacketPayload> type() {
         return ID;
     }
 }

@@ -9,18 +9,21 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
+import org.jetbrains.annotations.NotNull;
 
 public final class TerritoryClaimState extends SavedData {
 
-    private static final String STATE_ID = "eroded_territory_claims";
+    private static final Identifier STATE_ID =
+            Identifier.fromNamespaceAndPath("eroded", "territory_claims");
 
     private static final Codec<TerritoryClaimState> CODEC =
             CompoundTag.CODEC.xmap(TerritoryClaimState::fromNbt, TerritoryClaimState::toNbt);
 
-    private static final SavedDataType<TerritoryClaimState> TYPE =
+    private static final SavedDataType<@NotNull TerritoryClaimState> TYPE =
             new SavedDataType<>(
                     STATE_ID,
                     TerritoryClaimState::new,

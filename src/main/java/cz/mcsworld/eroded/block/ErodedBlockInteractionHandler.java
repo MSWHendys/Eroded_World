@@ -18,7 +18,7 @@ public final class ErodedBlockInteractionHandler {
 
     public static void register() {
         UseBlockCallback.EVENT.register((player, world, hand, hitResult) -> {
-            if (player == null || player.isSpectator()) {
+            if (player.isSpectator()) {
                 return InteractionResult.PASS;
             }
 

@@ -1,21 +1,22 @@
 package cz.mcsworld.eroded.crafting;
 
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import org.jetbrains.annotations.NotNull;
 
 public final class RecipeDifficultyResolver {
 
-    private static final TagKey<Item> SIMPLE =
-            TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath("eroded", "simple"));
+    private static final TagKey<@NotNull Item> SIMPLE =
+            TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath("eroded", "simple"));
 
-    private static final TagKey<Item> NORMAL =
-            TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath("eroded", "normal"));
+    private static final TagKey<@NotNull Item> NORMAL =
+            TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath("eroded", "normal"));
 
-    private static final TagKey<Item> COMPLEX =
-            TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath("eroded", "complex"));
+    private static final TagKey<@NotNull Item> COMPLEX =
+            TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath("eroded", "complex"));
 
     private RecipeDifficultyResolver() {}
 

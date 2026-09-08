@@ -7,10 +7,12 @@ import java.util.Map;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.UUIDUtil;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
+import org.jetbrains.annotations.NotNull;
 
 public final class ErodedPortalMemoryState extends SavedData {
 
@@ -33,11 +35,11 @@ public final class ErodedPortalMemoryState extends SavedData {
                 return s;
             }));
 
-    public static final SavedDataType<ErodedPortalMemoryState> TYPE =
-            new SavedDataType<>(
-                    "eroded_portal_memory",
-                    ctx -> new ErodedPortalMemoryState(),
-                    ctx -> CODEC,
+    public static final SavedDataType<@NotNull ErodedPortalMemoryState> TYPE =
+            new SavedDataType<>(Identifier.fromNamespaceAndPath(
+                    "eroded","eroded_portal_memory"),
+                    ErodedPortalMemoryState::new,
+                    CODEC,
                     DataFixTypes.LEVEL
             );
 

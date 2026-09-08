@@ -5,11 +5,13 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import java.util.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.UUIDUtil;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
+import org.jetbrains.annotations.NotNull;
 
 public final class DeathChestState extends SavedData {
 
@@ -104,11 +106,11 @@ public final class DeathChestState extends SavedData {
                 return s;
             }));
 
-    public static final SavedDataType<DeathChestState> TYPE =
-            new SavedDataType<>(
-                    "eroded_death_chest_state",
-                    ctx -> new DeathChestState(),
-                    ctx -> CODEC,
+    public static final SavedDataType<@NotNull DeathChestState> TYPE =
+            new SavedDataType<>(Identifier.fromNamespaceAndPath
+                    ("eroded","eroded_death_chest_state"),
+                    DeathChestState::new,
+                    CODEC,
                     DataFixTypes.LEVEL
             );
 

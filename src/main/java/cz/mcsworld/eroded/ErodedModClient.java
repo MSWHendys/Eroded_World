@@ -8,6 +8,7 @@ import cz.mcsworld.eroded.client.audio.CalmDownEffect;
 import cz.mcsworld.eroded.client.data.*;
 import cz.mcsworld.eroded.client.debug.TerritoryDebugOverlay;
 import cz.mcsworld.eroded.client.gui.EnergyScreenOverlay;
+import cz.mcsworld.eroded.client.hud.DarknessHudOverlay;
 import cz.mcsworld.eroded.client.hud.EnergyHud;
 import cz.mcsworld.eroded.client.hud.EnergyHudLogic;
 import cz.mcsworld.eroded.client.input.DodgeInputHandler;
@@ -25,7 +26,6 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import cz.mcsworld.eroded.gui.ErodedSpecialItemTooltip;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.renderer.entity.SkeletonRenderer;
 import net.minecraft.client.renderer.entity.ZombieRenderer;
@@ -51,8 +51,8 @@ public class ErodedModClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
 
-        HudRenderCallback.EVENT.register(new EnergyHud());
-        HudRenderCallback.EVENT.register(new DarknessDebugOverlay());
+        EnergyHud.register();
+        DarknessDebugOverlay.register();
         EnergyScreenOverlay.register();
         MenuScreens.register(
                 ErodedScreenHandlers.TERRITORY_MODULE,
@@ -81,6 +81,7 @@ public class ErodedModClient implements ClientModInitializer {
         EnergyWarningClientHandler.register();
         ErodedKeybinds.register();
         TerritoryDebugOverlay.register();
+        DarknessHudOverlay.register();
 
         DodgeInputHandler.register();
 

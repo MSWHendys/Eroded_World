@@ -15,8 +15,10 @@ public final class TerritoryMiningListener {
 
             long tick = serverWorld.getGameTime();
             TerritoryTracker.onBlockBroken(serverWorld, pos, blockState);
-            ChunkPos chunk = new ChunkPos(pos);
-            TerritoryCellKey key = TerritoryCellKey.fromChunk(chunk.x, chunk.z);
+            ChunkPos chunk = new ChunkPos(
+                    player.blockPosition().getX() >> 4,
+                    player.blockPosition().getZ() >> 4);
+            TerritoryCellKey key = TerritoryCellKey.fromChunk(chunk.x(), chunk.z());
 
             TerritoryWorldState stateData = TerritoryWorldState.get(serverWorld);
             TerritoryCell cell = stateData.getOrCreateCell(key);

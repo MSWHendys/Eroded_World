@@ -143,7 +143,7 @@ public final class ErodedTorchHandler {
     ) {
         var cfg = DarknessConfigs.get().server.erodedTorch;
 
-        long time = world.getDayTime() % 24000L;
+        long time = world.getDefaultClockTime() % 24000L;
 
         boolean eveningOrNight = isTimeInside(
                 time,

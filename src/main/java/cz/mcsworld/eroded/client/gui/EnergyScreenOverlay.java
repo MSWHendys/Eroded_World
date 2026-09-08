@@ -6,7 +6,7 @@ import cz.mcsworld.eroded.config.energy.EnergyConfig;
 import cz.mcsworld.eroded.skills.SkillData;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AnvilScreen;
 import net.minecraft.client.gui.screens.inventory.CraftingScreen;
@@ -33,17 +33,18 @@ public final class EnergyScreenOverlay {
     private static Component customMessage = null;
     private static int customMessageColor = 0xFFFFFFFF;
 
-    private EnergyScreenOverlay() {
-    }
+    private EnergyScreenOverlay() {}
 
     public static void register() {
         ScreenEvents.AFTER_INIT.register((client, screen, width, height) ->
-                ScreenEvents.afterRender(screen).register(EnergyScreenOverlay::render)
+                ScreenEvents.afterExtract(screen).register(EnergyScreenOverlay::render)
         );
     }
 
     public static void triggerWarning(SkillData.EnergyState state) {
-        if (state == null || state == SkillData.EnergyState.NORMAL) return;
+        if (state == null || state == SkillData.EnergyState.NORMAL) {
+            return;
+        }
         activeWarningState = state;
         warningUntilMs = System.currentTimeMillis() + warningDurationMs(state);
     }
@@ -77,15 +78,13 @@ public final class EnergyScreenOverlay {
     public static void showAnvilMessage(Component text, String quality) {
         anvilMessage = text;
         anvilQuality = quality;
-        anvilMessageTicks =
-                EnergyConfig.get().client.hud.warningMessageTime * 5;
+        anvilMessageTicks = EnergyConfig.get().client.hud.warningMessageTime * 5;
     }
 
     public static void showCustomMessage(Component text, int color) {
         customMessage = text;
         customMessageColor = color;
-        customMessageTicks =
-                EnergyConfig.get().client.hud.warningMessageTime * 2;
+        customMessageTicks = EnergyConfig.get().client.hud.warningMessageTime * 2;
     }
 
     private static boolean shouldRender(Screen screen) {
@@ -96,7 +95,7 @@ public final class EnergyScreenOverlay {
 
     private static void render(
             Screen screen,
-            GuiGraphics context,
+            GuiGraphicsExtractor graphics,
             int mouseX,
             int mouseY,
             float delta
@@ -107,8 +106,7 @@ public final class EnergyScreenOverlay {
 
         Minecraft client = Minecraft.getInstance();
 
-        if (client.player == null
-                || !ClientEnergyData.isInitialized()) {
+        if (client == null || client.player == null || !ClientEnergyData.isInitialized()) {
             return;
         }
 
@@ -140,9 +138,9 @@ public final class EnergyScreenOverlay {
         lastEnergyValue = energy;
 
         int total = cfg.numberEnergyFlashes;
-        int ticks = client.gui.getGuiTicks();
+        int ticks = client.gui.hud.getGuiTicks();
 
-        int screenWidth = context.guiWidth();
+        int screenWidth = client.getWindow().getGuiScaledWidth();
 
         int barWidth = total * 8;
         int iconsX = (screenWidth - barWidth) / 2;
@@ -164,30 +162,21 @@ public final class EnergyScreenOverlay {
                         );
 
                 int iconColor;
-
                 if (!visual.visible()) {
                     iconColor = EnergyHudLogic.EMPTY;
                 } else {
-                    iconColor =
-                            0xFF000000
-                                    | (visual.color() & 0x00FFFFFF);
+                    iconColor = 0xFF000000 | (visual.color() & 0x00FFFFFF);
                 }
 
-                var matrices = context.pose();
-
-                matrices.pushMatrix();
-
+                var pose = graphics.pose();
+                pose.pushMatrix();
                 float centerX = drawX + 4.0F;
                 float centerY = iconsY + 4.0F;
+                pose.translate(centerX, centerY);
+                pose.scale(visual.scale(), visual.scale());
+                pose.translate(-centerX, -centerY);
 
-                matrices.translate(centerX, centerY);
-                matrices.scale(
-                        visual.scale(),
-                        visual.scale()
-                );
-                matrices.translate(-centerX, -centerY);
-
-                context.drawString(
+                graphics.text(
                         client.font,
                         ICON,
                         drawX,
@@ -196,7 +185,7 @@ public final class EnergyScreenOverlay {
                         true
                 );
 
-                matrices.popMatrix();
+                pose.popMatrix();
             }
         }
 
@@ -208,30 +197,20 @@ public final class EnergyScreenOverlay {
 
             if (anvilQuality != null) {
                 switch (anvilQuality) {
-                    case "POOR" ->
-                            textColor = EnergyHudLogic.RED;
-
-                    case "STANDARD" ->
-                            textColor = EnergyHudLogic.YELLOW;
-
-                    case "EXCELLENT" ->
-                            textColor = EnergyHudLogic.GREEN;
-
-                    default ->
-                            textColor = 0xFFFFFFFF;
+                    case "POOR" -> textColor = EnergyHudLogic.RED;
+                    case "STANDARD" -> textColor = EnergyHudLogic.YELLOW;
+                    case "EXCELLENT" -> textColor = EnergyHudLogic.GREEN;
+                    default -> textColor = 0xFFFFFFFF;
                 }
             }
 
             anvilMessageTicks--;
-
             if (anvilMessageTicks <= 0) {
                 anvilMessage = null;
                 anvilQuality = null;
             }
 
-        } else if (customMessageTicks > 0
-                && customMessage != null) {
-
+        } else if (customMessageTicks > 0 && customMessage != null) {
             textToDraw = customMessage;
             textColor = customMessageColor;
             customMessageTicks--;
@@ -242,25 +221,17 @@ public final class EnergyScreenOverlay {
             }
 
         } else if (energyEnabled && craftingFailTicks > 0) {
-            textToDraw = Component.translatable(
-                    "eroded.crafting.not_enough_energy"
-            );
-
+            textToDraw = Component.translatable("eroded.crafting.not_enough_energy");
             textColor = EnergyHudLogic.RED;
             craftingFailTicks--;
 
-        } else if (energyEnabled && activeWarningState != null
+        } else if (energyEnabled
+                && activeWarningState != null
                 && warningUntilMs > System.currentTimeMillis()) {
 
-            String translationKey =
-                    EnergyHudLogic.getWarningTranslationKey(
-                            activeWarningState
-                    );
-
+            String translationKey = EnergyHudLogic.getWarningTranslationKey(activeWarningState);
             if (translationKey != null) {
-                textToDraw =
-                        Component.translatable(translationKey);
-
+                textToDraw = Component.translatable(translationKey);
                 textColor = EnergyHudLogic.RED;
             } else {
                 resetWarning();
@@ -270,34 +241,21 @@ public final class EnergyScreenOverlay {
                 && warningUntilMs <= System.currentTimeMillis()) {
             resetWarning();
             if (energyEnabled) {
-                textToDraw = Component.translatable(
-                        "eroded.gui.energy.prefix"
-                ).append(
-                        Component.literal(
-                                energy + " / " + maxEnergy
-                        )
-                );
+                textToDraw = Component.translatable("eroded.gui.energy.prefix")
+                        .append(Component.literal(energy + " / " + maxEnergy));
             }
 
         } else if (energyEnabled) {
-            textToDraw =
-                    Component.translatable(
-                            "eroded.gui.energy.prefix"
-                    ).append(
-                            Component.literal(
-                                    energy + " / " + maxEnergy
-                            )
-                    );
+            textToDraw = Component.translatable("eroded.gui.energy.prefix")
+                    .append(Component.literal(energy + " / " + maxEnergy));
         }
 
         if (textToDraw == null) {
             return;
         }
 
-        int textWidth =
-                client.font.width(textToDraw);
-
-        context.drawString(
+        int textWidth = client.font.width(textToDraw);
+        graphics.text(
                 client.font,
                 textToDraw,
                 barCenterX - textWidth / 2,

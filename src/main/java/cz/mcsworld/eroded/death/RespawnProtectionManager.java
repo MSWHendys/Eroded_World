@@ -50,7 +50,7 @@ public final class RespawnProtectionManager {
             end(serverPlayer);
 
             if (cfg.respawnProtection.showMessage) {
-                serverPlayer.displayClientMessage(
+                serverPlayer.sendSystemMessage(
                         Component.translatable("eroded.respawn_protection.cancelled_by_attack"),
                         true
                 );
@@ -75,7 +75,7 @@ public final class RespawnProtectionManager {
         );
 
         if (cfg.respawnProtection.showMessage) {
-            player.displayClientMessage(
+            player.sendSystemMessage(
                     Component.translatable("eroded.respawn_protection.started"),
                     true
             );
@@ -125,7 +125,7 @@ public final class RespawnProtectionManager {
                 iterator.remove();
 
                 if (cfg.respawnProtection.showMessage) {
-                    player.displayClientMessage(
+                    player.sendSystemMessage(
                             Component.translatable("eroded.respawn_protection.expired"),
                             true
                     );

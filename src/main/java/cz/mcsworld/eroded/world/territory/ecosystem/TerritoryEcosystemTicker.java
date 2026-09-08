@@ -81,8 +81,11 @@ public final class TerritoryEcosystemTicker {
         for (int i = 0; i < count; i++) {
             int idx = rrIndex++ % players.size();
             ServerPlayer player = players.get(idx);
-            ChunkPos cp = new ChunkPos(player.blockPosition());
-            TerritoryCellKey key = TerritoryCellKey.fromChunk(cp.x, cp.z);
+            ChunkPos cp = new ChunkPos(
+                    player.blockPosition().getX() >> 4,
+                    player.blockPosition().getZ() >> 4
+            );
+            TerritoryCellKey key = TerritoryCellKey.fromChunk(cp.x(), cp.z());
             TerritoryCell cell = state.getCell(key);
             if (cell == null) continue;
 

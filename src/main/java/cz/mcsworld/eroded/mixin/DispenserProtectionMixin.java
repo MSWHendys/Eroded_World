@@ -24,7 +24,7 @@ public abstract class DispenserProtectionMixin {
             BlockPos pos,
             CallbackInfo ci
     ) {
-        if (!DispenserDropperProtectionManager.canDispense(world, pos, state)) {
+        if (DispenserDropperProtectionManager.canDispense(world, pos, state)) {
             ci.cancel();
         }
     }

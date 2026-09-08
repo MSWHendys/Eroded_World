@@ -11,7 +11,7 @@ public final class TerritoryStateMaintenance {
     private TerritoryStateMaintenance() {}
 
     public static void register() {
-        ServerTickEvents.END_WORLD_TICK.register(TerritoryStateMaintenance::onWorldTick);
+        ServerTickEvents.END_LEVEL_TICK.register(TerritoryStateMaintenance::onWorldTick);
     }
 
     private static void onWorldTick(ServerLevel world) {

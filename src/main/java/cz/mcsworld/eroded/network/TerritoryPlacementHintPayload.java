@@ -4,14 +4,15 @@ import cz.mcsworld.eroded.ErodedMod;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
+import org.jetbrains.annotations.NotNull;
 
 public record TerritoryPlacementHintPayload(boolean showMessage) implements CustomPacketPayload {
 
-    public static final Type<TerritoryPlacementHintPayload> ID =
-            new Type<>(ResourceLocation.fromNamespaceAndPath(ErodedMod.MOD_ID, "territory_placement_hint"));
+    public static final Type<@NotNull TerritoryPlacementHintPayload> ID =
+            new Type<>(Identifier.fromNamespaceAndPath(ErodedMod.MOD_ID, "territory_placement_hint"));
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, TerritoryPlacementHintPayload> CODEC =
+    public static final StreamCodec<@NotNull RegistryFriendlyByteBuf, @NotNull TerritoryPlacementHintPayload> CODEC =
             StreamCodec.ofMember(
                     TerritoryPlacementHintPayload::write,
                     TerritoryPlacementHintPayload::read
@@ -26,7 +27,7 @@ public record TerritoryPlacementHintPayload(boolean showMessage) implements Cust
     }
 
     @Override
-    public Type<? extends CustomPacketPayload> type() {
+    public @NotNull Type<? extends @NotNull CustomPacketPayload> type() {
         return ID;
     }
 }

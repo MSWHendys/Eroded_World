@@ -4,6 +4,7 @@ import cz.mcsworld.eroded.config.territory.TerritoryConfig;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.permissions.Permissions;
 
 public final class ExplosionProtectionManager {
 
@@ -27,7 +28,7 @@ public final class ExplosionProtectionManager {
             return false;
         }
 
-        BlockPos spawn = world.getSharedSpawnPos();
+        BlockPos spawn = world.getRespawnData().pos();
 
         int radius = cfg().spawnProtectionRadius;
 
@@ -138,6 +139,6 @@ public final class ExplosionProtectionManager {
             return true;
         }
 
-        return cfg().bypassOP && player.hasPermissions(2);
+        return cfg().bypassOP && player.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER);
     }
 }

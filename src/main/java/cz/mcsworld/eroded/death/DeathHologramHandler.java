@@ -2,6 +2,7 @@ package cz.mcsworld.eroded.death;
 
 import com.mojang.authlib.GameProfile;
 import cz.mcsworld.eroded.config.death.DeathConfig;
+import cz.mcsworld.eroded.core.EntityInvulnerabilityCompat;
 import cz.mcsworld.eroded.death.block.ErodedBlocks;
 import java.util.Set;
 import java.util.UUID;
@@ -14,6 +15,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.item.ItemStack;
@@ -33,12 +35,18 @@ public final class DeathHologramHandler {
     private DeathHologramHandler() {}
 
     public static void register() {
-        ServerTickEvents.END_WORLD_TICK.register(DeathHologramHandler::tick);
+        ServerTickEvents.END_LEVEL_TICK.register(DeathHologramHandler::tick);
     }
 
-    public static void spawn(ServerLevel world, BlockPos pos, GameProfile profile, int protectionSeconds, UUID hologramId) {
+    public static void spawn(
+            ServerLevel world,
+            BlockPos pos,
+            GameProfile profile,
+            int protectionSeconds,
+            UUID hologramId
+    ) {
         long expiryEpochMs = System.currentTimeMillis() + (protectionSeconds * 1000L);
-        String name = profile.getName();
+        String name = profile.name();
         String hidTag = TAG_HOLOGRAM_ID + hologramId;
 
         double baseX = pos.getX() + 0.5;
@@ -50,10 +58,10 @@ public final class DeathHologramHandler {
         stand.setInvisible(true);
         stand.setNoGravity(true);
         stand.setSilent(true);
-        stand.setInvulnerable(true);
+        EntityInvulnerabilityCompat.protectHologram(stand);
 
         ItemStack head = new ItemStack(Items.PLAYER_HEAD);
-        head.set(DataComponents.PROFILE, new ResolvableProfile(profile));
+        head.set(DataComponents.PROFILE, ResolvableProfile.createResolved(profile));
         stand.setItemSlot(EquipmentSlot.HEAD, head);
 
         stand.addTag(TAG);
@@ -65,7 +73,7 @@ public final class DeathHologramHandler {
         world.addFreshEntity(stand);
 
         double textY = baseY + 2.6;
-        Display.TextDisplay text = new Display.TextDisplay(EntityType.TEXT_DISPLAY, world);
+        Display.TextDisplay text = new Display.TextDisplay(EntityTypes.TEXT_DISPLAY, world);
         text.setPos(baseX, textY, baseZ);
         text.setBillboardConstraints(Display.BillboardConstraints.CENTER);
         text.setBackgroundColor(0x60000000);
@@ -81,9 +89,14 @@ public final class DeathHologramHandler {
 
     public static void tick(ServerLevel world) {
         DeathChestState state = DeathChestState.getIfPresent(world);
-        if (state == null) return;
+        if (state == null) {
+            return;
+        }
+
         var entries = state.all();
-        if (entries.isEmpty()) return;
+        if (entries.isEmpty()) {
+            return;
+        }
 
         long serverTick = world.getServer().getTickCount();
         boolean eachSecond = serverTick % 20L == 0L;
@@ -94,7 +107,7 @@ public final class DeathHologramHandler {
             BlockPos pos = entry.pos();
 
             // Never force-load a distant death-chest chunk for hologram upkeep.
-            // Orphan cleanup is performed when a chunk actually loads.
+            // Orphan cleanup runs when the chunk is actually loaded.
             if (!world.hasChunkAt(pos)) {
                 continue;
             }
@@ -108,10 +121,14 @@ public final class DeathHologramHandler {
             AABB box = hologramBox(pos);
 
             for (Entity e : world.getEntities(null, box)) {
-                if (e == null || e.isRemoved()) continue;
+                if (e == null || e.isRemoved()) {
+                    continue;
+                }
 
-                Set<String> tags = e.getTags();
-                if (!tags.contains(hidTag)) continue;
+                Set<String> tags = e.entityTags();
+                if (!tags.contains(hidTag)) {
+                    continue;
+                }
 
                 if (e instanceof ArmorStand stand && tags.contains(TAG_HEAD)) {
                     float yaw = (serverTick * cfg.rotationSpeed) % 360f;
@@ -136,8 +153,8 @@ public final class DeathHologramHandler {
     }
 
     /**
-     * Removes only the hologram entities next to the known death-chest
-     * position. The old implementation scanned every entity in the dimension.
+     * Removes only hologram entities near the known death-chest position.
+     * This avoids scanning every entity in the dimension.
      */
     public static void removeAt(ServerLevel world, BlockPos pos, UUID hologramId) {
         if (pos == null || hologramId == null || !world.hasChunkAt(pos)) {
@@ -146,7 +163,7 @@ public final class DeathHologramHandler {
 
         String hidTag = TAG_HOLOGRAM_ID + hologramId;
         for (Entity e : world.getEntities(null, hologramBox(pos))) {
-            if (e != null && !e.isRemoved() && e.getTags().contains(hidTag)) {
+            if (e != null && !e.isRemoved() && e.entityTags().contains(hidTag)) {
                 e.discard();
             }
         }
@@ -173,25 +190,29 @@ public final class DeathHologramHandler {
     }
 
     private static double getBaseY(Entity e) {
-        for (String tag : e.getTags()) {
+        for (String tag : e.entityTags()) {
             if (tag.startsWith(TAG_BASE_Y)) {
-                try { return Double.parseDouble(tag.substring(TAG_BASE_Y.length())); } catch (Exception ignored) {}
+                try {
+                    return Double.parseDouble(tag.substring(TAG_BASE_Y.length()));
+                } catch (Exception ignored) {}
             }
         }
         return e.getY();
     }
 
     private static long getExpiry(Entity e) {
-        for (String tag : e.getTags()) {
+        for (String tag : e.entityTags()) {
             if (tag.startsWith(TAG_EXPIRY)) {
-                try { return Long.parseLong(tag.substring(TAG_EXPIRY.length())); } catch (Exception ignored) {}
+                try {
+                    return Long.parseLong(tag.substring(TAG_EXPIRY.length()));
+                } catch (Exception ignored) {}
             }
         }
         return -1;
     }
 
     private static String getName(Entity e) {
-        for (String tag : e.getTags()) {
+        for (String tag : e.entityTags()) {
             if (tag.startsWith(TAG_NAME)) {
                 return tag.substring(TAG_NAME.length());
             }

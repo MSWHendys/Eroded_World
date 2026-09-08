@@ -5,17 +5,18 @@ import cz.mcsworld.eroded.block.*;
 import cz.mcsworld.eroded.config.darkness.DarknessConfigs;
 import cz.mcsworld.eroded.item.ErodedTorchItem;
 import cz.mcsworld.eroded.item.TerritoryAnchorItem;
-import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
+import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockBehaviour;
+import org.jetbrains.annotations.NotNull;
 
 public final class ErodedBlocks {
 
@@ -30,9 +31,9 @@ public final class ErodedBlocks {
 
     public static void register() {
 
-        ResourceLocation chestId = ResourceLocation.fromNamespaceAndPath(ErodedMod.MOD_ID, "death_ender_chest");
-        ResourceKey<Block> chestBlockKey = ResourceKey.create(BuiltInRegistries.BLOCK.key(), chestId);
-        ResourceKey<Item> chestItemKey = ResourceKey.create(BuiltInRegistries.ITEM.key(), chestId);
+        Identifier chestId = Identifier.fromNamespaceAndPath(ErodedMod.MOD_ID, "death_ender_chest");
+        ResourceKey<@NotNull Block> chestBlockKey = ResourceKey.create(BuiltInRegistries.BLOCK.key(), chestId);
+        ResourceKey<@NotNull Item> chestItemKey = ResourceKey.create(BuiltInRegistries.ITEM.key(), chestId);
 
         DEATH_ENDER_CHEST = Registry.register(
                 BuiltInRegistries.BLOCK,
@@ -55,9 +56,9 @@ public final class ErodedBlocks {
                 )
         );
 
-        ResourceLocation lanternId = ResourceLocation.fromNamespaceAndPath(ErodedMod.MOD_ID, "eroded_lamp");
-        ResourceKey<Block> lanternBlockKey = ResourceKey.create(BuiltInRegistries.BLOCK.key(), lanternId);
-        ResourceKey<Item> lanternItemKey = ResourceKey.create(BuiltInRegistries.ITEM.key(), lanternId);
+        Identifier lanternId = Identifier.fromNamespaceAndPath(ErodedMod.MOD_ID, "eroded_lamp");
+        ResourceKey<@NotNull Block> lanternBlockKey = ResourceKey.create(BuiltInRegistries.BLOCK.key(), lanternId);
+        ResourceKey<@NotNull Item> lanternItemKey = ResourceKey.create(BuiltInRegistries.ITEM.key(), lanternId);
 
         WARDING_LANTERN = Registry.register(
                 BuiltInRegistries.BLOCK,
@@ -87,9 +88,9 @@ public final class ErodedBlocks {
                 )
         );
 
-        ResourceLocation erodedBlockId = ResourceLocation.fromNamespaceAndPath(ErodedMod.MOD_ID, "eroded_block");
-        ResourceKey<Block> erodedBlockKey = ResourceKey.create(BuiltInRegistries.BLOCK.key(), erodedBlockId);
-        ResourceKey<Item> erodedBlockItemKey = ResourceKey.create(BuiltInRegistries.ITEM.key(), erodedBlockId);
+        Identifier erodedBlockId = Identifier.fromNamespaceAndPath(ErodedMod.MOD_ID, "eroded_block");
+        ResourceKey<@NotNull Block> erodedBlockKey = ResourceKey.create(BuiltInRegistries.BLOCK.key(), erodedBlockId);
+        ResourceKey<@NotNull Item> erodedBlockItemKey = ResourceKey.create(BuiltInRegistries.ITEM.key(), erodedBlockId);
 
         ERODED_BLOCK = Registry.register(
                 BuiltInRegistries.BLOCK,
@@ -111,12 +112,12 @@ public final class ErodedBlocks {
                 )
         );
 
-        ResourceLocation territoryAnchorId = ResourceLocation.fromNamespaceAndPath(ErodedMod.MOD_ID, "territory_anchor");
+        Identifier territoryAnchorId = Identifier.fromNamespaceAndPath(ErodedMod.MOD_ID, "territory_anchor");
 
-        ResourceKey<Block> territoryAnchorBlockKey =
+        ResourceKey<@NotNull Block> territoryAnchorBlockKey =
                 ResourceKey.create(BuiltInRegistries.BLOCK.key(), territoryAnchorId);
 
-        ResourceKey<Item> territoryAnchorItemKey =
+        ResourceKey<@NotNull Item> territoryAnchorItemKey =
                 ResourceKey.create(BuiltInRegistries.ITEM.key(), territoryAnchorId);
 
         TERRITORY_ANCHOR = Registry.register(
@@ -143,42 +144,42 @@ public final class ErodedBlocks {
         );
 
         registerErodedTorch();
+        CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.BUILDING_BLOCKS).register(output ->
+                output.accept(ERODED_BLOCK.asItem())
+        );
 
-        ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.BUILDING_BLOCKS).register(entries -> entries.accept(ERODED_BLOCK.asItem()));
-
-        ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.FUNCTIONAL_BLOCKS).register(entries -> {
-            entries.accept(WARDING_LANTERN.asItem());
-            entries.accept(DEATH_ENDER_CHEST.asItem());
-            entries.accept(TERRITORY_ANCHOR.asItem());
-            entries.accept(ERODED_TORCH_ITEM);
-            entries.accept(cz.mcsworld.eroded.core.ErodedItems.TERRITORY_MODULE);
+        CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.FUNCTIONAL_BLOCKS).register(output -> {
+            output.accept(WARDING_LANTERN.asItem());
+            output.accept(DEATH_ENDER_CHEST.asItem());
+            output.accept(TERRITORY_ANCHOR.asItem());
+            output.accept(ERODED_TORCH_ITEM);
+            output.accept(cz.mcsworld.eroded.core.ErodedItems.TERRITORY_MODULE);
         });
 
-        ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.FOOD_AND_DRINKS).register(entries -> {
-            entries.accept(cz.mcsworld.eroded.core.ErodedItems.ENERGY_DRINK);
-            entries.accept(cz.mcsworld.eroded.core.ErodedItems.ADRENALINE_SHOT);
-        });
-    }
+        CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.FOOD_AND_DRINKS).register(output -> {
+            output.accept(cz.mcsworld.eroded.core.ErodedItems.ENERGY_DRINK);
+            output.accept(cz.mcsworld.eroded.core.ErodedItems.ADRENALINE_SHOT);
+        });    }
 
 
     private static void registerErodedTorch() {
-        ResourceLocation torchId =
-                ResourceLocation.fromNamespaceAndPath(ErodedMod.MOD_ID, "eroded_torch");
+        Identifier torchId =
+                Identifier.fromNamespaceAndPath(ErodedMod.MOD_ID, "eroded_torch");
 
-        ResourceLocation wallTorchId =
-                ResourceLocation.fromNamespaceAndPath(ErodedMod.MOD_ID, "eroded_wall_torch");
+        Identifier wallTorchId =
+                Identifier.fromNamespaceAndPath(ErodedMod.MOD_ID, "eroded_wall_torch");
 
-        ResourceKey<Block> torchBlockKey = ResourceKey.create(
+        ResourceKey<@NotNull Block> torchBlockKey = ResourceKey.create(
                 BuiltInRegistries.BLOCK.key(),
                 torchId
         );
 
-        ResourceKey<Block> wallTorchBlockKey = ResourceKey.create(
+        ResourceKey<@NotNull Block> wallTorchBlockKey = ResourceKey.create(
                 BuiltInRegistries.BLOCK.key(),
                 wallTorchId
         );
 
-        ResourceKey<Item> torchItemKey = ResourceKey.create(
+        ResourceKey<@NotNull Item> torchItemKey = ResourceKey.create(
                 BuiltInRegistries.ITEM.key(),
                 torchId
         );
@@ -188,7 +189,7 @@ public final class ErodedBlocks {
                 torchBlockKey,
                 new ErodedTorchBlock(
                         BlockBehaviour.Properties.of()
-                                .noCollission()
+                                .noCollision()
                                 .noOcclusion()
                                 .strength(0.0F)
                                 .lightLevel(state -> getConfiguredTorchLightLevel())
@@ -201,7 +202,7 @@ public final class ErodedBlocks {
                 wallTorchBlockKey,
                 new ErodedWallTorchBlock(
                         BlockBehaviour.Properties.of()
-                                .noCollission()
+                                .noCollision()
                                 .noOcclusion()
                                 .strength(0.0F)
                                 .lightLevel(state -> getConfiguredTorchLightLevel())

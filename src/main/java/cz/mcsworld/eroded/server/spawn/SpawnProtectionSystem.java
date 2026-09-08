@@ -1,5 +1,6 @@
 package cz.mcsworld.eroded.server.spawn;
 
+import cz.mcsworld.eroded.core.EntityInvulnerabilityCompat;
 import cz.mcsworld.eroded.config.territory.TerritoryConfig;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -25,7 +26,7 @@ public final class SpawnProtectionSystem {
         int radiusSq = radius * radius;
         int checkRange = radius + 24;
 
-        BlockPos spawn = world.getSharedSpawnPos();
+        BlockPos spawn = world.getRespawnData().pos();
 
         AABB spawnBox = new AABB(spawn).inflate(checkRange);
 
@@ -106,7 +107,7 @@ public final class SpawnProtectionSystem {
 
         return isInSpawn(
                 player.blockPosition(),
-                world.getSharedSpawnPos(),
+                world.getRespawnData().pos(),
                 radiusSq
         );
     }
@@ -121,7 +122,7 @@ public final class SpawnProtectionSystem {
         int radiusSq = radius * radius;
         return isInSpawn(
                 player.blockPosition(),
-                world.getSharedSpawnPos(),
+                world.getRespawnData().pos(),
                 radiusSq);
     }
 
@@ -132,7 +133,7 @@ public final class SpawnProtectionSystem {
      */
     public static void clearLegacyPlayerInvulnerability(ServerPlayer player) {
         if (player.isCreative() || player.isSpectator()) return;
-        if (!player.isInvulnerable()) return;
+        if (!EntityInvulnerabilityCompat.isInvulnerable(player)) return;
 
         // The old implementation could legitimately leave this flag behind only
         // while the player was inside the Overworld spawn radius, or after the
@@ -145,11 +146,11 @@ public final class SpawnProtectionSystem {
             int radius = Math.max(0, cfg.spawnProtectionRadius);
             int radiusSq = radius * radius;
 
-            if (!isInSpawn(player.blockPosition(), world.getSharedSpawnPos(), radiusSq)) {
+            if (!isInSpawn(player.blockPosition(), world.getRespawnData().pos(), radiusSq)) {
                 return;
             }
         }
 
-        player.setInvulnerable(false);
+        EntityInvulnerabilityCompat.clear(player);
     }
 }

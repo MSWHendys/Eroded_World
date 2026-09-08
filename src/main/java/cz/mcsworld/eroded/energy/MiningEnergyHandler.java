@@ -136,4 +136,3 @@ public final class MiningEnergyHandler {
         return (int) Math.min(Integer.MAX_VALUE, weighted);
     }
 }
-

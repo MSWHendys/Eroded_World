@@ -23,7 +23,7 @@ public abstract class ItemStackFinishUsingMixin {
             LivingEntity user,
             CallbackInfoReturnable<ItemStack> cir
     ) {
-        if (world.isClientSide) return;
+        if (world.isClientSide()) return;
         if (!(user instanceof Player player)) return;
 
         ItemStack stack = (ItemStack)(Object)this;

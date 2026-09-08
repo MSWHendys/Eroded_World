@@ -2,9 +2,11 @@ package cz.mcsworld.eroded.world.darkness;
 
 import com.mojang.serialization.Codec;
 import cz.mcsworld.eroded.ErodedMod;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -45,8 +47,8 @@ public final class DynamicLightState extends SavedData {
                     }
             );
 
-    public static final SavedDataType<DynamicLightState> TYPE = new SavedDataType<>(
-            ErodedMod.MOD_ID + "_dynamic_lights",
+    public static final SavedDataType<@NotNull DynamicLightState> TYPE = new SavedDataType<>(
+            Identifier.fromNamespaceAndPath(ErodedMod.MOD_ID, "eroded_dynamic_lights"),
             DynamicLightState::new,
             CODEC,
             null

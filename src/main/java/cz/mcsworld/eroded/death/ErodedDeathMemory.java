@@ -4,11 +4,12 @@ import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
+import org.jetbrains.annotations.NotNull;
 
 public final class ErodedDeathMemory {
 
     private final BlockPos deathPos;
-    private final ResourceKey<Level> deathDimension;
+    private final ResourceKey<@NotNull Level> deathDimension;
     private long expireEpochMs;
     private final long value;
     private final UUID hologramId;
@@ -16,7 +17,7 @@ public final class ErodedDeathMemory {
 
     public ErodedDeathMemory(
             BlockPos deathPos,
-            ResourceKey<Level> deathDimension,
+            ResourceKey<@NotNull Level> deathDimension,
             long expireEpochMs,
             long value,
             UUID hologramId
@@ -53,7 +54,7 @@ public final class ErodedDeathMemory {
         return deathPos;
     }
 
-    public ResourceKey<Level> getDeathDimension() {
+    public ResourceKey<@NotNull Level> getDeathDimension() {
         return deathDimension;
     }
 

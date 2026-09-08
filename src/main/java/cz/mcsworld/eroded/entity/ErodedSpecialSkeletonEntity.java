@@ -4,27 +4,23 @@ import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.SpawnGroupData;
-import net.minecraft.world.entity.monster.Skeleton;
+import net.minecraft.world.entity.monster.skeleton.Skeleton;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class ErodedSpecialSkeletonEntity extends Skeleton {
 
-    public ErodedSpecialSkeletonEntity(EntityType<? extends Skeleton> type, Level world) {
+    public ErodedSpecialSkeletonEntity(EntityType< ? extends @NotNull Skeleton> type, Level world) {
         super(type, world);
     }
 
     @Override
-    public boolean isSunBurnTick() {
-        return false;
-    }
-
-    @Override
     public SpawnGroupData finalizeSpawn(
-            ServerLevelAccessor world,
-            DifficultyInstance difficulty,
-            EntitySpawnReason spawnReason,
+            @NotNull ServerLevelAccessor world,
+            @NotNull DifficultyInstance difficulty,
+            @NotNull EntitySpawnReason spawnReason,
             @Nullable SpawnGroupData entityData
     ) {
         SpawnGroupData data = super.finalizeSpawn(world, difficulty, spawnReason, entityData);

@@ -63,7 +63,7 @@ public final class EnergySyncHandler {
      * behaviour exactly once and move the value into eroded_skills.
      */
     private static void migrateLegacyEnergy(ServerPlayer player, SkillData data) {
-        var legacy = EnergyPersistentState.getIfPresent(player.getServer().overworld());
+        var legacy = EnergyPersistentState.getIfPresent(player.level().getServer().overworld());
         if (legacy == null) return;
 
         Integer legacyValue = legacy.takeEnergy(player.getUUID());
@@ -73,7 +73,7 @@ public final class EnergySyncHandler {
 
         ErodedMod.LOGGER.debug(
                 "[Eroded World] Migrated legacy energy persistence for {} ({} remaining legacy entries).",
-                player.getGameProfile().getName(),
+                player.getGameProfile().name(),
                 legacy.size()
         );
     }

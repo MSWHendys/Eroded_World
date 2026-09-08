@@ -5,14 +5,15 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
+import org.jetbrains.annotations.NotNull;
 
 public record TerritoryModuleRequestPayload(BlockPos anchorPos) implements CustomPacketPayload {
 
-    public static final Type<TerritoryModuleRequestPayload> ID =
-            new Type<>(ResourceLocation.fromNamespaceAndPath(ErodedMod.MOD_ID, "territory_module_request"));
+    public static final Type<@NotNull TerritoryModuleRequestPayload> ID =
+            new Type<>(Identifier.fromNamespaceAndPath(ErodedMod.MOD_ID, "territory_module_request"));
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, TerritoryModuleRequestPayload> CODEC =
+    public static final StreamCodec<@NotNull RegistryFriendlyByteBuf, @NotNull TerritoryModuleRequestPayload> CODEC =
             StreamCodec.ofMember(
                     TerritoryModuleRequestPayload::write,
                     TerritoryModuleRequestPayload::read
@@ -27,7 +28,7 @@ public record TerritoryModuleRequestPayload(BlockPos anchorPos) implements Custo
     }
 
     @Override
-    public Type<? extends CustomPacketPayload> type() {
+    public @NotNull Type<? extends @NotNull CustomPacketPayload> type() {
         return ID;
     }
 }

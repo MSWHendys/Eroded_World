@@ -72,8 +72,8 @@ public final class ProtectionBoundaryManager {
                 .map(TerritoryClaim::anchorPos)
                 .min(Comparator
                         .comparingInt((BlockPos pos) -> pos.getX())
-                        .thenComparingInt(pos -> pos.getY())
-                        .thenComparingInt(pos -> pos.getZ()))
+                        .thenComparingInt((BlockPos pos) -> pos.getY())
+                        .thenComparingInt((BlockPos pos) -> pos.getZ()))
                 .orElse(claim.anchorPos());
     }
 

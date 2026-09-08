@@ -9,6 +9,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.level.block.Block;
+import org.jetbrains.annotations.NotNull;
 
 public class TerritoryAnchorItem extends BlockItem {
 
@@ -18,11 +19,11 @@ public class TerritoryAnchorItem extends BlockItem {
 
     @Override
     public void appendHoverText(
-            ItemStack stack,
-            Item.TooltipContext context,
-            TooltipDisplay displayComponent,
+            @NotNull ItemStack stack,
+            Item.@NotNull TooltipContext context,
+            @NotNull TooltipDisplay displayComponent,
             Consumer<Component> textConsumer,
-            TooltipFlag type
+            @NotNull TooltipFlag type
     ) {
         textConsumer.accept(Component.translatable("tooltip.eroded.territory_anchor.1").withStyle(ChatFormatting.GRAY));
         textConsumer.accept(Component.translatable("tooltip.eroded.territory_anchor.2").withStyle(ChatFormatting.DARK_GRAY));

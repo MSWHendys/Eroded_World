@@ -6,15 +6,16 @@ import cz.mcsworld.eroded.entity.ErodedSpecialZombieEntity;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
+import org.jetbrains.annotations.NotNull;
 
 public final class ErodedEntities {
 
-    public static final EntityType<ErodedSpecialSkeletonEntity> ERODED_SPECIAL_SKELETON = register(
+    public static final EntityType<@NotNull ErodedSpecialSkeletonEntity> ERODED_SPECIAL_SKELETON = register(
             "eroded_special_skeleton",
             EntityType.Builder.of(ErodedSpecialSkeletonEntity::new, MobCategory.MONSTER)
                     .sized(0.6F, 1.99F)
@@ -22,7 +23,7 @@ public final class ErodedEntities {
                     .clientTrackingRange(8)
     );
 
-    public static final EntityType<ErodedSpecialZombieEntity> ERODED_SPECIAL_ZOMBIE = register(
+    public static final EntityType<@NotNull ErodedSpecialZombieEntity> ERODED_SPECIAL_ZOMBIE = register(
             "eroded_special_zombie",
             EntityType.Builder.of(ErodedSpecialZombieEntity::new, MobCategory.MONSTER)
                     .sized(0.6F, 1.95F)
@@ -37,12 +38,12 @@ public final class ErodedEntities {
 
     }
 
-    private static <T extends Entity> EntityType<T> register(
+    private static <T extends Entity> EntityType<@NotNull T> register(
             String name,
-            EntityType.Builder<T> builder
+            EntityType.Builder<@NotNull T> builder
     ) {
-        ResourceLocation id = ResourceLocation.fromNamespaceAndPath(ErodedMod.MOD_ID, name);
-        ResourceKey<EntityType<?>> key = ResourceKey.create(Registries.ENTITY_TYPE, id);
+        Identifier id = Identifier.fromNamespaceAndPath(ErodedMod.MOD_ID, name);
+        ResourceKey<@NotNull EntityType<?>> key = ResourceKey.create(Registries.ENTITY_TYPE, id);
 
         return Registry.register(
                 BuiltInRegistries.ENTITY_TYPE,

@@ -1,5 +1,8 @@
 package cz.mcsworld.eroded.network;
 
+
+import org.jetbrains.annotations.NotNull;
+
 public record TerritoryDebugPacket(
         int miningBlocks,
         int mining,
@@ -8,10 +11,10 @@ public record TerritoryDebugPacket(
         float threat
 ) implements net.minecraft.network.protocol.common.custom.CustomPacketPayload {
 
-    public static final Type<TerritoryDebugPacket> ID =
-            new Type<>(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("eroded", "territory_debug"));
+    public static final Type<@NotNull TerritoryDebugPacket> ID =
+            new Type<>(net.minecraft.resources.Identifier.fromNamespaceAndPath("eroded", "territory_debug"));
 
-    public static final net.minecraft.network.codec.StreamCodec<net.minecraft.network.RegistryFriendlyByteBuf, TerritoryDebugPacket> CODEC =
+    public static final net.minecraft.network.codec.StreamCodec<net.minecraft.network.@NotNull RegistryFriendlyByteBuf, @NotNull TerritoryDebugPacket> CODEC =
             net.minecraft.network.codec.StreamCodec.ofMember(
                     (p, buf) -> {
                         buf.writeInt(p.miningBlocks());
@@ -26,5 +29,5 @@ public record TerritoryDebugPacket(
             );
 
     @Override
-    public Type<? extends net.minecraft.network.protocol.common.custom.CustomPacketPayload> type() { return ID; }
+    public @NotNull Type<? extends net.minecraft.network.protocol.common.custom.@NotNull CustomPacketPayload> type() { return ID; }
 }

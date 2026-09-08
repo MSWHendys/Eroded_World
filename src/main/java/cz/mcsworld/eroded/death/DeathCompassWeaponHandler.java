@@ -11,6 +11,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.SwingAnimation;
 
 public final class DeathCompassWeaponHandler {
 
@@ -74,7 +75,7 @@ public final class DeathCompassWeaponHandler {
                     Math.max(1, cfg.compassWeapon.cooldownTicks)
             );
 
-            serverPlayer.swing(hand, true);
+            serverPlayer.swing(hand, SwingAnimation.DEFAULT, true);
 
             return InteractionResult.SUCCESS;
         });
@@ -103,7 +104,7 @@ public final class DeathCompassWeaponHandler {
             return false;
         }
 
-        int serverTicks = player.getServer().getTickCount();
+        int serverTicks = player.level().getServer().getTickCount();
 
         return !mem.isExpired(serverTicks) && !mem.isResolved();
     }

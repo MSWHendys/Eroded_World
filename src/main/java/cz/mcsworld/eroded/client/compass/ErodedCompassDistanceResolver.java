@@ -3,6 +3,7 @@ package cz.mcsworld.eroded.client.compass;
 import cz.mcsworld.eroded.client.data.ErodedCompassClientData;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.Vec3;
 
 public final class ErodedCompassDistanceResolver {
 
@@ -23,6 +24,6 @@ public final class ErodedCompassDistanceResolver {
             return -1;
 
         return client.player.position()
-                .distanceTo(deathPos.getCenter());
+                .distanceTo(Vec3.atCenterOf(deathPos));
     }
 }

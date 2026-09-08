@@ -20,8 +20,8 @@ public final class ErodedMobSunBehaviour {
 
         mob.addTag(TAG_ERODED);
 
-        if (mob.getTags().contains(TAG_PERMANENT)
-                || mob.getTags().contains(TAG_TEMPORARY)) {
+        if (mob.entityTags().contains(TAG_PERMANENT)
+                || mob.entityTags().contains(TAG_TEMPORARY)) {
             return;
         }
 
@@ -55,7 +55,7 @@ public final class ErodedMobSunBehaviour {
             return;
         }
 
-        if (mob.getTags().contains(TAG_PERMANENT)) {
+        if (mob.entityTags().contains(TAG_PERMANENT)) {
             if (mob.isOnFire()) {
                 mob.clearFire();
             }
@@ -63,7 +63,7 @@ public final class ErodedMobSunBehaviour {
             return;
         }
 
-        if (mob.getTags().contains(TAG_TEMPORARY)) {
+        if (mob.entityTags().contains(TAG_TEMPORARY)) {
             long burnTime = getBurnTime(mob);
             long now = mob.level().getGameTime();
 
@@ -92,7 +92,7 @@ public final class ErodedMobSunBehaviour {
     }
 
     private static long getBurnTime(Mob mob) {
-        for (String tag : mob.getTags()) {
+        for (String tag : mob.entityTags()) {
             if (!tag.startsWith(TAG_BURN_PREFIX)) {
                 continue;
             }
@@ -110,7 +110,7 @@ public final class ErodedMobSunBehaviour {
     private static void removeBurnTimeTag(Mob mob) {
         String burnTag = null;
 
-        for (String tag : mob.getTags()) {
+        for (String tag : mob.entityTags()) {
             if (tag.startsWith(TAG_BURN_PREFIX)) {
                 burnTag = tag;
                 break;

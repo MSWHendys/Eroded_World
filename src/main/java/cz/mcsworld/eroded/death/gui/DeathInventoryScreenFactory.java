@@ -7,6 +7,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import org.jetbrains.annotations.NotNull;
 
 public class DeathInventoryScreenFactory implements MenuProvider {
 
@@ -25,15 +26,15 @@ public class DeathInventoryScreenFactory implements MenuProvider {
     }
 
     @Override
-    public Component getDisplayName() {
+    public @NotNull Component getDisplayName() {
         return Component.translatable("eroded.death.chest.title");
     }
 
     @Override
     public AbstractContainerMenu createMenu(
             int syncId,
-            Inventory inv,
-            net.minecraft.world.entity.player.Player player
+            @NotNull Inventory inv,
+            net.minecraft.world.entity.player.@NotNull Player player
     ) {
         return new DeathInventoryScreenHandler(
                 syncId,

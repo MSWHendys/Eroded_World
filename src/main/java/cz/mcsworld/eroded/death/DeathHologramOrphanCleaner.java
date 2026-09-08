@@ -1,14 +1,14 @@
 package cz.mcsworld.eroded.death;
 
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerChunkEvents;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.phys.AABB;
-import java.util.Set;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
 public final class DeathHologramOrphanCleaner {
 
@@ -17,13 +17,13 @@ public final class DeathHologramOrphanCleaner {
     private DeathHologramOrphanCleaner() {}
 
     public static void register() {
-        ServerChunkEvents.CHUNK_LOAD.register(
-                DeathHologramOrphanCleaner::onChunkLoad
+        // 26.x Fabric supplies an additional callback argument here.
+        ServerChunkEvents.CHUNK_LOAD.register((world, chunk, ignored) ->
+                onChunkLoad(world, chunk)
         );
     }
 
     private static void onChunkLoad(ServerLevel world, LevelChunk chunk) {
-
         ChunkPos cPos = chunk.getPos();
 
         int bottomY = world.getMinY();
@@ -36,8 +36,10 @@ public final class DeathHologramOrphanCleaner {
 
         var chunkEntities = world.getEntities(null, chunkBox);
         boolean hasTaggedHologram = chunkEntities.stream()
-                .anyMatch(e -> e.getTags().stream().anyMatch(tag -> tag.startsWith(TAG_HOLOGRAM_ID)));
-        if (!hasTaggedHologram) return;
+                .anyMatch(e -> e.entityTags().stream().anyMatch(tag -> tag.startsWith(TAG_HOLOGRAM_ID)));
+        if (!hasTaggedHologram) {
+            return;
+        }
 
         DeathChestState state = DeathChestState.getIfPresent(world);
         Set<UUID> validIds = state == null
@@ -48,19 +50,22 @@ public final class DeathHologramOrphanCleaner {
                         .collect(Collectors.toSet());
 
         for (Entity e : chunkEntities) {
-            if (e.getTags().isEmpty()) continue;
+            if (e.entityTags().isEmpty()) {
+                continue;
+            }
 
-            for (String tag : e.getTags()) {
-                if (tag.startsWith(TAG_HOLOGRAM_ID)) {
-                    try {
-                        UUID id = UUID.fromString(tag.substring(TAG_HOLOGRAM_ID.length()));
+            for (String tag : e.entityTags()) {
+                if (!tag.startsWith(TAG_HOLOGRAM_ID)) {
+                    continue;
+                }
 
-                        if (!validIds.contains(id)) {
-                            e.discard();
-                        }
-                    } catch (IllegalArgumentException ignored) {
+                try {
+                    UUID id = UUID.fromString(tag.substring(TAG_HOLOGRAM_ID.length()));
+                    if (!validIds.contains(id)) {
                         e.discard();
                     }
+                } catch (IllegalArgumentException ignored) {
+                    e.discard();
                 }
             }
         }

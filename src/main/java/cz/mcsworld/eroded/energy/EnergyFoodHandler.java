@@ -6,7 +6,7 @@ import cz.mcsworld.eroded.skills.SkillManager;
 import cz.mcsworld.eroded.skills.SkillType;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -15,19 +15,20 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import org.jetbrains.annotations.NotNull;
 
 public final class EnergyFoodHandler {
 
     private EnergyFoodHandler() {}
 
-    private static TagKey<Item> c(String path) {
-        return TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath("c", path));
+    private static TagKey<@NotNull Item> c(String path) {
+        return TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath("c", path));
     }
 
-    private static final TagKey<Item> ERODED_OVERRIDE = tag("food_override");
+    private static final TagKey<@NotNull Item> ERODED_OVERRIDE = tag("food_override");
 
-    private static TagKey<Item> tag(String name) {
-        return TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath("eroded", name));
+    private static TagKey<@NotNull Item> tag(String name) {
+        return TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath("eroded", name));
     }
 
     public static void onEat(Player player, ItemStack stack) {

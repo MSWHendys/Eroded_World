@@ -3,14 +3,19 @@ package cz.mcsworld.eroded.client.hud;
 import cz.mcsworld.eroded.client.data.ClientEnergyData;
 import cz.mcsworld.eroded.config.energy.EnergyConfig;
 import cz.mcsworld.eroded.skills.SkillData;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 
-public class EnergyHud implements HudRenderCallback {
+public final class EnergyHud {
+
+    private static final Identifier ID =
+            Identifier.fromNamespaceAndPath("eroded", "energy_hud");
 
     private static final String ICON = "⚡";
 
@@ -23,10 +28,20 @@ public class EnergyHud implements HudRenderCallback {
     private static final long POSITION_PREVIEW_DURATION_MS = 3000L;
     private static long positionPreviewUntilMs = 0L;
 
-    public EnergyHud() {}
+    private EnergyHud() {}
+
+    public static void register() {
+        HudElementRegistry.attachElementBefore(
+                VanillaHudElements.CHAT,
+                ID,
+                EnergyHud::render
+        );
+    }
 
     public static void triggerWarning(SkillData.EnergyState state) {
-        if (state == null || state == SkillData.EnergyState.NORMAL) return;
+        if (state == null || state == SkillData.EnergyState.NORMAL) {
+            return;
+        }
 
         activeWarningState = state;
         warningUntilMs = System.currentTimeMillis() + warningDurationMs(state);
@@ -55,32 +70,42 @@ public class EnergyHud implements HudRenderCallback {
         };
     }
 
-    @Override
-    public void onHudRender(GuiGraphics context, DeltaTracker tickCounter) {
+    private static void render(GuiGraphicsExtractor graphics, DeltaTracker tickCounter) {
         Minecraft client = Minecraft.getInstance();
 
-        if (client.player == null || !ClientEnergyData.isInitialized()) return;
-        if (!ClientEnergyData.isEnabled()) return;
+        if (client.player == null || !ClientEnergyData.isInitialized()) {
+            return;
+        }
+        if (!ClientEnergyData.isEnabled()) {
+            return;
+        }
 
         var root = EnergyConfig.get();
         var cfg = root.client.hud;
-        if (!cfg.energyHudEnabled) return;
+
+        if (!cfg.energyHudEnabled) {
+            return;
+        }
 
         int energy = ClientEnergyData.getEnergy();
         int maxEnergy = ClientEnergyData.getMaxEnergy();
         boolean isImmune = ClientEnergyData.isImmune();
         int immunitySecs = ClientEnergyData.getImmunitySeconds();
 
-        if (maxEnergy <= 0) maxEnergy = root.server.core.maxEnergy;
+        if (maxEnergy <= 0) {
+            maxEnergy = root.server.core.maxEnergy;
+        }
 
         if (energy > lastEnergyValue && lastEnergyValue != -1) {
             isRegenerating = true;
         } else if (energy < lastEnergyValue) {
             isRegenerating = false;
         }
+
         if (energy >= maxEnergy) {
             isRegenerating = false;
         }
+
         lastEnergyValue = energy;
 
         long nowMs = System.currentTimeMillis();
@@ -89,13 +114,15 @@ public class EnergyHud implements HudRenderCallback {
         if (!cfg.showHudWhenFull
                 && energy >= maxEnergy
                 && !isImmune
-                && !positionPreviewActive) return;
+                && !positionPreviewActive) {
+            return;
+        }
 
         int total = cfg.numberEnergyFlashes;
-        int ticks = client.gui.getGuiTicks();
+        int ticks = client.gui.hud.getGuiTicks();
 
-        int screenW = context.guiWidth();
-        int screenH = context.guiHeight();
+        int screenW = client.getWindow().getGuiScaledWidth();
+        int screenH = client.getWindow().getGuiScaledHeight();
         int spacing = 8;
         int hudWidth = total * spacing;
 
@@ -110,7 +137,6 @@ public class EnergyHud implements HudRenderCallback {
             case CENTER_DOWN -> {
                 x = (screenW - hudWidth) / 2;
                 // Keep the centered HUD above the vanilla health/food rows and hotbar.
-                // LEFT_DOWN / RIGHT_DOWN retain the configurable bottom offset.
                 int centerDownOffset = Math.max(posIconHUD_Y, 52);
                 y = screenH - centerDownOffset;
             }
@@ -140,37 +166,48 @@ public class EnergyHud implements HudRenderCallback {
             }
         }
 
-        boolean hideIconsBecauseChat = client.screen instanceof ChatScreen;
+        boolean hideIconsBecauseChat = client.gui.screen() instanceof ChatScreen;
+
         if (!hideIconsBecauseChat) {
             for (int i = 0; i < total; i++) {
-                int drawX = x + i * 8;
-                EnergyHudLogic.SegmentVisual visual =
-                        EnergyHudLogic.resolve(i, total, energy, maxEnergy, isRegenerating, ticks);
+                int drawX = x + i * spacing;
 
+                EnergyHudLogic.SegmentVisual visual =
+                        EnergyHudLogic.resolve(
+                                i,
+                                total,
+                                energy,
+                                maxEnergy,
+                                isRegenerating,
+                                ticks
+                        );
+
+                int iconColor;
                 if (!visual.visible()) {
-                    context.drawString(client.font, ICON, drawX, y, EnergyHudLogic.EMPTY, true);
-                    continue;
+                    iconColor = EnergyHudLogic.EMPTY;
+                } else {
+                    iconColor = isImmune ? 0xFFFFD700 : visual.color();
+                    iconColor = 0xFF000000 | (iconColor & 0x00FFFFFF);
                 }
 
-                int iconColor = isImmune ? 0xFFFFD700 : visual.color();
+                var pose = graphics.pose();
+                pose.pushMatrix();
+                float cx = drawX + 4.0F;
+                float cy = y + 4.0F;
+                pose.translate(cx, cy);
+                pose.scale(visual.scale(), visual.scale());
+                pose.translate(-cx, -cy);
 
-                var matrices = context.pose();
-                matrices.pushMatrix();
-                float cx = drawX + 4;
-                float cy = y + 4;
-                matrices.translate(cx, cy);
-                matrices.scale(visual.scale(), visual.scale());
-                matrices.translate(-cx, -cy);
-
-                context.drawString(
+                graphics.text(
                         client.font,
                         ICON,
                         drawX,
                         y,
-                        (0xFF << 24) | (iconColor & 0x00FFFFFF),
+                        iconColor,
                         true
                 );
-                matrices.popMatrix();
+
+                pose.popMatrix();
             }
 
             if (isImmune) {
@@ -178,17 +215,31 @@ public class EnergyHud implements HudRenderCallback {
                 int barHeight = 2;
                 int barX = x;
                 int barY = y + 10;
-                float progress = Math.min(1.0f, immunitySecs / 120.0f);
+                float progress = Math.min(1.0F, immunitySecs / 120.0F);
 
-                context.fill(barX, barY, barX + barWidth, barY + barHeight, 0xAA000000);
+                graphics.fill(
+                        barX,
+                        barY,
+                        barX + barWidth,
+                        barY + barHeight,
+                        0xAA000000
+                );
 
-                context.fill(barX, barY, barX + (int)(barWidth * progress), barY + barHeight, 0xFFFFD700);
-
+                graphics.fill(
+                        barX,
+                        barY,
+                        barX + (int) (barWidth * progress),
+                        barY + barHeight,
+                        0xFFFFD700
+                );
             }
         }
 
-        if (warningUntilMs > nowMs && !isRegenerating && root.server.warnings.warningsEnabled) {
-            String key = (activeWarningState == null)
+        if (warningUntilMs > nowMs
+                && !isRegenerating
+                && root.server.warnings.warningsEnabled) {
+
+            String key = activeWarningState == null
                     ? null
                     : EnergyHudLogic.getWarningTranslationKey(activeWarningState);
 
@@ -199,9 +250,22 @@ public class EnergyHud implements HudRenderCallback {
                 int textY = y - posTextHUD_Y;
                 int padding = 4;
 
-                context.fill(textX - padding, textY - padding, textX + textWidth + padding, textY + client.font.lineHeight + padding, 0xCC000000);
-                context.drawString(client.font, text, textX, textY, EnergyHudLogic.RED, true);
+                graphics.fill(
+                        textX - padding,
+                        textY - padding,
+                        textX + textWidth + padding,
+                        textY + client.font.lineHeight + padding,
+                        0xCC000000
+                );
 
+                graphics.text(
+                        client.font,
+                        text,
+                        textX,
+                        textY,
+                        EnergyHudLogic.RED,
+                        true
+                );
             } else {
                 resetWarning();
             }

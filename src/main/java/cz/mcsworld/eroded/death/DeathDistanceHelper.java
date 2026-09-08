@@ -5,6 +5,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
+import org.jetbrains.annotations.NotNull;
 
 public final class DeathDistanceHelper {
 
@@ -13,11 +14,11 @@ public final class DeathDistanceHelper {
     public static double getDeathToWorldSpawnDistance(
             ServerPlayer player,
             BlockPos deathPos,
-            ResourceKey<Level> deathDim
+            ResourceKey<@NotNull Level> deathDim
     ) {
         ServerLevel world = player.level();
-        BlockPos spawnPos = world.getSharedSpawnPos();
-        ResourceKey<Level> spawnDim = world.dimension();
+        BlockPos spawnPos = world.getRespawnData().pos();
+        ResourceKey<@NotNull Level> spawnDim = world.dimension();
 
         if (!deathDim.equals(spawnDim)) {
             return -1;

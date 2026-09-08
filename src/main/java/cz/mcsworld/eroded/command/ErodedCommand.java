@@ -64,7 +64,7 @@ public final class ErodedCommand {
                 Commands.literal("eroded")
 
                         .then(Commands.literal("reload")
-                                .requires(src -> src.hasPermission(2))
+                                .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
                                 .executes(ctx -> {
                                     try {
                                         ErodedConfigs.ReloadResult result = ErodedConfigs.reload();
@@ -101,10 +101,10 @@ public final class ErodedCommand {
                         )
 
                         .then(Commands.literal("chest")
-                                .requires(src -> src.hasPermission(2))
+                                .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
                                 .executes(ctx -> {
                                     ServerPlayer player =
-                                            ctx.getSource().getPlayerOrException();
+                                            ctx.getSource().getPlayer();
 
                                     ItemStack stack = new ItemStack(Items.CHEST);
 
@@ -133,7 +133,7 @@ public final class ErodedCommand {
                         )
 
                         .then(Commands.literal("energy")
-                                .requires(src -> src.hasPermission(2))
+                                .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
                                 .then(Commands.argument(
                                                         "player",
                                                         EntityArgument.player()
@@ -194,7 +194,7 @@ public final class ErodedCommand {
                                                                     );
 
                                                             ServerPlayer player =
-                                                                    ctx.getSource().getPlayerOrException();
+                                                                    ctx.getSource().getPlayer();
 
                                                             long now =
                                                                     System.currentTimeMillis();
@@ -261,7 +261,7 @@ public final class ErodedCommand {
                                                                     );
 
                                                             ServerPlayer player =
-                                                                    ctx.getSource().getPlayerOrException();
+                                                                    ctx.getSource().getPlayer();
 
                                                             long now =
                                                                     System.currentTimeMillis();
@@ -315,7 +315,7 @@ public final class ErodedCommand {
                                 .then(Commands.literal("info")
                                         .executes(ctx -> {
                                             ServerPlayer player =
-                                                    ctx.getSource().getPlayerOrException();
+                                                    ctx.getSource().getPlayer();
 
                                             long now =
                                                     System.currentTimeMillis();
@@ -392,7 +392,7 @@ public final class ErodedCommand {
                                 .then(Commands.literal("reset")
                                         .executes(ctx -> {
                                             ServerPlayer player =
-                                                    ctx.getSource().getPlayerOrException();
+                                                    ctx.getSource().getPlayer();
 
                                             long now =
                                                     System.currentTimeMillis();
@@ -469,7 +469,7 @@ public final class ErodedCommand {
                                                                 );
 
                                                         ServerPlayer player =
-                                                                ctx.getSource().getPlayerOrException();
+                                                                ctx.getSource().getPlayer();
 
                                                         HudPositionSyncPacket.sendTo(
                                                                 player,
@@ -498,7 +498,7 @@ public final class ErodedCommand {
                         )
 
                         .then(Commands.literal("territory")
-                                .requires(src -> src.hasPermission(2))
+                                .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
 
                                 .then(Commands.literal("info")
                                         .executes(ctx -> {
@@ -509,7 +509,7 @@ public final class ErodedCommand {
                                                     source.getLevel();
 
                                             ServerPlayer player =
-                                                    source.getPlayerOrException();
+                                                    source.getPlayer();
 
                                             TerritoryClaim claim =
                                                     findClaimForCommand(
@@ -605,7 +605,7 @@ public final class ErodedCommand {
                                                     source.getLevel();
 
                                             ServerPlayer player =
-                                                    source.getPlayerOrException();
+                                                    source.getPlayer();
 
                                             TerritoryClaim claim =
                                                     findClaimForCommand(
@@ -709,8 +709,8 @@ public final class ErodedCommand {
 
                                             var chunk = player.chunkPosition();
                                             TerritoryCellKey key = TerritoryCellKey.fromChunk(
-                                                    chunk.x,
-                                                    chunk.z
+                                                    chunk.x(),
+                                                    chunk.z()
                                             );
 
                                             TerritoryWorldState state =

@@ -24,16 +24,15 @@ public final class DodgeHandler {
 
         ServerPlayNetworking.registerGlobalReceiver(
                 DodgeRequestPacket.ID,
-                (payload, context) -> {
+                (payload, context) -> context.server().execute(() -> {
                     ServerPlayer player = context.player();
 
-                    // Object payload handlers already run on the server thread.
                     // Drop malformed/spammy requests before collision scanning.
                     if (!ServerPacketGuard.allow(player, "dodge", 10)) return;
                     if (!isValidDirection(payload)) return;
 
                     handle(player, payload);
-                }
+                })
         );
 
     }
@@ -60,7 +59,7 @@ public final class DodgeHandler {
         if (!cfg.allowSideways && pkt.dirX() != 0) return;
 
         UUID id = player.getUUID();
-        int ticks = player.getServer().getTickCount();
+        int ticks = player.level().getServer().getTickCount();
 
         int last = COOLDOWNS.getOrDefault(id, -9999);
         if (ticks - last < cfg.cooldownTicks) return;

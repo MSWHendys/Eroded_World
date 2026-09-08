@@ -1,15 +1,31 @@
 package cz.mcsworld.eroded.world.territory;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BlockTags;
-import net.minecraft.world.level.ChunkPos;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 
 public final class TerritoryTracker {
 
+    private static final TagKey<Block> COAL_ORES = vanillaBlockTag("coal_ores");
+    private static final TagKey<Block> REDSTONE_ORES = vanillaBlockTag("redstone_ores");
+    private static final TagKey<Block> LAPIS_ORES = vanillaBlockTag("lapis_ores");
+    private static final TagKey<Block> EMERALD_ORES = vanillaBlockTag("emerald_ores");
+    private static final TagKey<Block> DIAMOND_ORES = vanillaBlockTag("diamond_ores");
+    private static final TagKey<Block> SAPLINGS = vanillaBlockTag("saplings");
+
     private TerritoryTracker() {}
+
+    private static TagKey<Block> vanillaBlockTag(String path) {
+        return TagKey.create(
+                Registries.BLOCK,
+                Identifier.withDefaultNamespace(path)
+        );
+    }
 
     public static void onBlockPlaced(ServerLevel world, BlockPos pos, BlockState blockState) {
         long tick = world.getGameTime();
@@ -35,9 +51,17 @@ public final class TerritoryTracker {
         }
     }
 
-    private static void updateCell(ServerLevel world, BlockPos pos, long tick, java.util.function.Consumer<TerritoryCell> action) {
-        ChunkPos chunk = new ChunkPos(pos);
-        TerritoryCellKey key = TerritoryCellKey.fromChunk(chunk.x, chunk.z);
+    private static void updateCell(
+            ServerLevel world,
+            BlockPos pos,
+            long tick,
+            java.util.function.Consumer<TerritoryCell> action
+    ) {
+        TerritoryCellKey key = TerritoryCellKey.fromChunk(
+                pos.getX() >> 4,
+                pos.getZ() >> 4
+        );
+
         TerritoryWorldState worldState = TerritoryWorldState.get(world);
         TerritoryCell cell = worldState.getOrCreateCell(key);
 
@@ -49,9 +73,9 @@ public final class TerritoryTracker {
     private static int resolveMiningValue(BlockState state, BlockPos pos) {
 
         if (state.is(BlockTags.GOLD_ORES) || state.is(BlockTags.IRON_ORES) ||
-                state.is(BlockTags.DIAMOND_ORES) || state.is(BlockTags.COAL_ORES) ||
-                state.is(BlockTags.COPPER_ORES) || state.is(BlockTags.REDSTONE_ORES) ||
-                state.is(BlockTags.LAPIS_ORES) || state.is(BlockTags.EMERALD_ORES)) {
+                state.is(DIAMOND_ORES) || state.is(COAL_ORES) ||
+                state.is(BlockTags.COPPER_ORES) || state.is(REDSTONE_ORES) ||
+                state.is(LAPIS_ORES) || state.is(EMERALD_ORES)) {
             return 3;
         }
 
@@ -67,7 +91,7 @@ public final class TerritoryTracker {
             return 2;
         }
 
-        if (state.is(BlockTags.SAPLINGS)) {
+        if (state.is(SAPLINGS)) {
             return 1;
         }
 

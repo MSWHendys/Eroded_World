@@ -5,7 +5,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
+import org.jetbrains.annotations.NotNull;
 
 public record TerritoryTrustAddPayload(
         BlockPos anchorPos,
@@ -15,10 +16,10 @@ public record TerritoryTrustAddPayload(
 
     public static final int MAX_PLAYER_NAME_LENGTH = 16;
 
-    public static final Type<TerritoryTrustAddPayload> ID =
-            new Type<>(ResourceLocation.fromNamespaceAndPath(ErodedMod.MOD_ID, "territory_trust_add"));
+    public static final Type<@NotNull TerritoryTrustAddPayload> ID =
+            new Type<>(Identifier.fromNamespaceAndPath(ErodedMod.MOD_ID, "territory_trust_add"));
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, TerritoryTrustAddPayload> CODEC =
+    public static final StreamCodec<@NotNull RegistryFriendlyByteBuf, @NotNull TerritoryTrustAddPayload> CODEC =
             StreamCodec.ofMember(
                     TerritoryTrustAddPayload::write,
                     TerritoryTrustAddPayload::read
@@ -43,7 +44,7 @@ public record TerritoryTrustAddPayload(
     }
 
     @Override
-    public Type<? extends CustomPacketPayload> type() {
+    public @NotNull Type<? extends @NotNull CustomPacketPayload> type() {
         return ID;
     }
 }

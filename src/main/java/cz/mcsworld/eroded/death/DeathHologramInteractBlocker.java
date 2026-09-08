@@ -24,7 +24,7 @@ public final class DeathHologramInteractBlocker {
     }
 
     private static boolean isDeathHologram(Entity entity) {
-        return entity.getTags()
+        return entity.entityTags()
                 .contains("eroded_death_hologram");
     }
 }

@@ -5,7 +5,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
+import org.jetbrains.annotations.NotNull;
 
 public record TerritoryPermissionUpdatePayload(
         BlockPos anchorPos,
@@ -18,10 +19,10 @@ public record TerritoryPermissionUpdatePayload(
     public static final int MAX_UUID_LENGTH = 36;
     public static final int MAX_PERMISSION_NAME_LENGTH = 32;
 
-    public static final Type<TerritoryPermissionUpdatePayload> ID =
-            new Type<>(ResourceLocation.fromNamespaceAndPath(ErodedMod.MOD_ID, "territory_permission_update"));
+    public static final Type<@NotNull TerritoryPermissionUpdatePayload> ID =
+            new Type<>(Identifier.fromNamespaceAndPath(ErodedMod.MOD_ID, "territory_permission_update"));
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, TerritoryPermissionUpdatePayload> CODEC =
+    public static final StreamCodec<@NotNull RegistryFriendlyByteBuf, @NotNull TerritoryPermissionUpdatePayload> CODEC =
             StreamCodec.ofMember(
                     TerritoryPermissionUpdatePayload::write,
                     TerritoryPermissionUpdatePayload::read
@@ -46,7 +47,7 @@ public record TerritoryPermissionUpdatePayload(
     }
 
     @Override
-    public Type<? extends CustomPacketPayload> type() {
+    public @NotNull Type<? extends @NotNull CustomPacketPayload> type() {
         return ID;
     }
 }

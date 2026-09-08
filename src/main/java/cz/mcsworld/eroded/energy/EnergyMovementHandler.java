@@ -4,7 +4,7 @@ import cz.mcsworld.eroded.config.energy.EnergyConfig;
 import cz.mcsworld.eroded.skills.SkillData;
 import cz.mcsworld.eroded.skills.SkillManager;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
@@ -21,8 +21,8 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
  */
 public final class EnergyMovementHandler {
 
-    private static final ResourceLocation COLLAPSE_SPEED_ID =
-            ResourceLocation.fromNamespaceAndPath("eroded", "energy_collapse_speed");
+    private static final Identifier COLLAPSE_SPEED_ID =
+            Identifier.fromNamespaceAndPath("eroded", "energy_collapse_speed");
 
     private EnergyMovementHandler() {}
 

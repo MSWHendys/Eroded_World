@@ -4,7 +4,7 @@ import cz.mcsworld.eroded.config.energy.EnergyConfig;
 import cz.mcsworld.eroded.skills.SkillData;
 import cz.mcsworld.eroded.skills.SkillManager;
 import net.minecraft.ChatFormatting;
-import net.minecraft.advancements.CriteriaTriggers;
+import net.minecraft.advancements.triggers.CriteriaTriggers;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -16,6 +16,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemUseAnimation;
 import net.minecraft.world.item.ItemUtils;
 import net.minecraft.world.level.Level;
+import org.jetbrains.annotations.NotNull;
 
 public class EnergyDrinkItem extends Item {
 
@@ -24,7 +25,7 @@ public class EnergyDrinkItem extends Item {
     }
 
     @Override
-    public InteractionResult use(Level world, Player user, InteractionHand hand) {
+    public @NotNull InteractionResult use(@NotNull Level world, @NotNull Player user, @NotNull InteractionHand hand) {
 
         if (user instanceof ServerPlayer player) {
             if (!EnergyConfig.get().server.enabled) {
@@ -33,7 +34,7 @@ public class EnergyDrinkItem extends Item {
             SkillData data = SkillManager.get(player);
 
             if (data.getEnergy() >= data.getMaxEnergy()) {
-                player.displayClientMessage(Component.translatable("eroded.energy.full").withStyle(ChatFormatting.GOLD), true);
+                player.sendSystemMessage(Component.translatable("eroded.energy.full").withStyle(ChatFormatting.GOLD), true);
                 return InteractionResult.FAIL;
             }
         }
@@ -42,7 +43,7 @@ public class EnergyDrinkItem extends Item {
     }
 
     @Override
-    public ItemStack finishUsingItem(ItemStack stack, Level world, LivingEntity user) {
+    public @NotNull ItemStack finishUsingItem(@NotNull ItemStack stack, @NotNull Level world, @NotNull LivingEntity user) {
 
         if (user instanceof ServerPlayer player) {
             if (!EnergyConfig.get().server.enabled) {
@@ -69,12 +70,12 @@ public class EnergyDrinkItem extends Item {
     }
 
     @Override
-    public int getUseDuration(ItemStack stack, LivingEntity user) {
+    public int getUseDuration(@NotNull ItemStack stack, @NotNull LivingEntity user) {
         return 32;
     }
 
     @Override
-    public ItemUseAnimation getUseAnimation(ItemStack stack) {
+    public @NotNull ItemUseAnimation getUseAnimation(@NotNull ItemStack stack) {
         return ItemUseAnimation.DRINK;
     }
 }

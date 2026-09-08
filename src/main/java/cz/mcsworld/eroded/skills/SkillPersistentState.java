@@ -4,13 +4,16 @@ import com.mojang.serialization.Codec;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
+import org.jetbrains.annotations.NotNull;
 
 public final class SkillPersistentState extends SavedData {
 
-    private static final String ID = "eroded_skills";
+    private static final Identifier ID =  Identifier.fromNamespaceAndPath("eroded","eroded_skills");
 
     private final Map<UUID, SkillDataRecord> players = new HashMap<>();
 
@@ -27,7 +30,7 @@ public final class SkillPersistentState extends SavedData {
                     state -> state.players
             );
 
-    public static final SavedDataType<SkillPersistentState> TYPE =
+    public static final SavedDataType<@NotNull SkillPersistentState> TYPE =
             new SavedDataType<>(
                     ID,
                     SkillPersistentState::new,

@@ -6,6 +6,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
+import org.jetbrains.annotations.NotNull;
 
 public final class ErodedCompassTargetResolver {
 
@@ -16,14 +17,14 @@ public final class ErodedCompassTargetResolver {
             ErodedDeathMemory memory
     ) {
         ServerLevel playerWorld = player.level();
-        ResourceKey<Level> playerDim = playerWorld.dimension();
-        ResourceKey<Level> deathDim  = memory.getDeathDimension();
+        ResourceKey<@NotNull Level> playerDim = playerWorld.dimension();
+        ResourceKey<@NotNull Level> deathDim  = memory.getDeathDimension();
 
         if (playerDim.equals(deathDim)) {
             return memory.getDeathPos();
         }
 
-        MinecraftServer server = player.getServer();
+        MinecraftServer server = player.level().getServer();
         if (server == null) return memory.getDeathPos();
 
         ServerLevel overworld = server.getLevel(Level.OVERWORLD);
@@ -31,11 +32,11 @@ public final class ErodedCompassTargetResolver {
 
         if (deathDim.equals(Level.NETHER) && !playerDim.equals(Level.NETHER)) {
             BlockPos portal = ErodedPortalMemoryState.get(overworld).getOverworldPortal(player.getUUID());
-            return portal != null ? portal : overworld.getSharedSpawnPos();
+            return portal != null ? portal : overworld.getRespawnData().pos();
         }
 
         if (deathDim.equals(Level.END) && !playerDim.equals(Level.END)) {
-            return overworld.getSharedSpawnPos();
+            return overworld.getRespawnData().pos();
         }
 
         return memory.getDeathPos();
