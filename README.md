@@ -1,14 +1,14 @@
-![Minecraft](https://img.shields.io/badge/Minecraft-1.21.6%20--%201.21.8-green)
+![Minecraft](https://img.shields.io/badge/Minecraft-26.3--pre--2-green)
 ![Loader](https://img.shields.io/badge/Loader-Fabric-blue)
-![Java](https://img.shields.io/badge/Java-21-orange)
+![Java](https://img.shields.io/badge/Java-25-orange)
 ![Requires](https://img.shields.io/badge/Requires-Fabric%20API-yellow)
-![Status](https://img.shields.io/badge/Status-Release-green)
+![Status](https://img.shields.io/badge/Status-BETA%20%2F%20EXPERIMENTAL-red)
 
-![Eroded World Banner](https://github.com/MSWHendys/Eroded_World/blob/1.21.6-1.21.8/gradle/wrapper/img/fabric%201.21.6-1.21.8.webp?raw=true)
+![Eroded World Banner](https://github.com/MSWHendys/Eroded_World/blob/26.3-pre-2/gradle/wrapper/img/fabric%2026.3-pre-2.png?raw=true)
 
 # Eroded World
 
-**Hardcore survival overhaul for Minecraft Fabric 1.21.6 - 1.21.8**
+**Hardcore survival overhaul for Minecraft Fabric 26.3-pre.2**
 
 > Darkness is not cosmetic.  
 > Mining has consequences.  
@@ -16,14 +16,14 @@
 
 Eroded World turns ordinary survival actions into long-term decisions. Mining, movement, crafting, darkness, territory pressure, death recovery and player protection are connected into one harsher survival loop.
 
-Current project version: **`1.1.0_1.21.6-1.21.8`**
+Current beta version: **`1.1.0-26.3_test_pre-2`**
 
 ---
 
 ## Table of Contents
 
 - [About](#about)
-- [Current Release Highlights](#current-release-highlights)
+- [Current Beta Highlights](#current-beta-highlights)
 - [Installation](#installation)
 - [Core Systems](#core-systems)
 - [Items and Blocks](#items-and-blocks)
@@ -53,9 +53,9 @@ The mod is intended for atmospheric survival and multiplayer servers where slowe
 
 ---
 
-## Current Release Highlights
+## Current Beta Highlights
 
-This release includes the current reworked survival systems and several important reliability improvements:
+This experimental beta build brings the current Eroded World systems to Minecraft 26.3-pre.2 for compatibility and gameplay testing. It includes the current reworked survival systems and reliability improvements:
 
 - removed the Cloth Config / AutoConfig dependency,
 - added built-in JSON configuration loading, validation, migration and recovery,
@@ -72,14 +72,16 @@ This release includes the current reworked survival systems and several importan
 
 ---
 
+> **Testing build:** Minecraft 26.3-pre.2 is a pre-release game version. This Eroded World build is intended for testing and may require further changes before the final Minecraft 26.3 release. Back up important worlds before testing.
+
 ## Installation
 
 ### Requirements
 
-- Minecraft `1.21.6 - 1.21.8`
-- Fabric Loader `0.16.10+`
-- Fabric API `0.128.2+`
-- Java `21`
+- Minecraft `26.3-pre.2`
+- Fabric Loader `0.19.5+`
+- Fabric API `0.159.4+26.3`
+- Java `25`
 
 **Cloth Config API is not required.**
 
@@ -528,19 +530,19 @@ After manual changes, use:
 ## Technical Information
 
 - **Mod ID:** `eroded`
-- **Version:** `1.1.0_1.21.6-1.21.8`
-- **Minecraft target:** `1.21.6`
-- **Minecraft compatibility range:** `>=1.21.6 <1.21.9`
-- **Java:** `21`
-- **Loader:** Fabric `0.16.10+`
-- **Fabric API:** `0.128.2+`
+- **Version:** `eroded_world-1.1.0-26.3_test_pre-2`
+- **Minecraft target:** `26.3-pre-2`
+- **Minecraft compatibility range:** `26.3-pre-2`
+- **Java:** `25`
+- **Loader:** Fabric `0.19.5+`
+- **Fabric API:** `0.159.4+26.3`
 - **Environment:** client + server
 - **Mappings:** Mojang official mappings
 - **Networking:** custom Fabric payloads for Energy, skills, darkness, compass, territory and UI synchronization
-- **Persistence:** Minecraft `PersistentState`-based world/player data and custom death/territory storage
+- **Persistence:** Minecraft persistent world/player state and custom death/territory storage
 - **Configuration:** built-in strict JSON configuration system
 - **Localization:** English and Czech language files
-- **Required runtime dependencies:** Fabric Loader, Fabric API, Java 21
+- **Required runtime dependencies:** Fabric Loader, Fabric API, Java 25
 
 ---
 
