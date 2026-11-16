@@ -1,4 +1,25 @@
-Copyright (c) 2026
-Currently under internal / custom license.
+ERODED WORLD — COPYRIGHT AND USE NOTICE
 
-License details may change in the future.
+Copyright (c) 2026 MSWHendys (MCStoryWorld).
+All Rights Reserved.
+
+Eroded World's original source code, binaries, artwork, and other original
+project assets are proprietary to their respective copyright holder(s).
+
+You may download and use unmodified official Eroded World releases for
+Minecraft gameplay, subject to the terms of the authorized distribution
+platforms and applicable law. This permission does not include redistributing,
+reuploading, selling, sublicensing, or publishing modified versions.
+
+Except where permitted by applicable law or expressly authorized in writing,
+no permission is granted to copy, modify, distribute, publish, sell, or create
+derivative works from Eroded World's original project materials.
+
+Public access to this repository is provided for viewing and reference and
+does not constitute an open-source license.
+
+Third-party libraries, tools, and assets remain subject to their own licenses.
+Nothing in this notice revokes rights validly granted under licenses for
+previous releases.
+
+Project: https://mcstoryworld.cz/eroded-world/
