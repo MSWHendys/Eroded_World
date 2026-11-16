@@ -79,3 +79,13 @@ Older releases, including version 1.1.0, are preserved in the project's developm
 Discover the project, Minecraft server and future mods at:
 
 [MCStoryWorld.cz](https://mcstoryworld.cz/)
+
+## License
+
+**Eroded World © 2026 MSWHendys (MCStoryWorld). All Rights Reserved.**
+
+Official releases are available for Minecraft gameplay. The source code is publicly viewable but is not distributed under an open-source license.
+
+Unauthorized modification, redistribution, reuploading, and commercial use are not permitted.
+
+See [LICENSE.txt](LICENSE.txt) for details.
